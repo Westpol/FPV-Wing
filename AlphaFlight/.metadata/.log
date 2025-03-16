@@ -1,0 +1,21 @@
+!SESSION 2025-03-16 23:01:00.861 -----------------------------------------------
+eclipse.buildId=Version 1.16.0
+java.version=17.0.11
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=linux, ARCH=x86_64, WS=gtk, NL=en_US
+Command-line arguments:  -os linux -ws gtk -arch x86_64
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 4 4 2025-03-16 23:01:16.159
+!MESSAGE CubeMX plugin appears to be active, Log4j initialization might be too late.
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2025-03-16 23:01:16.160
+!MESSAGE Log4j2 initialized with config file /home/benno/Documents/GitHub/FPV-Wing/AlphaFlight/.metadata/.log4j2.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2025-03-16 23:01:17.325
+!MESSAGE Started RMI Server, listening on port 41337
+
+!ENTRY org.eclipse.cdt.core 1 0 2025-03-16 23:01:59.275
+!MESSAGE Indexed 'AlphaFlight' (33 sources, 95 headers) in 2.06 sec: 9,562 declarations; 80,605 references; 0 unresolved inclusions; 1 syntax errors; 2 unresolved names (0.0022%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2025-03-16 23:29:24.753
+!MESSAGE Indexed 'AlphaFlight' (41 sources, 107 headers) in 1.44 sec: 10,661 declarations; 84,459 references; 0 unresolved inclusions; 1 syntax errors; 2 unresolved names (0.0021%)
