@@ -1,0 +1,11 @@
+
+#ifndef CROSSFIRE_H
+#define CROSSFIRE_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "main.h"
+
+#endif
