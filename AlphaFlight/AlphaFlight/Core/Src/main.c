@@ -52,6 +52,7 @@ SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim6;
+DMA_HandleTypeDef hdma_tim1_ch1;
 
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart1;
@@ -67,6 +68,7 @@ UART_HandleTypeDef huart6;
 void SystemClock_Config(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_SDMMC1_SD_Init(void);
@@ -120,6 +122,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_SDMMC1_SD_Init();
@@ -132,6 +135,7 @@ int main(void)
   MX_USART3_UART_Init();
   MX_ADC1_Init();
   MX_TIM6_Init();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
   MX_USB_DEVICE_Init();  // Initialize USB CDC
   /* USER CODE END 2 */
@@ -141,8 +145,6 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  Serial_Print("Hello from STM32F722 USB CDC!\r\n");
-	  HAL_Delay(1000);
 
     /* USER CODE BEGIN 3 */
   }
@@ -446,7 +448,7 @@ static void MX_TIM1_Init(void)
   htim1.Init.Period = 65535;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
@@ -705,6 +707,22 @@ static void MX_USART6_UART_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -723,22 +741,28 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, RGB_R_Pin|BARO_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(RGB_R_GPIO_Port, RGB_R_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GYRO_CS_Pin|ACCEL_CS_Pin|SERVO1_Pin|SERVO2_Pin
-                          |SERVO3_Pin|SERVO4_Pin|CS_EXT_3_Pin|CS_EXT_2_Pin
-                          |CS_EXT_1_Pin|RGB_B_Pin|RGB_G_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(BARO_CS_GPIO_Port, BARO_CS_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GYRO_CS_Pin|ACCEL_CS_Pin|CS_EXT_3_Pin|CS_EXT_2_Pin
+                          |CS_EXT_1_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, SERVO1_Pin|SERVO2_Pin|SERVO3_Pin|SERVO4_Pin
+                          |RGB_B_Pin|RGB_G_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, SERVO7_Pin|SEVO5_Pin|SERVO6_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : RGB_R_Pin BARO_CS_Pin */
-  GPIO_InitStruct.Pin = RGB_R_Pin|BARO_CS_Pin;
+  /*Configure GPIO pin : RGB_R_Pin */
+  GPIO_InitStruct.Pin = RGB_R_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(RGB_R_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SD_CD_Pin */
   GPIO_InitStruct.Pin = SD_CD_Pin;
@@ -746,23 +770,42 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(SD_CD_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : GYRO_CS_Pin ACCEL_CS_Pin SERVO1_Pin SERVO2_Pin
-                           SERVO3_Pin SERVO4_Pin CS_EXT_3_Pin CS_EXT_2_Pin
-                           CS_EXT_1_Pin RGB_B_Pin RGB_G_Pin */
-  GPIO_InitStruct.Pin = GYRO_CS_Pin|ACCEL_CS_Pin|SERVO1_Pin|SERVO2_Pin
-                          |SERVO3_Pin|SERVO4_Pin|CS_EXT_3_Pin|CS_EXT_2_Pin
-                          |CS_EXT_1_Pin|RGB_B_Pin|RGB_G_Pin;
+  /*Configure GPIO pin : BARO_CS_Pin */
+  GPIO_InitStruct.Pin = BARO_CS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(BARO_CS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : GYRO_CS_Pin ACCEL_CS_Pin CS_EXT_3_Pin CS_EXT_2_Pin
+                           CS_EXT_1_Pin */
+  GPIO_InitStruct.Pin = GYRO_CS_Pin|ACCEL_CS_Pin|CS_EXT_3_Pin|CS_EXT_2_Pin
+                          |CS_EXT_1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SERVO1_Pin SERVO2_Pin SERVO3_Pin SERVO4_Pin */
+  GPIO_InitStruct.Pin = SERVO1_Pin|SERVO2_Pin|SERVO3_Pin|SERVO4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : SERVO7_Pin SEVO5_Pin SERVO6_Pin */
   GPIO_InitStruct.Pin = SERVO7_Pin|SEVO5_Pin|SERVO6_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : RGB_B_Pin RGB_G_Pin */
+  GPIO_InitStruct.Pin = RGB_B_Pin|RGB_G_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

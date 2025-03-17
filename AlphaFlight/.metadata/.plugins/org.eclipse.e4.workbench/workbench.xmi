@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ASCII"?>
 <application:Application xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:advanced="http://www.eclipse.org/ui/2010/UIModel/application/ui/advanced" xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmlns:menu="http://www.eclipse.org/ui/2010/UIModel/application/ui/menu" xmi:id="_Lcer4QKyEfCBf-R9YLWoTg" elementId="org.eclipse.e4.legacy.ide.application" contributorURI="platform:/plugin/org.eclipse.ui.workbench" selectedElement="_Lcer4gKyEfCBf-R9YLWoTg" bindingContexts="_LcfS8gKyEfCBf-R9YLWoTg">
-  <persistedState key="memento" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xA;&lt;workbench>&#xA;&lt;mruList>&#xA;&lt;file factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;usbd_cdc_if.c&quot; tooltip=&quot;AlphaFlight/USB_DEVICE/App/usbd_cdc_if.c&quot;>&#xA;&lt;persistable path=&quot;/AlphaFlight/USB_DEVICE/App/usbd_cdc_if.c&quot;/>&#xA;&lt;/file>&#xA;&lt;file factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;usb_device.h&quot; tooltip=&quot;AlphaFlight/USB_DEVICE/App/usb_device.h&quot;>&#xA;&lt;persistable path=&quot;/AlphaFlight/USB_DEVICE/App/usb_device.h&quot;/>&#xA;&lt;/file>&#xA;&lt;file factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;usb_device.c&quot; tooltip=&quot;AlphaFlight/USB_DEVICE/App/usb_device.c&quot;>&#xA;&lt;persistable path=&quot;/AlphaFlight/USB_DEVICE/App/usb_device.c&quot;/>&#xA;&lt;/file>&#xA;&lt;file factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;main.c&quot; tooltip=&quot;AlphaFlight/Core/Src/main.c&quot;>&#xA;&lt;persistable path=&quot;/AlphaFlight/Core/Src/main.c&quot;/>&#xA;&lt;/file>&#xA;&lt;file factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; id=&quot;com.st.stm32cube.common.mx.startCubeMx&quot; name=&quot;AlphaFlight.ioc&quot; tooltip=&quot;AlphaFlight/AlphaFlight.ioc&quot;>&#xA;&lt;persistable path=&quot;/AlphaFlight/AlphaFlight.ioc&quot;/>&#xA;&lt;/file>&#xA;&lt;/mruList>&#xA;&lt;/workbench>"/>
+  <persistedState key="memento" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xA;&lt;workbench>&#xA;&lt;mruList>&#xA;&lt;file factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;main.c&quot; tooltip=&quot;AlphaFlight/Core/Src/main.c&quot;>&#xA;&lt;persistable path=&quot;/AlphaFlight/Core/Src/main.c&quot;/>&#xA;&lt;/file>&#xA;&lt;file factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; id=&quot;com.st.stm32cube.common.mx.startCubeMx&quot; name=&quot;AlphaFlight.ioc&quot; tooltip=&quot;AlphaFlight/AlphaFlight.ioc&quot;>&#xA;&lt;persistable path=&quot;/AlphaFlight/AlphaFlight.ioc&quot;/>&#xA;&lt;/file>&#xA;&lt;file factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;usbd_cdc_if.c&quot; tooltip=&quot;AlphaFlight/USB_DEVICE/App/usbd_cdc_if.c&quot;>&#xA;&lt;persistable path=&quot;/AlphaFlight/USB_DEVICE/App/usbd_cdc_if.c&quot;/>&#xA;&lt;/file>&#xA;&lt;file factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;usb_device.h&quot; tooltip=&quot;AlphaFlight/USB_DEVICE/App/usb_device.h&quot;>&#xA;&lt;persistable path=&quot;/AlphaFlight/USB_DEVICE/App/usb_device.h&quot;/>&#xA;&lt;/file>&#xA;&lt;file factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;usb_device.c&quot; tooltip=&quot;AlphaFlight/USB_DEVICE/App/usb_device.c&quot;>&#xA;&lt;persistable path=&quot;/AlphaFlight/USB_DEVICE/App/usb_device.c&quot;/>&#xA;&lt;/file>&#xA;&lt;/mruList>&#xA;&lt;/workbench>"/>
   <tags>activeSchemeId:org.eclipse.ui.defaultAcceleratorConfiguration</tags>
   <children xsi:type="basic:TrimmedWindow" xmi:id="_Lcer4gKyEfCBf-R9YLWoTg" elementId="IDEWindow" contributorURI="platform:/plugin/org.eclipse.ui.workbench" selectedElement="_LmrwwgKyEfCBf-R9YLWoTg" width="1050" height="768">
     <persistedState key="coolBarVisible" value="true"/>
@@ -85,7 +85,7 @@
                 <tags>categoryTag:General</tags>
               </children>
             </children>
-            <children xsi:type="basic:PartSashContainer" xmi:id="_LoqtxgKyEfCBf-R9YLWoTg" containerData="7500" selectedElement="_LoqtzQKyEfCBf-R9YLWoTg">
+            <children xsi:type="basic:PartSashContainer" xmi:id="_LoqtxgKyEfCBf-R9YLWoTg" containerData="7500" selectedElement="_LoqtxwKyEfCBf-R9YLWoTg">
               <children xsi:type="basic:PartSashContainer" xmi:id="_LoqtxwKyEfCBf-R9YLWoTg" containerData="7500" selectedElement="_LoqtyAKyEfCBf-R9YLWoTg" horizontal="true">
                 <children xsi:type="advanced:Placeholder" xmi:id="_LoqtyAKyEfCBf-R9YLWoTg" elementId="org.eclipse.ui.editorss" containerData="7500" ref="_LojZAAKyEfCBf-R9YLWoTg"/>
                 <children xsi:type="basic:PartStack" xmi:id="_LoqtyQKyEfCBf-R9YLWoTg" elementId="topRight" containerData="2500" selectedElement="_LoqtygKyEfCBf-R9YLWoTg">
@@ -161,7 +161,6 @@
           <tags>persp.newWizSC:com.st.stm32cube.ide.cmake.newwizard</tags>
           <children xsi:type="basic:PartSashContainer" xmi:id="_QqpZ4QKyEfCBf-R9YLWoTg" selectedElement="_QqpZ5AKyEfCBf-R9YLWoTg" horizontal="true">
             <children xsi:type="basic:PartStack" xmi:id="_QqpZ4gKyEfCBf-R9YLWoTg" elementId="left" containerData="1100" selectedElement="_QqpZ4wKyEfCBf-R9YLWoTg">
-              <tags>noFocus</tags>
               <children xsi:type="advanced:Placeholder" xmi:id="_QqpZ4wKyEfCBf-R9YLWoTg" elementId="org.eclipse.ui.navigator.ProjectExplorer" ref="_LomcUAKyEfCBf-R9YLWoTg" closeable="true">
                 <tags>View</tags>
                 <tags>categoryTag:General</tags>
@@ -222,15 +221,17 @@
       <tags>categoryTag:Help</tags>
     </sharedElements>
     <sharedElements xsi:type="advanced:Area" xmi:id="_LojZAAKyEfCBf-R9YLWoTg" elementId="org.eclipse.ui.editorss" selectedElement="_LojZAQKyEfCBf-R9YLWoTg">
-      <children xsi:type="basic:PartStack" xmi:id="_LojZAQKyEfCBf-R9YLWoTg" elementId="org.eclipse.e4.primaryDataStack" selectedElement="_s6AOwAK2EfCBf-R9YLWoTg">
+      <children xsi:type="basic:PartStack" xmi:id="_LojZAQKyEfCBf-R9YLWoTg" elementId="org.eclipse.e4.primaryDataStack" selectedElement="_WlZroAKzEfCBf-R9YLWoTg">
         <tags>org.eclipse.e4.primaryDataStack</tags>
         <tags>EditorStack</tags>
         <tags>active</tags>
         <children xsi:type="basic:Part" xmi:id="_WlZroAKzEfCBf-R9YLWoTg" elementId="org.eclipse.e4.ui.compatibility.editor" contributionURI="bundleclass://org.eclipse.ui.workbench/org.eclipse.ui.internal.e4.compatibility.CompatibilityEditor" label="main.c" iconURI="platform:/plugin/org.eclipse.cdt.ui/icons/obj16/c_file_obj.gif" closeable="true">
-          <persistedState key="memento" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xA;&lt;editor id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;main.c&quot; partName=&quot;main.c&quot; title=&quot;main.c&quot; tooltip=&quot;AlphaFlight/Core/Src/main.c&quot;>&#xA;&lt;input factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; path=&quot;/AlphaFlight/Core/Src/main.c&quot;/>&#xA;&lt;editorState selectionHorizontalPixel=&quot;0&quot; selectionLength=&quot;0&quot; selectionOffset=&quot;3821&quot; selectionTopPixel=&quot;12881&quot;/>&#xA;&lt;/editor>"/>
+          <persistedState key="memento" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xA;&lt;editor id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;main.c&quot; partName=&quot;main.c&quot; title=&quot;main.c&quot; tooltip=&quot;AlphaFlight/Core/Src/main.c&quot;>&#xA;&lt;input factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; path=&quot;/AlphaFlight/Core/Src/main.c&quot;/>&#xA;&lt;editorState selectionHorizontalPixel=&quot;0&quot; selectionLength=&quot;0&quot; selectionOffset=&quot;2484&quot; selectionTopPixel=&quot;1173&quot;/>&#xA;&lt;/editor>"/>
           <tags>Editor</tags>
           <tags>removeOnHide</tags>
           <tags>org.eclipse.cdt.ui.editor.CEditor</tags>
+          <tags>active</tags>
+          <tags>activeOnClose</tags>
         </children>
         <children xsi:type="basic:Part" xmi:id="_wumXMAK1EfCBf-R9YLWoTg" elementId="org.eclipse.e4.ui.compatibility.editor" contributionURI="bundleclass://org.eclipse.ui.workbench/org.eclipse.ui.internal.e4.compatibility.CompatibilityEditor" label="usb_device.c" iconURI="platform:/plugin/org.eclipse.cdt.ui/icons/obj16/c_file_obj.gif" closeable="true">
           <persistedState key="memento" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xA;&lt;editor id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;usb_device.c&quot; partName=&quot;usb_device.c&quot; title=&quot;usb_device.c&quot; tooltip=&quot;AlphaFlight/USB_DEVICE/App/usb_device.c&quot;>&#xA;&lt;input factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; path=&quot;/AlphaFlight/USB_DEVICE/App/usb_device.c&quot;/>&#xA;&lt;editorState selectionHorizontalPixel=&quot;0&quot; selectionLength=&quot;0&quot; selectionOffset=&quot;2372&quot; selectionTopPixel=&quot;853&quot;/>&#xA;&lt;/editor>"/>
@@ -245,12 +246,10 @@
           <tags>org.eclipse.cdt.ui.editor.CEditor</tags>
         </children>
         <children xsi:type="basic:Part" xmi:id="_s6AOwAK2EfCBf-R9YLWoTg" elementId="org.eclipse.e4.ui.compatibility.editor" contributionURI="bundleclass://org.eclipse.ui.workbench/org.eclipse.ui.internal.e4.compatibility.CompatibilityEditor" label="usbd_cdc_if.c" iconURI="platform:/plugin/org.eclipse.cdt.ui/icons/obj16/c_file_obj.gif" closeable="true">
-          <persistedState key="memento" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xA;&lt;editor id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;usbd_cdc_if.c&quot; partName=&quot;usbd_cdc_if.c&quot; title=&quot;usbd_cdc_if.c&quot; tooltip=&quot;AlphaFlight/USB_DEVICE/App/usbd_cdc_if.c&quot;>&#xA;&lt;input factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; path=&quot;/AlphaFlight/USB_DEVICE/App/usbd_cdc_if.c&quot;/>&#xA;&lt;editorState selectionHorizontalPixel=&quot;0&quot; selectionLength=&quot;0&quot; selectionOffset=&quot;9214&quot; selectionTopPixel=&quot;4780&quot;/>&#xA;&lt;/editor>"/>
+          <persistedState key="memento" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xA;&lt;editor id=&quot;org.eclipse.cdt.ui.editor.CEditor&quot; name=&quot;usbd_cdc_if.c&quot; partName=&quot;usbd_cdc_if.c&quot; title=&quot;usbd_cdc_if.c&quot; tooltip=&quot;AlphaFlight/USB_DEVICE/App/usbd_cdc_if.c&quot;>&#xA;&lt;input factoryID=&quot;org.eclipse.ui.part.FileEditorInputFactory&quot; path=&quot;/AlphaFlight/USB_DEVICE/App/usbd_cdc_if.c&quot;/>&#xA;&lt;editorState selectionHorizontalPixel=&quot;0&quot; selectionLength=&quot;0&quot; selectionOffset=&quot;9214&quot; selectionTopPixel=&quot;4743&quot;/>&#xA;&lt;/editor>"/>
           <tags>Editor</tags>
           <tags>removeOnHide</tags>
           <tags>org.eclipse.cdt.ui.editor.CEditor</tags>
-          <tags>active</tags>
-          <tags>activeOnClose</tags>
         </children>
       </children>
     </sharedElements>
@@ -405,7 +404,7 @@
       </children>
       <children xsi:type="menu:ToolBar" xmi:id="_LnV4EAKyEfCBf-R9YLWoTg" elementId="org.eclipse.ui.workbench.file">
         <tags>Draggable</tags>
-        <children xsi:type="menu:HandledToolItem" xmi:id="_LnYUUAKyEfCBf-R9YLWoTg" elementId="print" visible="false" iconURI="platform:/plugin/org.eclipse.ui/icons/full/etool16/print_edit.png" tooltip="Print" command="_LcyN8AKyEfCBf-R9YLWoTg"/>
+        <children xsi:type="menu:HandledToolItem" xmi:id="_mp6aAAMUEfCP_PqZ0l72HA" elementId="print" visible="false" iconURI="platform:/plugin/org.eclipse.ui/icons/full/etool16/print_edit.png" tooltip="Print" command="_LcyN8AKyEfCBf-R9YLWoTg"/>
       </children>
       <children xsi:type="menu:ToolBar" xmi:id="_LnV4EQKyEfCBf-R9YLWoTg" elementId="group.edit" toBeRendered="false">
         <tags>toolbarSeparator</tags>
@@ -413,14 +412,14 @@
       </children>
       <children xsi:type="menu:ToolBar" xmi:id="_LnV4EwKyEfCBf-R9YLWoTg" elementId="org.eclipse.ui.workbench.edit">
         <tags>Draggable</tags>
-        <children xsi:type="menu:HandledToolItem" xmi:id="_LnYUVgKyEfCBf-R9YLWoTg" elementId="undo" iconURI="platform:/plugin/org.eclipse.ui/icons/full/etool16/undo_edit.png" tooltip="Undo" enabled="false" command="_LcxnXgKyEfCBf-R9YLWoTg"/>
-        <children xsi:type="menu:HandledToolItem" xmi:id="_LnY7YAKyEfCBf-R9YLWoTg" elementId="redo" iconURI="platform:/plugin/org.eclipse.ui/icons/full/etool16/redo_edit.png" tooltip="Redo" enabled="false" command="_LcyOgQKyEfCBf-R9YLWoTg"/>
+        <children xsi:type="menu:HandledToolItem" xmi:id="_mp8PMAMUEfCP_PqZ0l72HA" elementId="undo" iconURI="platform:/plugin/org.eclipse.ui/icons/full/etool16/undo_edit.png" tooltip="Undo" command="_LcxnXgKyEfCBf-R9YLWoTg"/>
+        <children xsi:type="menu:HandledToolItem" xmi:id="_mp82QAMUEfCP_PqZ0l72HA" elementId="redo" iconURI="platform:/plugin/org.eclipse.ui/icons/full/etool16/redo_edit.png" tooltip="Redo" enabled="false" command="_LcyOgQKyEfCBf-R9YLWoTg"/>
       </children>
       <children xsi:type="menu:ToolBar" xmi:id="_LnV4FAKyEfCBf-R9YLWoTg" elementId="additions" toBeRendered="false">
         <tags>toolbarSeparator</tags>
         <children xsi:type="menu:ToolBarSeparator" xmi:id="_LnV4FQKyEfCBf-R9YLWoTg" elementId="additions" toBeRendered="false"/>
       </children>
-      <children xsi:type="menu:ToolBar" xmi:id="_LpIAwAKyEfCBf-R9YLWoTg" elementId="org.eclipse.cdt.ui.CElementCreationActionSet">
+      <children xsi:type="menu:ToolBar" xmi:id="_LpIAwAKyEfCBf-R9YLWoTg" elementId="org.eclipse.cdt.ui.CElementCreationActionSet" visible="false">
         <tags>Draggable</tags>
       </children>
       <children xsi:type="menu:ToolBar" xmi:id="_Lpa7sAKyEfCBf-R9YLWoTg" elementId="org.eclipse.debug.ui.launchActionSet">
@@ -429,7 +428,7 @@
       <children xsi:type="menu:ToolBar" xmi:id="_LpQjoAKyEfCBf-R9YLWoTg" elementId="org.eclipse.search.searchActionSet">
         <tags>Draggable</tags>
       </children>
-      <children xsi:type="menu:ToolBar" xmi:id="_LpDvUAKyEfCBf-R9YLWoTg" elementId="org.eclipse.ui.edit.text.actionSet.presentation">
+      <children xsi:type="menu:ToolBar" xmi:id="_LpDvUAKyEfCBf-R9YLWoTg" elementId="org.eclipse.ui.edit.text.actionSet.presentation" visible="false">
         <tags>Draggable</tags>
       </children>
       <children xsi:type="menu:ToolBar" xmi:id="_LnV4FgKyEfCBf-R9YLWoTg" elementId="group.nav" toBeRendered="false">
@@ -438,7 +437,7 @@
       </children>
       <children xsi:type="menu:ToolBar" xmi:id="_LnWfIAKyEfCBf-R9YLWoTg" elementId="org.eclipse.ui.workbench.navigate">
         <tags>Draggable</tags>
-        <children xsi:type="menu:HandledToolItem" xmi:id="_LnY7ZgKyEfCBf-R9YLWoTg" elementId="org.eclipse.ui.window.pinEditor" iconURI="platform:/plugin/org.eclipse.ui/icons/full/etool16/pin_editor.png" tooltip="Pin Editor" enabled="false" type="Check" command="_LcxnFAKyEfCBf-R9YLWoTg"/>
+        <children xsi:type="menu:HandledToolItem" xmi:id="_mp9dUAMUEfCP_PqZ0l72HA" elementId="org.eclipse.ui.window.pinEditor" iconURI="platform:/plugin/org.eclipse.ui/icons/full/etool16/pin_editor.png" tooltip="Pin Editor" type="Check" command="_LcxnFAKyEfCBf-R9YLWoTg"/>
       </children>
       <children xsi:type="menu:ToolBar" xmi:id="_LnWfIQKyEfCBf-R9YLWoTg" elementId="group.editor" toBeRendered="false">
         <tags>toolbarSeparator</tags>
