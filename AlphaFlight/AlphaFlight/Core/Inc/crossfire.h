@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-
+#define CRSF_RADIO_CONTROL_STARTBYTE 0xEE
 
 #ifdef __cplusplus
 }

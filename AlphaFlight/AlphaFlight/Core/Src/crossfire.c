@@ -1,2 +1,5 @@
 
 #include "crossfire.h"
+
+char lul = CRSF_RADIO_CONTROL_STARTBYTE;
+HAL_
