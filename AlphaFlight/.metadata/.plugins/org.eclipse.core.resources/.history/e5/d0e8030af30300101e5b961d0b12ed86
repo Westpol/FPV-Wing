@@ -1,0 +1,15 @@
+
+#ifndef __CROSSFIRE_H
+#define __CROSSFIRE_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define CRSF_RADIO_CONTROL_STARTBYTE 0xEE
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
