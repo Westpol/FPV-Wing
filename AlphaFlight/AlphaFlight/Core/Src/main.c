@@ -158,14 +158,20 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	CRSF_Process();
+	/*CRSF_Process();
 	uint16_t ch0 = CRSF_GetChannel(0);
 	printf("Ch 0: %d\n", ch0);
 	printf("Read at: %ld\n", __HAL_TIM_GET_COUNTER(&htim2));
 	char message[64];
 	snprintf(message, sizeof(message), "Hello, World!");
 	CDC_Transmit_FS((uint8_t *)message, strlen(message));
-	HAL_Delay(100);
+	HAL_Delay(100);*/
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
+	HAL_Delay(1000);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+	HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
