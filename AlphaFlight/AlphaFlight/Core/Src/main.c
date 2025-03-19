@@ -156,23 +156,38 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  HAL_TIM_Base_Start(&htim2);
+  uint64_t delay_loop = (1000 * 1000);
+  char message[64];
+
   while (1)
   {
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);
 	  	printf("Ch 0: %d\n", ch0);*/
+	  if(__HAL_TIM_GET_COUNTER(&htim2) > delay_loop){
+		snprintf(message, sizeof(message), "Hello, World sent %f seconds after boot!", (__HAL_TIM_GET_COUNTER(&htim2) / 1000000.0));
+		CDC_Transmit_FS((uint8_t *)message, strlen(message));
+		HAL_UART_Transmit(&huart1, (uint8_t *)message, strlen(message), 10);
+		delay_loop += (1000 * 1000);
+		if(HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8) == GPIO_PIN_RESET){
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);
+		}
+		else if(HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9) == GPIO_PIN_RESET){
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
+		}
+		else{
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);
+		}
+	  }
 
-	  	char message[64];
-	  	snprintf(message, sizeof(message), "Hello, World!");
-	  	CDC_Transmit_FS((uint8_t *)message, strlen(message));
-	  	//printf("Read at: %ld\n", __HAL_TIM_GET_COUNTER(&htim2));
-
-	  	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
-	  	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
-	  	HAL_Delay(1000);
-	  	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
-	  	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
-	  	HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -827,25 +842,21 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(RGB_R_GPIO_Port, RGB_R_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(BARO_CS_GPIO_Port, BARO_CS_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOC, RGB_R_Pin|BARO_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GYRO_CS_Pin|ACCEL_CS_Pin|CS_EXT_3_Pin|CS_EXT_2_Pin
-                          |CS_EXT_1_Pin, GPIO_PIN_SET);
+                          |CS_EXT_1_Pin|RGB_B_Pin|RGB_G_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, SERVO1_Pin|SERVO2_Pin|SERVO3_Pin|SERVO4_Pin
-                          |RGB_B_Pin|RGB_G_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, SERVO1_Pin|SERVO2_Pin|SERVO3_Pin|SERVO4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, SERVO7_Pin|SEVO5_Pin|SERVO6_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : RGB_R_Pin */
   GPIO_InitStruct.Pin = RGB_R_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(RGB_R_GPIO_Port, &GPIO_InitStruct);
@@ -888,7 +899,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : RGB_B_Pin RGB_G_Pin */
   GPIO_InitStruct.Pin = RGB_B_Pin|RGB_G_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);

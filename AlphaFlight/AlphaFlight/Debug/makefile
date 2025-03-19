@@ -69,7 +69,7 @@ main-build: AlphaFlight.elf secondary-outputs
 
 # Tool invocations
 AlphaFlight.elf AlphaFlight.map: $(OBJS) $(USER_OBJS) /home/benno/Documents/GitHub/FPV-Wing/AlphaFlight/AlphaFlight/STM32F722RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "AlphaFlight.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/benno/Documents/GitHub/FPV-Wing/AlphaFlight/AlphaFlight/STM32F722RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="AlphaFlight.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "AlphaFlight.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"/home/benno/Documents/GitHub/FPV-Wing/AlphaFlight/AlphaFlight/STM32F722RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="AlphaFlight.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
