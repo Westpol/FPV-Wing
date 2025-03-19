@@ -1,0 +1,8 @@
+../Core/Src/bmi088.c:16:5:BMI_INIT	3
+../Core/Src/bmi088.c:46:6:BMI_READ_GYRO_DATA	1
+../Core/Src/bmi088.c:50:6:BMI_GET_GYRO_X	1
+../Core/Src/bmi088.c:53:6:BMI_GET_GYRO_Y	1
+../Core/Src/bmi088.c:56:6:BMI_GET_GYRO_Z	1
+../Core/Src/bmi088.c:60:6:BMI_GET_X_RAW	1
+../Core/Src/bmi088.c:63:6:BMI_GET_Y_RAW	1
+../Core/Src/bmi088.c:66:6:BMI_GET_Z_RAW	1

@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
 #include "crossfire.h"
+#include "bmi088.h"
 #include "stdint.h"
 #include "string.h"
 /* USER CODE END Includes */
@@ -153,11 +154,13 @@ int main(void)
   /* USER CODE BEGIN 2 */
   CRSF_Init(&huart1);
 
+  while(BMI_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1)){
+	  HAL_Delay(100);
+  }
+
   //HAL_TIM_Base_Start(&htim2);
   //uint64_t delay_loop = (1000 * 1000);
   char message[64];
-  uint8_t tx_data[2] = {0x00 | 0x80, 0x00};
-  uint8_t rx_data[2] = {0x00, 0x00};
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -170,27 +173,8 @@ int main(void)
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);
 	  	printf("Ch 0: %d\n", ch0);*/
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
-		HAL_SPI_TransmitReceive(&hspi1, tx_data, rx_data, 2, 100);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-		snprintf(message, sizeof(message), "Gyro Chip ID is: %X\r\n", rx_data[1]);
+		snprintf(message, sizeof(message), "BMI correctly initialized\r\n");
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
-
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
-		HAL_SPI_TransmitReceive(&hspi1, tx_data, rx_data, 2, 100);
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
-		snprintf(message, sizeof(message), "Accelerometer Chip ID is: %X\r\n", rx_data[1]);
-		CDC_Transmit_FS((uint8_t *)message, strlen(message));
-
-		tx_data[0] = 0x00 | 0x80;
-
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);
-		HAL_SPI_TransmitReceive(&hspi1, tx_data, rx_data, 2, 100);
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
-		snprintf(message, sizeof(message), "Barometer Chip ID is: %X\r\n", rx_data[1]);
-		CDC_Transmit_FS((uint8_t *)message, strlen(message));
-
-		tx_data[0] = 0x00 | 0x80;
 
 		HAL_Delay(1000);
 
