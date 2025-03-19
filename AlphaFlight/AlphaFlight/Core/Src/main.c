@@ -152,41 +152,47 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   CRSF_Init(&huart1);
+
+  //HAL_TIM_Base_Start(&htim2);
+  //uint64_t delay_loop = (1000 * 1000);
+  char message[64];
+  uint8_t tx_data[2] = {0x00 | 0x80, 0x00};
+  uint8_t rx_data[2] = {0x00, 0x00};
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  HAL_TIM_Base_Start(&htim2);
-  uint64_t delay_loop = (1000 * 1000);
-  char message[64];
+
 
   while (1)
   {
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);
 	  	printf("Ch 0: %d\n", ch0);*/
-	  if(__HAL_TIM_GET_COUNTER(&htim2) > delay_loop){
-		snprintf(message, sizeof(message), "Hello, World sent %f seconds after boot!", (__HAL_TIM_GET_COUNTER(&htim2) / 1000000.0));
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+		HAL_SPI_TransmitReceive(&hspi1, tx_data, rx_data, 2, 100);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+		snprintf(message, sizeof(message), "Gyro Chip ID is: %X\r\n", rx_data[1]);
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
-		HAL_UART_Transmit(&huart1, (uint8_t *)message, strlen(message), 10);
-		delay_loop += (1000 * 1000);
-		if(HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8) == GPIO_PIN_RESET){
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);
-		}
-		else if(HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9) == GPIO_PIN_RESET){
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
-		}
-		else{
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_8, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
-			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);
-		}
-	  }
+
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
+		HAL_SPI_TransmitReceive(&hspi1, tx_data, rx_data, 2, 100);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
+		snprintf(message, sizeof(message), "Accelerometer Chip ID is: %X\r\n", rx_data[1]);
+		CDC_Transmit_FS((uint8_t *)message, strlen(message));
+
+		tx_data[0] = 0x00 | 0x80;
+
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);
+		HAL_SPI_TransmitReceive(&hspi1, tx_data, rx_data, 2, 100);
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
+		snprintf(message, sizeof(message), "Barometer Chip ID is: %X\r\n", rx_data[1]);
+		CDC_Transmit_FS((uint8_t *)message, strlen(message));
+
+		tx_data[0] = 0x00 | 0x80;
+
+		HAL_Delay(1000);
 
     /* USER CODE END WHILE */
 
@@ -402,7 +408,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -438,11 +444,11 @@ static void MX_SPI2_Init(void)
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi2.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -874,12 +880,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(BARO_CS_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : GYRO_CS_Pin ACCEL_CS_Pin CS_EXT_3_Pin CS_EXT_2_Pin
-                           CS_EXT_1_Pin */
-  GPIO_InitStruct.Pin = GYRO_CS_Pin|ACCEL_CS_Pin|CS_EXT_3_Pin|CS_EXT_2_Pin
-                          |CS_EXT_1_Pin;
+  /*Configure GPIO pins : GYRO_CS_Pin ACCEL_CS_Pin */
+  GPIO_InitStruct.Pin = GYRO_CS_Pin|ACCEL_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -896,6 +900,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : CS_EXT_3_Pin CS_EXT_2_Pin CS_EXT_1_Pin */
+  GPIO_InitStruct.Pin = CS_EXT_3_Pin|CS_EXT_2_Pin|CS_EXT_1_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : RGB_B_Pin RGB_G_Pin */
   GPIO_InitStruct.Pin = RGB_B_Pin|RGB_G_Pin;
