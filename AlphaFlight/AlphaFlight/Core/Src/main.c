@@ -158,7 +158,7 @@ int main(void)
 	  HAL_Delay(100);
   }
 
-  //HAL_TIM_Base_Start(&htim2);
+  HAL_TIM_Base_Start(&htim2);
   //uint64_t delay_loop = (1000 * 1000);
   char message[64];
   /* USER CODE END 2 */
@@ -173,11 +173,10 @@ int main(void)
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);
 	  	printf("Ch 0: %d\n", ch0);*/
-	  	  BMI_READ_GYRO_DATA();
-		  snprintf(message, sizeof(message), "Gyro values: %f  %f  %f\r\n", BMI_GET_GYRO_X(), BMI_GET_GYRO_Y(), BMI_GET_GYRO_Z());
-		  CDC_Transmit_FS((uint8_t *)message, strlen(message));
+		snprintf(message, sizeof(message), "Gyro values: %f °/s  %f °/s  %f °/s\r\n", BMI_GET_GYRO_X_ANGLE(), BMI_GET_GYRO_Y_ANGLE(), BMI_GET_GYRO_Z_ANGLE());
+		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
-		  HAL_Delay(100);
+		HAL_Delay(1000);
 
     /* USER CODE END WHILE */
 
@@ -826,8 +825,8 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
@@ -844,6 +843,12 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, SERVO7_Pin|SEVO5_Pin|SERVO6_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PC13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : RGB_R_Pin */
   GPIO_InitStruct.Pin = RGB_R_Pin;
@@ -900,12 +905,24 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+    if (GPIO_Pin == GPIO_PIN_13) {  // If interrupt came from PC13
+    	BMI_READ_GYRO_DATA();
+    	BMI_CALCULATE_ANGLE(__HAL_TIM_GET_COUNTER(&htim2));
+	}
+}
+
 
 /* USER CODE END 4 */
 

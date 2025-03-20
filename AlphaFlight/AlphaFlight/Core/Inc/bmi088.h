@@ -14,16 +14,24 @@ typedef struct {
     int16_t gyro_x_raw;
     int16_t gyro_y_raw;
     int16_t gyro_z_raw;
+    double angle_x;
+    double angle_y;
+    double angle_z;
 } Gyro_Data;
 
 extern Gyro_Data gyro_data;
 
 int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN);
 void BMI_READ_GYRO_DATA();
+void BMI_CALCULATE_ANGLE(uint32_t time_us);
 
 double BMI_GET_GYRO_X();
 double BMI_GET_GYRO_Y();
 double BMI_GET_GYRO_Z();
+
+double BMI_GET_GYRO_X_ANGLE();
+double BMI_GET_GYRO_Y_ANGLE();
+double BMI_GET_GYRO_Z_ANGLE();
 
 int16_t BMI_GET_GYRO_X_RAW();
 int16_t BMI_GET_GYRO_Y_RAW();

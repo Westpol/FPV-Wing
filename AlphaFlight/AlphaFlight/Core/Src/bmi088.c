@@ -13,12 +13,17 @@ static uint16_t gyro_pin;
 static GPIO_TypeDef *accel_port;
 static uint16_t accel_pin;
 
+uint32_t last_microseconds = 0;		// time where x was calculated, time where y was calculated, time where z was calculated
+
 Gyro_Data gyro_data;
 
 int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN){
 	gyro_data.gyro_x_raw = 0;
 	gyro_data.gyro_y_raw = 0;
 	gyro_data.gyro_z_raw = 0;
+	gyro_data.angle_x = 0.0;
+	gyro_data.angle_y = 0.0;
+	gyro_data.angle_z = 0.0;
 	bmi088_spi = hspi;
 	gyro_port = GYRO_GPIOx;
 	gyro_pin = GYRO_PIN;
@@ -62,6 +67,24 @@ int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PI
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
+
+	tx_buffer[0] = 0x15 & WRITE_BYTE;		// enabling interrupt
+	tx_buffer[1] = 0x80;
+	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
+	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
+
+	tx_buffer[0] = 0x16 & WRITE_BYTE;		// INT4 IO Config
+	tx_buffer[1] = 0b00001011;
+	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
+	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
+
+	tx_buffer[0] = 0x18 & WRITE_BYTE;		// data ready interrupt mapped to INT4
+	tx_buffer[1] = 0x80;
+	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
+	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
 	// need to add real Setup here
 
 	return 0;
@@ -75,10 +98,21 @@ void BMI_READ_GYRO_DATA(){
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 7, 100);
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
 
-	gyro_data.gyro_x_raw = ((int16_t)rx_buffer[1] << 8) | rx_buffer[2];
-	gyro_data.gyro_y_raw = ((int16_t)rx_buffer[3] << 8) | rx_buffer[4];
-	gyro_data.gyro_z_raw = ((int16_t)rx_buffer[5] << 8) | rx_buffer[6];
+	gyro_data.gyro_x_raw = ((int16_t)rx_buffer[2] << 8) | rx_buffer[1];
+	gyro_data.gyro_y_raw = ((int16_t)rx_buffer[4] << 8) | rx_buffer[3];
+	gyro_data.gyro_z_raw = ((int16_t)rx_buffer[6] << 8) | rx_buffer[5];
 
+}
+
+void BMI_CALCULATE_ANGLE(uint32_t time_us){		// TODO: Change from timer mode to getting time passed and caculating everything at the same time
+	if(time_us == 0 || time_us == last_microseconds){
+		return;
+	}
+	// gyro_data.angle_x += BMI_GET_GYRO_X() / ((time_us - last_microseconds) / 1000000.0);
+	gyro_data.angle_x += BMI_GET_GYRO_X();
+	gyro_data.angle_y += BMI_GET_GYRO_Y() / ((time_us - last_microseconds) / 1000000.0);
+	gyro_data.angle_z += BMI_GET_GYRO_Z() / ((time_us - last_microseconds) / 1000000.0);
+	last_microseconds = time_us;
 }
 
 double BMI_GET_GYRO_X(){
@@ -89,6 +123,16 @@ double BMI_GET_GYRO_Y(){
 }
 double BMI_GET_GYRO_Z(){
 	return (gyro_data.gyro_z_raw / 32767.0) * 2000.0;
+}
+
+double BMI_GET_GYRO_X_ANGLE(){
+	return gyro_data.angle_x;
+}
+double BMI_GET_GYRO_Y_ANGLE(){
+	return gyro_data.angle_y;
+}
+double BMI_GET_GYRO_Z_ANGLE(){
+	return gyro_data.angle_z;
 }
 
 int16_t BMI_GET_GYRO_X_RAW(){
