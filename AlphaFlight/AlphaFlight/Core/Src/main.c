@@ -173,10 +173,11 @@ int main(void)
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);
 	  	printf("Ch 0: %d\n", ch0);*/
-		snprintf(message, sizeof(message), "BMI correctly initialized\r\n");
-		CDC_Transmit_FS((uint8_t *)message, strlen(message));
+	  	  BMI_READ_GYRO_DATA();
+		  snprintf(message, sizeof(message), "Gyro values: %f  %f  %f\r\n", BMI_GET_GYRO_X(), BMI_GET_GYRO_Y(), BMI_GET_GYRO_Z());
+		  CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
-		HAL_Delay(1000);
+		  HAL_Delay(100);
 
     /* USER CODE END WHILE */
 

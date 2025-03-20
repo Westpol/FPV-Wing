@@ -1,8 +1,9 @@
-../Core/Src/bmi088.c:16:5:BMI_INIT	40	static
-../Core/Src/bmi088.c:46:6:BMI_READ_GYRO_DATA	4	static
-../Core/Src/bmi088.c:50:6:BMI_GET_GYRO_X	4	static
-../Core/Src/bmi088.c:53:6:BMI_GET_GYRO_Y	4	static
-../Core/Src/bmi088.c:56:6:BMI_GET_GYRO_Z	4	static
-../Core/Src/bmi088.c:60:6:BMI_GET_X_RAW	4	static
-../Core/Src/bmi088.c:63:6:BMI_GET_Y_RAW	4	static
-../Core/Src/bmi088.c:66:6:BMI_GET_Z_RAW	4	static
+../Core/Src/bmi088.c:18:5:BMI_INIT	40	static
+../Core/Src/bmi088.c:70:6:BMI_READ_GYRO_DATA	32	static
+../Core/Src/bmi088.c:84:8:BMI_GET_GYRO_X	8	static
+../Core/Src/bmi088.c:87:8:BMI_GET_GYRO_Y	8	static
+../Core/Src/bmi088.c:90:8:BMI_GET_GYRO_Z	8	static
+../Core/Src/bmi088.c:94:9:BMI_GET_GYRO_X_RAW	4	static
+../Core/Src/bmi088.c:97:9:BMI_GET_GYRO_Y_RAW	4	static
+../Core/Src/bmi088.c:100:9:BMI_GET_GYRO_Z_RAW	4	static
+../Core/Src/bmi088.c:104:6:BMI_GYRO_SOFT_RESET	24	static
