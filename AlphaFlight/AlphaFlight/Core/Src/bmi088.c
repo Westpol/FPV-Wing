@@ -17,7 +17,7 @@ uint32_t last_microseconds = 0;		// time where x was calculated, time where y wa
 
 Gyro_Data gyro_data;
 
-int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN){
+int BMI_INIT_GYRO(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN){
 	gyro_data.gyro_x_raw = 0;
 	gyro_data.gyro_y_raw = 0;
 	gyro_data.gyro_z_raw = 0;
@@ -109,9 +109,9 @@ void BMI_CALCULATE_ANGLE(uint32_t time_us){		// TODO: Change from timer mode to 
 		return;
 	}
 	// gyro_data.angle_x += BMI_GET_GYRO_X() / ((time_us - last_microseconds) / 1000000.0);
-	gyro_data.angle_x += BMI_GET_GYRO_X();
-	gyro_data.angle_y += BMI_GET_GYRO_Y() / ((time_us - last_microseconds) / 1000000.0);
-	gyro_data.angle_z += BMI_GET_GYRO_Z() / ((time_us - last_microseconds) / 1000000.0);
+	gyro_data.angle_x += BMI_GET_GYRO_X() * ((time_us - last_microseconds) / 1000000.0);
+	gyro_data.angle_y += BMI_GET_GYRO_Y() * ((time_us - last_microseconds) / 1000000.0);
+	gyro_data.angle_z += BMI_GET_GYRO_Z() * ((time_us - last_microseconds) / 1000000.0);
 	last_microseconds = time_us;
 }
 

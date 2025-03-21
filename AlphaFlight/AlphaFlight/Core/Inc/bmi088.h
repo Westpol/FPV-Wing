@@ -21,6 +21,8 @@ typedef struct {
 
 extern Gyro_Data gyro_data;
 
+int BMI_INIT_GYRO(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN);
+int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN);
 int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN);
 void BMI_READ_GYRO_DATA();
 void BMI_CALCULATE_ANGLE(uint32_t time_us);

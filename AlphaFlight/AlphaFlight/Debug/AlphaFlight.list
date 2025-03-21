@@ -37,11 +37,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  16 .debug_macro  0002a9d3  00000000  00000000  00043648  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0002a5f5  00000000  00000000  0006e01b  2**0
+ 17 .debug_line   0002a5f7  00000000  00000000  0006e01b  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    000f088b  00000000  00000000  00098610  2**0
+ 18 .debug_str    000f088b  00000000  00000000  00098612  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  00188e9b  2**0
+ 19 .comment      00000043  00000000  00000000  00188e9d  2**0
                   CONTENTS, READONLY
  20 .debug_frame  00009c08  00000000  00000000  00188ee0  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
@@ -1679,7 +1679,8 @@ void BMI_CALCULATE_ANGLE(uint32_t time_us){		// TODO: Change from timer mode to 
  8001266:	d06f      	beq.n	8001348 <BMI_CALCULATE_ANGLE+0xf8>
 		return;
 	}
-	gyro_data.angle_x += BMI_GET_GYRO_X() / ((time_us - last_microseconds) / 1000000.0);
+	// gyro_data.angle_x += BMI_GET_GYRO_X() / ((time_us - last_microseconds) / 1000000.0);
+	gyro_data.angle_x += BMI_GET_GYRO_X() * ((time_us - last_microseconds) / 1000000.0);
  8001268:	f000 f87a 	bl	8001360 <BMI_GET_GYRO_X>
  800126c:	ec55 4b10 	vmov	r4, r5, d0
  8001270:	4b39      	ldr	r3, [pc, #228]	@ (8001358 <BMI_CALCULATE_ANGLE+0x108>)
@@ -1695,7 +1696,7 @@ void BMI_CALCULATE_ANGLE(uint32_t time_us){		// TODO: Change from timer mode to 
  800128a:	460b      	mov	r3, r1
  800128c:	4620      	mov	r0, r4
  800128e:	4629      	mov	r1, r5
- 8001290:	f7ff fb04 	bl	800089c <__aeabi_ddiv>
+ 8001290:	f7ff f9da 	bl	8000648 <__aeabi_dmul>
  8001294:	4602      	mov	r2, r0
  8001296:	460b      	mov	r3, r1
  8001298:	4610      	mov	r0, r2
@@ -1707,7 +1708,7 @@ void BMI_CALCULATE_ANGLE(uint32_t time_us){		// TODO: Change from timer mode to 
  80012a8:	460b      	mov	r3, r1
  80012aa:	492c      	ldr	r1, [pc, #176]	@ (800135c <BMI_CALCULATE_ANGLE+0x10c>)
  80012ac:	e9c1 2302 	strd	r2, r3, [r1, #8]
-	gyro_data.angle_y += BMI_GET_GYRO_Y() / ((time_us - last_microseconds) / 1000000.0);
+	gyro_data.angle_y += BMI_GET_GYRO_Y() * ((time_us - last_microseconds) / 1000000.0);
  80012b0:	f000 f87e 	bl	80013b0 <BMI_GET_GYRO_Y>
  80012b4:	ec55 4b10 	vmov	r4, r5, d0
  80012b8:	4b27      	ldr	r3, [pc, #156]	@ (8001358 <BMI_CALCULATE_ANGLE+0x108>)
@@ -1723,7 +1724,7 @@ void BMI_CALCULATE_ANGLE(uint32_t time_us){		// TODO: Change from timer mode to 
  80012d2:	460b      	mov	r3, r1
  80012d4:	4620      	mov	r0, r4
  80012d6:	4629      	mov	r1, r5
- 80012d8:	f7ff fae0 	bl	800089c <__aeabi_ddiv>
+ 80012d8:	f7ff f9b6 	bl	8000648 <__aeabi_dmul>
  80012dc:	4602      	mov	r2, r0
  80012de:	460b      	mov	r3, r1
  80012e0:	4610      	mov	r0, r2
@@ -1735,7 +1736,7 @@ void BMI_CALCULATE_ANGLE(uint32_t time_us){		// TODO: Change from timer mode to 
  80012f0:	460b      	mov	r3, r1
  80012f2:	491a      	ldr	r1, [pc, #104]	@ (800135c <BMI_CALCULATE_ANGLE+0x10c>)
  80012f4:	e9c1 2304 	strd	r2, r3, [r1, #16]
-	gyro_data.angle_z += BMI_GET_GYRO_Z() / ((time_us - last_microseconds) / 1000000.0);
+	gyro_data.angle_z += BMI_GET_GYRO_Z() * ((time_us - last_microseconds) / 1000000.0);
  80012f8:	f000 f882 	bl	8001400 <BMI_GET_GYRO_Z>
  80012fc:	ec55 4b10 	vmov	r4, r5, d0
  8001300:	4b15      	ldr	r3, [pc, #84]	@ (8001358 <BMI_CALCULATE_ANGLE+0x108>)
@@ -1751,7 +1752,7 @@ void BMI_CALCULATE_ANGLE(uint32_t time_us){		// TODO: Change from timer mode to 
  800131a:	460b      	mov	r3, r1
  800131c:	4620      	mov	r0, r4
  800131e:	4629      	mov	r1, r5
- 8001320:	f7ff fabc 	bl	800089c <__aeabi_ddiv>
+ 8001320:	f7ff f992 	bl	8000648 <__aeabi_dmul>
  8001324:	4602      	mov	r2, r0
  8001326:	460b      	mov	r3, r1
  8001328:	4610      	mov	r0, r2
