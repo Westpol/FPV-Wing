@@ -26,6 +26,7 @@
 #include "usbd_cdc_if.h"
 #include "crossfire.h"
 #include "bmi088.h"
+#include "servo.h"
 #include "stdint.h"
 #include "string.h"
 /* USER CODE END Includes */
