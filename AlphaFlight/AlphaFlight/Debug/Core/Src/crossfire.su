@@ -1,6 +1,0 @@
-../Core/Src/crossfire.c:7:6:CRSF_Init	16	static
-../Core/Src/crossfire.c:13:17:CRSF_GetRxCount	4	static
-../Core/Src/crossfire.c:18:13:CRSF_DecodeChannels	16	static
-../Core/Src/crossfire.c:34:6:CRSF_Process	16	static
-../Core/Src/crossfire.c:52:10:CRSF_GetChannel	16	static
-../Core/Src/crossfire.c:58:6:HAL_UART_RxCpltCallback	16	static
