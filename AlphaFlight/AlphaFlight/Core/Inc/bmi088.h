@@ -10,7 +10,7 @@
 
 #include "stm32f7xx_hal.h"
 
-typedef struct {
+typedef struct {		// all gyro data is stored in here
     int16_t gyro_x_raw;
     int16_t gyro_y_raw;
     int16_t gyro_z_raw;
@@ -19,6 +19,13 @@ typedef struct {
     double angle_z;
 } Gyro_Data;
 
+typedef struct {		// all accelerometer data is stored in here
+    int16_t accel_x_raw;
+    int16_t accel_y_raw;
+    int16_t accel_z_raw;
+} Accel_Data;
+
+extern Accel_Data accel_data;
 extern Gyro_Data gyro_data;
 
 int BMI_INIT_GYRO(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN);
@@ -39,11 +46,14 @@ int16_t BMI_GET_GYRO_X_RAW();
 int16_t BMI_GET_GYRO_Y_RAW();
 int16_t BMI_GET_GYRO_Z_RAW();
 
-void BMI_GYRO_SOFT_RESET();
+void BMI_GYRO_SOFT_RESET(void);
+void BMI_ACCEL_SOFT_RESET(void);
 
-#define WRITE_BYTE 0x7F
+
+#define WRITE_BYTE 0x7F		// for write: packet = value & WRITE_BYTE  / for read: packet = value | READ_BYTE
 #define READ_BYTE 0x80
 
+// -------------------------------------- all gyro setting addresses and values -------------------------------
 #define GYRO_RANGE_ADRESS 0x0F
 #define GYRO_RANGE_2000_DEG_PER_SECOND 0x00
 #define GYRO_RANGE_1000_DEG_PER_SECOND 0x01
@@ -64,5 +74,13 @@ void BMI_GYRO_SOFT_RESET();
 #define GYRO_POWER_MODE_ADRESS 0x11
 #define GYRO_POWER_MODE_NORMAL 0x00
 #define GYRO_POWER_MODE_SUSPEND 0x80
+// ------------------------------------------------------------------------------------------------------------
+
+// -------------------------------------- all gyro setting addresses and values -------------------------------
+#define ACCEL_CONFIG_ADRESS 0x40
+#define ACCEL_CONFIG_OVERSAMPLING_OSR4 0x08
+#define ACCEL_CONFIG_OVERSAMPLING_OSR2 0x09
+#define ACCEL_CONFIG_OVERSAMPLING_NORMAL 0x0A
+#define ACCEL_CONFIG_ODR_1600_HZ
 
 #endif /* INC_BMI088_H_ */

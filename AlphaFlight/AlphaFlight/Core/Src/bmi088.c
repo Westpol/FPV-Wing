@@ -18,6 +18,7 @@ static uint16_t accel_pin;
 uint32_t last_microseconds = 0;		// time where x was calculated, time where y was calculated, time where z was calculated
 
 Gyro_Data gyro_data;
+Accel_Data accel_data;
 
 int BMI_INIT_GYRO(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN){
 	gyro_data.gyro_x_raw = 0;
@@ -26,26 +27,19 @@ int BMI_INIT_GYRO(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GY
 	gyro_data.angle_x = 0.0;
 	gyro_data.angle_y = 0.0;
 	gyro_data.angle_z = 0.0;
+
 	bmi088_spi = hspi;
 	gyro_port = GYRO_GPIOx;
 	gyro_pin = GYRO_PIN;
+
 	uint8_t tx_buffer[2] = {0x00 | READ_BYTE, 0x00};
 	uint8_t rx_buffer[2] = {0x00, 0x00};
 
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);		// reads chip ID, if chip doesn't correctly return ID, return error code
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
 
-
 	if(rx_buffer[1] != 0x0F){
-		return 1;
-	}
-
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
-
-	if(rx_buffer[1] != 0x1E){
 		return 1;
 	}
 
@@ -92,26 +86,15 @@ int BMI_INIT_GYRO(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GY
 }
 
 int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN){
-	gyro_data.gyro_x_raw = 0;
-	gyro_data.gyro_y_raw = 0;
-	gyro_data.gyro_z_raw = 0;
-	gyro_data.angle_x = 0.0;
-	gyro_data.angle_y = 0.0;
-	gyro_data.angle_z = 0.0;
+	accel_data.accel_x_raw = 0;
+	accel_data.accel_y_raw = 0;
+	accel_data.accel_z_raw = 0;
+
 	bmi088_spi = hspi;
 	accel_port = ACCEL_GPIOx;
 	accel_pin = ACCEL_PIN;
 	uint8_t tx_buffer[2] = {0x00 | READ_BYTE, 0x00};
 	uint8_t rx_buffer[2] = {0x00, 0x00};
-
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
-
-
-	if(rx_buffer[1] != 0x0F){
-		return 1;
-	}
 
 	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
@@ -122,38 +105,8 @@ int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t 
 	}
 
 	// dummy setup here
-	tx_buffer[0] = GYRO_RANGE_ADRESS & WRITE_BYTE;		// setting up range
-	tx_buffer[1] = GYRO_RANGE_2000_DEG_PER_SECOND;
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
-
-	tx_buffer[0] = GYRO_ODR_FILTER_ADRESS & WRITE_BYTE;		// setting up filter
-	tx_buffer[1] = GYRO_ODR_100_HZ_FILTER_12_HZ;
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
-
-	tx_buffer[0] = GYRO_POWER_MODE_ADRESS & WRITE_BYTE;		// setting up power mode
-	tx_buffer[1] = GYRO_POWER_MODE_NORMAL;
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
-
-	tx_buffer[0] = 0x15 & WRITE_BYTE;		// enabling interrupt
-	tx_buffer[1] = 0x80;
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
-
-	tx_buffer[0] = 0x16 & WRITE_BYTE;		// INT4 IO Config
-	tx_buffer[1] = 0b00001011;
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
-
-	tx_buffer[0] = 0x18 & WRITE_BYTE;		// data ready interrupt mapped to INT4
-	tx_buffer[1] = 0x80;
+	tx_buffer[0] = 0x00 & WRITE_BYTE;		// setting up range
+	tx_buffer[1] = 0x00;
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
@@ -164,8 +117,12 @@ int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t 
 }
 
 int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN){
-	BMI_INIT_GYRO(hspi, GYRO_GPIOx, GYRO_PIN);
-	BMI_INIT_ACCEL(hspi, ACCEL_GPIOx, ACCEL_PIN);
+	if(BMI_INIT_GYRO(hspi, GYRO_GPIOx, GYRO_PIN) == 1){
+		return 1;
+	}
+	if(BMI_INIT_ACCEL(hspi, ACCEL_GPIOx, ACCEL_PIN) == 1){
+		return 1;
+	}
 	return 0;
 }
 
@@ -226,6 +183,14 @@ int16_t BMI_GET_GYRO_Z_RAW(){
 
 void BMI_GYRO_SOFT_RESET(){
 	uint8_t tx_buffer[2] = {0x11 & WRITE_BYTE, 0xB6};
+	uint8_t rx_buffer[2];
+	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
+	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);		// IMPORTANT: WAIT FOR AT LEAST 30ms BEFORE COMMUNICATING AGAIN!
+}
+
+void BMI_ACCEL_SOFT_RESET(){
+	uint8_t tx_buffer[2] = {0x7E & WRITE_BYTE, 0xB6};
 	uint8_t rx_buffer[2];
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
