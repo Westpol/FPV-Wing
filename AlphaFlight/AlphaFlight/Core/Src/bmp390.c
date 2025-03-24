@@ -10,4 +10,5 @@
 int BMP_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN){
 	HAL_GPIO_WritePin(GYRO_GPIOx, GYRO_PIN, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GYRO_GPIOx, GYRO_PIN, GPIO_PIN_SET);
+	return 0;
 }

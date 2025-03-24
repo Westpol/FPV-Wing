@@ -152,6 +152,7 @@ int main(void)
   MX_FATFS_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  HAL_Delay(100);
   CRSF_Init(&huart1);
 
   while(BMI_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1)){
@@ -160,7 +161,7 @@ int main(void)
 
   HAL_TIM_Base_Start(&htim2);
   //uint64_t delay_loop = (1000 * 1000);
-  char message[64];
+  char message[1024];
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -173,10 +174,16 @@ int main(void)
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);
 	  	printf("Ch 0: %d\n", ch0);*/
-		snprintf(message, sizeof(message), "Gyro values: %f °/s  %f °/s  %f °/s\r\n", BMI_GET_GYRO_X_ANGLE(), BMI_GET_GYRO_Y_ANGLE(), BMI_GET_GYRO_Z_ANGLE());
+	  	BMI_READ_ACCEL_DATA();
+	  	snprintf(message, sizeof(message), "Register value: %f G %f G %f G\r\n", BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z());
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
+		//snprintf(message, sizeof(message), "Accelerometer values: %f G  %f G  %f G\r\n", BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z());
+		//CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
-		HAL_Delay(1000);
+		//snprintf(message, sizeof(message), "Gyrometer values: %f °/s  %f °/s  %f °/s\r\n", BMI_GET_GYRO_X_ANGLE(), BMI_GET_GYRO_Y_ANGLE(), BMI_GET_GYRO_Z_ANGLE());
+		//CDC_Transmit_FS((uint8_t *)message, strlen(message));
+
+		HAL_Delay(100);
 
     /* USER CODE END WHILE */
 

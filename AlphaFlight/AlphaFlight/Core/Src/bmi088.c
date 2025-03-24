@@ -4,7 +4,7 @@
  *  Created on: Mar 19, 2025
  *      Author: benno
  *
- *      TODO: Correct functions to BMI_INIT_GYRO and BMI_INIT_ACCEL
+ *      TODO: THE FUCKING ACCELEROMETER HAS TO BE READ FROM THE THIRD BYTE IN READ MODE WHAT THE FUCK
  */
 
 #include "bmi088.h"
@@ -44,19 +44,19 @@ int BMI_INIT_GYRO(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GY
 	}
 
 	// dummy setup here
-	tx_buffer[0] = GYRO_RANGE_ADRESS & WRITE_BYTE;		// setting up range
+	tx_buffer[0] = GYRO_RANGE_ADDRESS & WRITE_BYTE;		// setting up range
 	tx_buffer[1] = GYRO_RANGE_2000_DEG_PER_SECOND;
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
 
-	tx_buffer[0] = GYRO_ODR_FILTER_ADRESS & WRITE_BYTE;		// setting up filter
+	tx_buffer[0] = GYRO_ODR_FILTER_ADDRESS & WRITE_BYTE;		// setting up filter
 	tx_buffer[1] = GYRO_ODR_100_HZ_FILTER_12_HZ;
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
 
-	tx_buffer[0] = GYRO_POWER_MODE_ADRESS & WRITE_BYTE;		// setting up power mode
+	tx_buffer[0] = GYRO_POWER_MODE_ADDRESS & WRITE_BYTE;		// setting up power mode
 	tx_buffer[1] = GYRO_POWER_MODE_NORMAL;
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
@@ -86,30 +86,68 @@ int BMI_INIT_GYRO(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GY
 }
 
 int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN){
+	uint8_t tx_buffer[3] = {0x00 | READ_BYTE, 0x00, 0x00};	// dummy read to get the Accelerometer into SPI mode
+	uint8_t rx_buffer[3] = {0x00, 0x00, 0x00};
+
+	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 3, 100);
+	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
+	HAL_Delay(20);
+
 	accel_data.accel_x_raw = 0;
 	accel_data.accel_y_raw = 0;
 	accel_data.accel_z_raw = 0;
+	accel_data.accel_x_mg = 0;
+	accel_data.accel_y_mg = 0;
+	accel_data.accel_z_mg = 0;
 
 	bmi088_spi = hspi;
 	accel_port = ACCEL_GPIOx;
 	accel_pin = ACCEL_PIN;
-	uint8_t tx_buffer[2] = {0x00 | READ_BYTE, 0x00};
-	uint8_t rx_buffer[2] = {0x00, 0x00};
+	tx_buffer[1] = 0x00 | READ_BYTE;
 
 	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
+	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 3, 100);
 	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
 
-	if(rx_buffer[1] != 0x1E){
+	if(rx_buffer[2] != 0x1E){
 		return 1;
 	}
 
 	// dummy setup here
-	tx_buffer[0] = 0x00 & WRITE_BYTE;		// setting up range
-	tx_buffer[1] = 0x00;
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
+	HAL_Delay(2);
+
+	tx_buffer[0] = ACCEL_ENABLE_SENSOR_ADDRESS & WRITE_BYTE;		// setting up sampling rate and oversampling
+	tx_buffer[1] = ACCEL_ENABLE_SENSOR_ON;
+	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
+
+	HAL_Delay(2);
+
+	tx_buffer[0] = ACCEL_CONFIG_ADDRESS & WRITE_BYTE;		// setting up sampling rate and oversampling
+	tx_buffer[1] = ACCEL_CONFIG_ODR_1600_HZ | ACCEL_CONFIG_OVERSAMPLING_OSR4;
+	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
+	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
+
+	tx_buffer[0] = ACCEL_RANGE_ADDRESS & WRITE_BYTE;		// setting up sampling rate and oversampling
+	tx_buffer[1] = ACCEL_RANGE_6G;
+	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
+	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
+
+	HAL_Delay(2);
+
+	tx_buffer[0] = ACCEL_POWER_MODE_ADDRESS & WRITE_BYTE;		// setting up sampling rate and oversampling
+	tx_buffer[1] = ACCEL_POWER_MODE_ACTIVE;
+	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
+	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
+
+
+
+	HAL_Delay(50);
 	// need to add real Setup here
 
 	return 0;
@@ -117,13 +155,15 @@ int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t 
 }
 
 int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN){
-	if(BMI_INIT_GYRO(hspi, GYRO_GPIOx, GYRO_PIN) == 1){
+	int config_sum = 0;
+	config_sum += BMI_INIT_GYRO(hspi, GYRO_GPIOx, GYRO_PIN);
+	config_sum += BMI_INIT_ACCEL(hspi, ACCEL_GPIOx, ACCEL_PIN);
+	if(config_sum == 0){
+		return 0;
+	}
+	else{
 		return 1;
 	}
-	if(BMI_INIT_ACCEL(hspi, ACCEL_GPIOx, ACCEL_PIN) == 1){
-		return 1;
-	}
-	return 0;
 }
 
 void BMI_READ_GYRO_DATA(){
@@ -137,6 +177,24 @@ void BMI_READ_GYRO_DATA(){
 	gyro_data.gyro_x_raw = ((int16_t)rx_buffer[2] << 8) | rx_buffer[1];
 	gyro_data.gyro_y_raw = ((int16_t)rx_buffer[4] << 8) | rx_buffer[3];
 	gyro_data.gyro_z_raw = ((int16_t)rx_buffer[6] << 8) | rx_buffer[5];
+
+}
+
+void BMI_READ_ACCEL_DATA(){
+	uint8_t tx_buffer[8] = {0x12 | READ_BYTE, 0, 0, 0, 0, 0, 0, 0};
+	uint8_t rx_buffer[8];
+
+	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 8, 100);
+	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
+
+	accel_data.accel_x_raw = ((int16_t)rx_buffer[3] << 8) | rx_buffer[2];
+	accel_data.accel_y_raw = ((int16_t)rx_buffer[5] << 8) | rx_buffer[4];
+	accel_data.accel_z_raw = ((int16_t)rx_buffer[7] << 8) | rx_buffer[6];
+
+	accel_data.accel_x_mg = (double)accel_data.accel_x_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5;		// replace 4 with (1 << (<0x41>+1) (content of 0x41's register)
+	accel_data.accel_y_mg = (double)accel_data.accel_y_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5;
+	accel_data.accel_z_mg = (double)accel_data.accel_z_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5;
 
 }
 
@@ -169,6 +227,18 @@ double BMI_GET_GYRO_Y_ANGLE(){
 }
 double BMI_GET_GYRO_Z_ANGLE(){
 	return gyro_data.angle_z;
+}
+
+double BMI_GET_ACCEL_X(){
+	return accel_data.accel_x_mg;
+}
+
+double BMI_GET_ACCEL_Y(){
+	return accel_data.accel_y_mg;
+}
+
+double BMI_GET_ACCEL_Z(){
+	return accel_data.accel_z_mg;
 }
 
 int16_t BMI_GET_GYRO_X_RAW(){
