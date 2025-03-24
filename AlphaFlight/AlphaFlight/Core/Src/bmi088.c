@@ -162,12 +162,12 @@ void BMI_READ_ACCEL_DATA(){
 
 void BMI_CALCULATE_ANGLE(uint32_t time_us){		// calculates angles from gyro (integrates each axis) (for best results call after each BMI_READ_GYRO_DATA call)
 
-	gyro_data.angle_x += BMI_GET_GYRO_X() * ((time_us - last_microseconds) / 1000000.0);
+	gyro_data.angle_x -= BMI_GET_GYRO_X() * ((time_us - last_microseconds) / 1000000.0);
 	gyro_data.angle_y -= BMI_GET_GYRO_Y() * ((time_us - last_microseconds) / 1000000.0);
 	gyro_data.angle_z -= BMI_GET_GYRO_Z() * ((time_us - last_microseconds) / 1000000.0);
 
 	if(gyro_accel_calibration && accel_right_for_calibration){
-		double accel_roll = atan2f(accel_data.accel_y_mg, accel_data.accel_z_mg) * 180.0f / M_PI;
+		double accel_roll = -atan2f(accel_data.accel_y_mg, accel_data.accel_z_mg) * 180.0f / M_PI;
 		double accel_pitch = -atan2f(-accel_data.accel_x_mg, sqrtf(accel_data.accel_y_mg * accel_data.accel_y_mg + accel_data.accel_z_mg * accel_data.accel_z_mg)) * 180.0f / M_PI;
 		gyro_data.angle_x += (accel_roll - gyro_data.angle_x) * 0.02;
 		gyro_data.angle_y += (accel_pitch - gyro_data.angle_y) * 0.02;
