@@ -17,135 +17,87 @@ static uint16_t accel_pin;
 
 uint32_t last_microseconds = 0;		// time where x was calculated, time where y was calculated, time where z was calculated
 
-Gyro_Data gyro_data;
-Accel_Data accel_data;
+Gyro_Data gyro_data = {0};
+Accel_Data accel_data = {0};
+
+
+void read_address(SPI_HandleTypeDef *hspi, GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t *txbuffer, uint8_t *rxbuffer, uint8_t readLength){
+	txbuffer[0] = txbuffer[0] | READ_BYTE;
+	HAL_GPIO_WritePin(DEVICE_GPIOx, DEVICE_PIN, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(hspi, txbuffer, rxbuffer, readLength, 100);
+	HAL_GPIO_WritePin(DEVICE_GPIOx, DEVICE_PIN, GPIO_PIN_SET);
+}
+
+void write_address(SPI_HandleTypeDef *hspi, GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t data){
+	uint8_t txbuffer[2] = {reg & WRITE_BYTE, data};
+	uint8_t rxbuffer[2];
+	HAL_GPIO_WritePin(DEVICE_GPIOx, DEVICE_PIN, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive(hspi, txbuffer, rxbuffer, 2, 100);
+	HAL_GPIO_WritePin(DEVICE_GPIOx, DEVICE_PIN, GPIO_PIN_SET);
+}
+
 
 int BMI_INIT_GYRO(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN){
-	gyro_data.gyro_x_raw = 0;
-	gyro_data.gyro_y_raw = 0;
-	gyro_data.gyro_z_raw = 0;
-	gyro_data.angle_x = 0.0;
-	gyro_data.angle_y = 0.0;
-	gyro_data.angle_z = 0.0;
-
 	bmi088_spi = hspi;
 	gyro_port = GYRO_GPIOx;
 	gyro_pin = GYRO_PIN;
 
-	uint8_t tx_buffer[2] = {0x00 | READ_BYTE, 0x00};
+	uint8_t tx_buffer[2] = {0x00, 0x00};
 	uint8_t rx_buffer[2] = {0x00, 0x00};
 
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);		// reads chip ID, if chip doesn't correctly return ID, return error code
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
+	read_address(bmi088_spi, gyro_port, gyro_pin, tx_buffer, rx_buffer, 2);		// reads chip ID, if chip doesn't correctly return ID, return error code
 
 	if(rx_buffer[1] != 0x0F){
 		return 1;
 	}
 
 	// dummy setup here
-	tx_buffer[0] = GYRO_RANGE_ADDRESS & WRITE_BYTE;		// setting up range
-	tx_buffer[1] = GYRO_RANGE_2000_DEG_PER_SECOND;
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
+	write_address(bmi088_spi, gyro_port, gyro_pin, GYRO_RANGE_ADDRESS, GYRO_RANGE_2000_DEG_PER_SECOND);		// setting gyro range
 
-	tx_buffer[0] = GYRO_ODR_FILTER_ADDRESS & WRITE_BYTE;		// setting up filter
-	tx_buffer[1] = GYRO_ODR_100_HZ_FILTER_12_HZ;
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
+	write_address(bmi088_spi, gyro_port, gyro_pin, GYRO_ODR_FILTER_ADDRESS, GYRO_ODR_100_HZ_FILTER_12_HZ);	// setting up filter
 
-	tx_buffer[0] = GYRO_POWER_MODE_ADDRESS & WRITE_BYTE;		// setting up power mode
-	tx_buffer[1] = GYRO_POWER_MODE_NORMAL;
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
+	write_address(bmi088_spi, gyro_port, gyro_pin, GYRO_POWER_MODE_ADDRESS, GYRO_POWER_MODE_NORMAL);		// setting up power mode
 
-	tx_buffer[0] = 0x15 & WRITE_BYTE;		// enabling interrupt
-	tx_buffer[1] = 0x80;
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
+	write_address(bmi088_spi, gyro_port, gyro_pin, 0x15, 0x80);		// enabling interrupt
 
-	tx_buffer[0] = 0x16 & WRITE_BYTE;		// INT4 IO Config
-	tx_buffer[1] = 0b00001011;
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
+	write_address(bmi088_spi, gyro_port, gyro_pin, 0x16, 0b00001011);		// INT4 IO Config
 
-	tx_buffer[0] = 0x18 & WRITE_BYTE;		// data ready interrupt mapped to INT4
-	tx_buffer[1] = 0x80;
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
+	write_address(bmi088_spi, gyro_port, gyro_pin, 0x18, 0x80);		// data ready interrupt mapped to INT4
 	// need to add real Setup here
 
 	return 0;
-
 }
 
 int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN){
-	uint8_t tx_buffer[3] = {0x00 | READ_BYTE, 0x00, 0x00};	// dummy read to get the Accelerometer into SPI mode
-	uint8_t rx_buffer[3] = {0x00, 0x00, 0x00};
-
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 3, 100);
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
-	HAL_Delay(20);
-
-	accel_data.accel_x_raw = 0;
-	accel_data.accel_y_raw = 0;
-	accel_data.accel_z_raw = 0;
-	accel_data.accel_x_mg = 0;
-	accel_data.accel_y_mg = 0;
-	accel_data.accel_z_mg = 0;
-
 	bmi088_spi = hspi;
 	accel_port = ACCEL_GPIOx;
 	accel_pin = ACCEL_PIN;
-	tx_buffer[1] = 0x00 | READ_BYTE;
 
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 3, 100);
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
+	uint8_t tx_buffer[3] = {0x00, 0x00, 0x00};	// dummy read to get the Accelerometer into SPI mode
+	uint8_t rx_buffer[3] = {0x00, 0x00, 0x00};
+
+	read_address(bmi088_spi, accel_port, accel_pin, tx_buffer, rx_buffer, 3);
+
+	HAL_Delay(1);
+
+	tx_buffer[0] = 0x00;
+
+	read_address(bmi088_spi, accel_port, accel_pin, tx_buffer, rx_buffer, 3);
 
 	if(rx_buffer[2] != 0x1E){
 		return 1;
 	}
 
 	// dummy setup here
-	HAL_Delay(2);
-
-	tx_buffer[0] = ACCEL_ENABLE_SENSOR_ADDRESS & WRITE_BYTE;		// turning on sensor
-	tx_buffer[1] = ACCEL_ENABLE_SENSOR_ON;
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
+	write_address(bmi088_spi, accel_port, accel_pin, ACCEL_ENABLE_SENSOR_ADDRESS, ACCEL_ENABLE_SENSOR_ON);		// turning on sensor
 
 	HAL_Delay(2);
 
-	tx_buffer[0] = ACCEL_CONFIG_ADDRESS & WRITE_BYTE;		// setting up sampling rate and oversampling
-	tx_buffer[1] = ACCEL_CONFIG_ODR_1600_HZ | ACCEL_CONFIG_OVERSAMPLING_OSR4;
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
+	write_address(bmi088_spi, accel_port, accel_pin, ACCEL_CONFIG_ADDRESS, ACCEL_CONFIG_ODR_1600_HZ | ACCEL_CONFIG_OVERSAMPLING_OSR4);		// setting up sampling rate and oversampling
 
-	tx_buffer[0] = ACCEL_RANGE_ADDRESS & WRITE_BYTE;		// setting up sampling range
-	tx_buffer[1] = ACCEL_RANGE_6G;
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
+	write_address(bmi088_spi, accel_port, accel_pin, ACCEL_RANGE_ADDRESS, ACCEL_RANGE_6G);		// setting up sampling range
 
-	HAL_Delay(2);
-
-	tx_buffer[0] = ACCEL_POWER_MODE_ADDRESS & WRITE_BYTE;		// set to normal power mode
-	tx_buffer[1] = ACCEL_POWER_MODE_ACTIVE;
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
-
-
+	write_address(bmi088_spi, accel_port, accel_pin, ACCEL_POWER_MODE_ADDRESS, ACCEL_POWER_MODE_ACTIVE);		// set to normal power mode
 
 	HAL_Delay(50);
 	// need to add real Setup here
@@ -167,12 +119,10 @@ int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PI
 }
 
 void BMI_READ_GYRO_DATA(){
-	uint8_t tx_buffer[7] = {GYRO_RATE_DATA_ADDRESS | READ_BYTE, 0, 0, 0, 0, 0, 0};
+	uint8_t tx_buffer[7] = {GYRO_RATE_DATA_ADDRESS, 0, 0, 0, 0, 0, 0};
 	uint8_t rx_buffer[7];
 
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 7, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);
+	read_address(bmi088_spi, gyro_port, gyro_pin, tx_buffer, rx_buffer, 7);
 
 	gyro_data.gyro_x_raw = ((int16_t)rx_buffer[2] << 8) | rx_buffer[1];
 	gyro_data.gyro_y_raw = ((int16_t)rx_buffer[4] << 8) | rx_buffer[3];
@@ -181,12 +131,10 @@ void BMI_READ_GYRO_DATA(){
 }
 
 void BMI_READ_ACCEL_DATA(){
-	uint8_t tx_buffer[8] = {ACCEL_ACCELERATION_DATA_ADDRESS | READ_BYTE, 0, 0, 0, 0, 0, 0, 0};
+	uint8_t tx_buffer[8] = {ACCEL_ACCELERATION_DATA_ADDRESS, 0, 0, 0, 0, 0, 0, 0};
 	uint8_t rx_buffer[8];
 
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 8, 100);
-	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
+	read_address(bmi088_spi, accel_port, accel_pin, tx_buffer, rx_buffer, 8);
 
 	accel_data.accel_x_raw = ((int16_t)rx_buffer[3] << 8) | rx_buffer[2];
 	accel_data.accel_y_raw = ((int16_t)rx_buffer[5] << 8) | rx_buffer[4];
@@ -238,17 +186,9 @@ double BMI_GET_ACCEL_Z(){
 }
 
 void BMI_GYRO_SOFT_RESET(){
-	uint8_t tx_buffer[2] = {0x11 & WRITE_BYTE, 0xB6};
-	uint8_t rx_buffer[2];
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);		// IMPORTANT: WAIT FOR AT LEAST 30ms BEFORE COMMUNICATING AGAIN!
+	write_address(bmi088_spi, gyro_port, gyro_pin, 0x11, 0xB6);		// IMPORTANT: WAIT FOR AT LEAST 30ms BEFORE COMMUNICATING AGAIN!
 }
 
 void BMI_ACCEL_SOFT_RESET(){
-	uint8_t tx_buffer[2] = {0x7E & WRITE_BYTE, 0xB6};
-	uint8_t rx_buffer[2];
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
-	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_SET);		// IMPORTANT: WAIT FOR AT LEAST 30ms BEFORE COMMUNICATING AGAIN!
+	write_address(bmi088_spi, gyro_port, gyro_pin, 0x7E, 0xB6);		// IMPORTANT: WAIT FOR AT LEAST 30ms BEFORE COMMUNICATING AGAIN!
 }

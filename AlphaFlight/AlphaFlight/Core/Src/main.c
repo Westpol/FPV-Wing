@@ -176,8 +176,29 @@ int main(void)
 	  	uint16_t ch0 = CRSF_GetChannel(0);
 	  	printf("Ch 0: %d\n", ch0);*/
 	  	BMI_READ_ACCEL_DATA();
-	  	snprintf(message, sizeof(message), "%f, %f, %f, %f\r\n", BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z(), sqrt(pow(BMI_GET_ACCEL_X(), 2) + pow(BMI_GET_ACCEL_Y(), 2) + pow(BMI_GET_ACCEL_Z(), 2)));
+	  	double vector_len = sqrt(pow(BMI_GET_ACCEL_X(), 2) + pow(BMI_GET_ACCEL_Y(), 2) + pow(BMI_GET_ACCEL_Z(), 2));
+	  	snprintf(message, sizeof(message), "%f, %f, %f, %f\r\n", BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z(), vector_len);
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
+
+		if(vector_len > 950 && vector_len < 1050){
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
+		}
+		else {
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+		}
+
+		/*HAL_Delay(10);
+
+		uint8_t tx_buffer[3] = {0x00 | 0x80, 0x00, 0x00};
+		uint8_t rx_buffer[3] = {0x00, 0x00, 0x00};
+
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);		// reads chip ID, if chip doesn't correctly return ID, return error code
+		HAL_SPI_TransmitReceive(&hspi1, tx_buffer, rx_buffer, 3, 100);
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
+
+		snprintf(message, sizeof(message), "%X\r\n", rx_buffer[2]);
+		CDC_Transmit_FS((uint8_t *)message, strlen(message));*/
+
 		//snprintf(message, sizeof(message), "Accelerometer values: %f G  %f G  %f G\r\n", BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z());
 		//CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
