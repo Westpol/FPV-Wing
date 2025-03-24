@@ -85,6 +85,7 @@ int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t 
 	if(rx_buffer[2] != 0x1E){
 		return 1;
 	}
+	HAL_Delay(2);
 
 	// dummy setup here
 	write_address(bmi088_spi, accel_port, accel_pin, ACCEL_ENABLE_SENSOR_ADDRESS, ACCEL_ENABLE_SENSOR_ON);		// turning on sensor
@@ -93,9 +94,10 @@ int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t 
 
 	write_address(bmi088_spi, accel_port, accel_pin, ACCEL_CONFIG_ADDRESS, ACCEL_CONFIG_ODR_1600_HZ | ACCEL_CONFIG_OVERSAMPLING_OSR4);		// setting up sampling rate and oversampling
 	write_address(bmi088_spi, accel_port, accel_pin, ACCEL_RANGE_ADDRESS, ACCEL_RANGE_6G);		// setting up sampling range
-	write_address(bmi088_spi, accel_port, accel_pin, ACCEL_POWER_MODE_ADDRESS, ACCEL_POWER_MODE_ACTIVE);		// set to normal power mode
 
-	HAL_Delay(50);
+	HAL_Delay(2);
+
+	write_address(bmi088_spi, accel_port, accel_pin, ACCEL_POWER_MODE_ADDRESS, ACCEL_POWER_MODE_ACTIVE);		// set to normal power mode
 	// need to add real Setup here
 
 	return 0;
@@ -105,8 +107,8 @@ int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t 
 int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN, bool GYRO_ACCEL_CALIBRATION){
 	gyro_accel_calibration = GYRO_ACCEL_CALIBRATION;
 	int config_sum = 0;
-	config_sum += BMI_INIT_GYRO(hspi, GYRO_GPIOx, GYRO_PIN);
 	config_sum += BMI_INIT_ACCEL(hspi, ACCEL_GPIOx, ACCEL_PIN);
+	config_sum += BMI_INIT_GYRO(hspi, GYRO_GPIOx, GYRO_PIN);
 	if(config_sum == 0){
 		return 0;
 	}
@@ -144,6 +146,16 @@ void BMI_READ_ACCEL_DATA(){
 		accel_data.accel_x_mg = ((double)accel_data.accel_x_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5);	// replace 4 with (1 << (<0x41>+1) (content of 0x41's register)
 		accel_data.accel_y_mg = ((double)accel_data.accel_y_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5);
 		accel_data.accel_z_mg = ((double)accel_data.accel_z_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5);
+
+		double g_force_all_axis = sqrt(pow(accel_data.accel_x_mg, 2) + pow(accel_data.accel_y_mg, 2) + pow(accel_data.accel_z_mg, 2));
+		if(g_force_all_axis > 950 && g_force_all_axis < 1050){
+			accel_right_for_calibration = true;
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
+		}
+		else{
+			accel_right_for_calibration = false;
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+		}
 	}
 
 }
@@ -153,6 +165,13 @@ void BMI_CALCULATE_ANGLE(uint32_t time_us){		// calculates angles from gyro (int
 	gyro_data.angle_x += BMI_GET_GYRO_X() * ((time_us - last_microseconds) / 1000000.0);
 	gyro_data.angle_y -= BMI_GET_GYRO_Y() * ((time_us - last_microseconds) / 1000000.0);
 	gyro_data.angle_z -= BMI_GET_GYRO_Z() * ((time_us - last_microseconds) / 1000000.0);
+
+	if(gyro_accel_calibration && accel_right_for_calibration){
+		double accel_roll = atan2f(accel_data.accel_y_mg, accel_data.accel_z_mg) * 180.0f / M_PI;
+		double accel_pitch = -atan2f(-accel_data.accel_x_mg, sqrtf(accel_data.accel_y_mg * accel_data.accel_y_mg + accel_data.accel_z_mg * accel_data.accel_z_mg)) * 180.0f / M_PI;
+		gyro_data.angle_x += (accel_roll - gyro_data.angle_x) * 0.02;
+		gyro_data.angle_y += (accel_pitch - gyro_data.angle_y) * 0.02;
+	}
 
 	last_microseconds = time_us;
 }

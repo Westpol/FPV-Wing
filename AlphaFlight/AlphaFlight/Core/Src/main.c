@@ -176,9 +176,11 @@ int main(void)
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);
 	  	printf("Ch 0: %d\n", ch0);*/
-	  	//BMI_READ_ACCEL_DATA();
-	  	snprintf(message, sizeof(message), "%f, %f, %f\r\n", BMI_GET_GYRO_X_ANGLE(), BMI_GET_GYRO_Y_ANGLE(), BMI_GET_GYRO_Z_ANGLE());
+	  	BMI_READ_ACCEL_DATA();
+	  	snprintf(message, sizeof(message), "%f, %f, %f, %f\r\n", BMI_GET_GYRO_X_ANGLE(), atan2f(BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z()) * 180.0f / M_PI, BMI_GET_GYRO_Y_ANGLE(), -atan2f(-BMI_GET_ACCEL_X(), sqrtf(BMI_GET_ACCEL_Y() * BMI_GET_ACCEL_Y() + BMI_GET_ACCEL_Z() * BMI_GET_ACCEL_Z())) * 180.0f / M_PI);
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
+	  	/*snprintf(message, sizeof(message), "%f, %f, %f, %f, %f, %f\r\n", BMI_GET_GYRO_X_ANGLE(), BMI_GET_GYRO_Y_ANGLE(), BMI_GET_GYRO_Z_ANGLE(), BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z());
+		CDC_Transmit_FS((uint8_t *)message, strlen(message));*/
 
 		/*if(vector_len > 950 && vector_len < 1050){
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
@@ -186,19 +188,6 @@ int main(void)
 		else {
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
 		}*/
-
-		/*HAL_Delay(10);
-
-		uint8_t tx_buffer[3] = {0x00 | 0x80, 0x00, 0x00};
-		uint8_t rx_buffer[3] = {0x00, 0x00, 0x00};
-
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);		// reads chip ID, if chip doesn't correctly return ID, return error code
-		HAL_SPI_TransmitReceive(&hspi1, tx_buffer, rx_buffer, 3, 100);
-		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
-
-		snprintf(message, sizeof(message), "%X\r\n", rx_buffer[2]);
-		CDC_Transmit_FS((uint8_t *)message, strlen(message));*/
-
 		//snprintf(message, sizeof(message), "Accelerometer values: %f G  %f G  %f G\r\n", BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z());
 		//CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
