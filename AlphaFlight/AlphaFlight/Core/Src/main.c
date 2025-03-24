@@ -29,6 +29,7 @@
 #include "stdint.h"
 #include "string.h"
 #include "math.h"
+#include "stdbool.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -156,7 +157,7 @@ int main(void)
   HAL_Delay(100);
   CRSF_Init(&huart1);
 
-  while(BMI_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1)){
+  while(BMI_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, true)){
 	  HAL_Delay(100);
   }
 
@@ -175,17 +176,16 @@ int main(void)
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);
 	  	printf("Ch 0: %d\n", ch0);*/
-	  	BMI_READ_ACCEL_DATA();
-	  	double vector_len = sqrt(pow(BMI_GET_ACCEL_X(), 2) + pow(BMI_GET_ACCEL_Y(), 2) + pow(BMI_GET_ACCEL_Z(), 2));
-	  	snprintf(message, sizeof(message), "%f, %f, %f, %f\r\n", BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z(), vector_len);
+	  	//BMI_READ_ACCEL_DATA();
+	  	snprintf(message, sizeof(message), "%f, %f, %f\r\n", BMI_GET_GYRO_X_ANGLE(), BMI_GET_GYRO_Y_ANGLE(), BMI_GET_GYRO_Z_ANGLE());
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
-		if(vector_len > 950 && vector_len < 1050){
+		/*if(vector_len > 950 && vector_len < 1050){
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
 		}
 		else {
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
-		}
+		}*/
 
 		/*HAL_Delay(10);
 
@@ -205,7 +205,7 @@ int main(void)
 		//snprintf(message, sizeof(message), "Gyrometer values: %f °/s  %f °/s  %f °/s\r\n", BMI_GET_GYRO_X_ANGLE(), BMI_GET_GYRO_Y_ANGLE(), BMI_GET_GYRO_Z_ANGLE());
 		//CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
-		HAL_Delay(100);
+		HAL_Delay(10);
 
     /* USER CODE END WHILE */
 

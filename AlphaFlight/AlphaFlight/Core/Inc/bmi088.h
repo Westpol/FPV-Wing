@@ -9,6 +9,8 @@
 #define INC_BMI088_H_
 
 #include "stm32f7xx_hal.h"
+#include "stdbool.h"
+#include "math.h"
 
 typedef struct {		// all gyro data is stored in here
     int16_t gyro_x_raw;
@@ -30,7 +32,7 @@ typedef struct {		// all accelerometer data is stored in here
 
 int BMI_INIT_GYRO(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN);
 int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN);
-int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN);		// initializes the whole chip (calls BMI_INIT_GYRO and then BMI_INIT_ACCEL)
+int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN, bool GYRO_ACCEL_CALIBRATION);		// initializes the whole chip (calls BMI_INIT_GYRO and then BMI_INIT_ACCEL)
 void BMI_READ_GYRO_DATA();		// reads from gyro registers
 void BMI_READ_ACCEL_DATA();		// reads from accel registers
 void BMI_CALCULATE_ANGLE(uint32_t time_us);		// calculates angles from gyro (integrates each axis)
@@ -53,6 +55,10 @@ void BMI_ACCEL_SOFT_RESET(void);
 
 #define WRITE_BYTE 0x7F		// for write: packet = value & WRITE_BYTE  / for read: packet = value | READ_BYTE
 #define READ_BYTE 0x80
+
+#define ACCEL_X_OFFSET 12
+#define ACCEL_Y_OFFSET 10
+#define ACCEL_Z_OFFSET 0
 
 // -------------------------------------- all gyro setting addresses and values -------------------------------
 #define GYRO_RATE_DATA_ADDRESS 0x02
