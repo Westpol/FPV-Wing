@@ -176,7 +176,6 @@ int main(void)
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);
 	  	printf("Ch 0: %d\n", ch0);*/
-	  	BMI_READ_ACCEL_DATA();
 	  	snprintf(message, sizeof(message), "%f, %f, %f, %f\r\n", BMI_GET_GYRO_X_ANGLE(), atan2f(BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z()) * 180.0f / M_PI, BMI_GET_GYRO_Y_ANGLE(), -atan2f(-BMI_GET_ACCEL_X(), sqrtf(BMI_GET_ACCEL_Y() * BMI_GET_ACCEL_Y() + BMI_GET_ACCEL_Z() * BMI_GET_ACCEL_Z())) * 180.0f / M_PI);
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 	  	/*snprintf(message, sizeof(message), "%f, %f, %f, %f, %f, %f\r\n", BMI_GET_GYRO_X_ANGLE(), BMI_GET_GYRO_Y_ANGLE(), BMI_GET_GYRO_Z_ANGLE(), BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z());
@@ -934,9 +933,41 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
+int gyro_call_counter = 0;
+
+void SPI_Reset(SPI_HandleTypeDef *hspi) {
+    // Step 1: Disable SPI
+    __HAL_SPI_DISABLE(hspi);
+
+    // Step 2: Clear any error flags
+    __HAL_SPI_CLEAR_OVRFLAG(hspi);   // Clear Overrun flag
+    __HAL_SPI_CLEAR_MODFFLAG(hspi);  // Clear Mode Fault flag
+    __HAL_SPI_CLEAR_FREFLAG(hspi);   // Clear Frame Format Error flag (if applicable)
+
+    // Step 3: Flush RX Buffer by reading DR if RXNE is set
+    while (__HAL_SPI_GET_FLAG(hspi, SPI_FLAG_RXNE)) {
+        (void) hspi->Instance->DR; // Read to clear RX buffer
+    }
+
+    // Step 4: Reset SPI State
+    hspi->State = HAL_SPI_STATE_READY;
+
+    // Step 5: Re-enable SPI
+    __HAL_SPI_ENABLE(hspi);
+}
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == GPIO_PIN_13) {  // If interrupt came from PC13
+    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
+    	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
+    	SPI_Reset(&hspi1);
     	BMI_READ_GYRO_DATA();
+    	if(gyro_call_counter >= 2){
+    	  	BMI_READ_ACCEL_DATA();
+    	  	gyro_call_counter = 0;
+    	}
+    	gyro_call_counter += 1;
     	BMI_CALCULATE_ANGLE(__HAL_TIM_GET_COUNTER(&htim2));
 	}
 }
