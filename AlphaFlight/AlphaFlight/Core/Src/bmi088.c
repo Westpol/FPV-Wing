@@ -117,7 +117,7 @@ int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t 
 	// dummy setup here
 	HAL_Delay(2);
 
-	tx_buffer[0] = ACCEL_ENABLE_SENSOR_ADDRESS & WRITE_BYTE;		// setting up sampling rate and oversampling
+	tx_buffer[0] = ACCEL_ENABLE_SENSOR_ADDRESS & WRITE_BYTE;		// turning on sensor
 	tx_buffer[1] = ACCEL_ENABLE_SENSOR_ON;
 	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
@@ -131,7 +131,7 @@ int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t 
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
 	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
 
-	tx_buffer[0] = ACCEL_RANGE_ADDRESS & WRITE_BYTE;		// setting up sampling rate and oversampling
+	tx_buffer[0] = ACCEL_RANGE_ADDRESS & WRITE_BYTE;		// setting up sampling range
 	tx_buffer[1] = ACCEL_RANGE_6G;
 	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
@@ -139,7 +139,7 @@ int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t 
 
 	HAL_Delay(2);
 
-	tx_buffer[0] = ACCEL_POWER_MODE_ADDRESS & WRITE_BYTE;		// setting up sampling rate and oversampling
+	tx_buffer[0] = ACCEL_POWER_MODE_ADDRESS & WRITE_BYTE;		// set to normal power mode
 	tx_buffer[1] = ACCEL_POWER_MODE_ACTIVE;
 	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
 	HAL_SPI_TransmitReceive(bmi088_spi, tx_buffer, rx_buffer, 2, 100);
@@ -167,7 +167,7 @@ int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PI
 }
 
 void BMI_READ_GYRO_DATA(){
-	uint8_t tx_buffer[7] = {0x02 | READ_BYTE, 0, 0, 0, 0, 0, 0};
+	uint8_t tx_buffer[7] = {GYRO_RATE_DATA_ADDRESS | READ_BYTE, 0, 0, 0, 0, 0, 0};
 	uint8_t rx_buffer[7];
 
 	HAL_GPIO_WritePin(gyro_port, gyro_pin, GPIO_PIN_RESET);
@@ -181,7 +181,7 @@ void BMI_READ_GYRO_DATA(){
 }
 
 void BMI_READ_ACCEL_DATA(){
-	uint8_t tx_buffer[8] = {0x12 | READ_BYTE, 0, 0, 0, 0, 0, 0, 0};
+	uint8_t tx_buffer[8] = {ACCEL_ACCELERATION_DATA_ADDRESS | READ_BYTE, 0, 0, 0, 0, 0, 0, 0};
 	uint8_t rx_buffer[8];
 
 	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_RESET);
@@ -198,18 +198,16 @@ void BMI_READ_ACCEL_DATA(){
 
 }
 
-void BMI_CALCULATE_ANGLE(uint32_t time_us){		// TODO: Change from timer mode to getting time passed and caculating everything at the same time
-	if(time_us == 0 || time_us == last_microseconds){
-		return;
-	}
-	// gyro_data.angle_x += BMI_GET_GYRO_X() / ((time_us - last_microseconds) / 1000000.0);
+void BMI_CALCULATE_ANGLE(uint32_t time_us){		// calculates angles from gyro (integrates each axis) (for best results call after each BMI_READ_GYRO_DATA call)
+
 	gyro_data.angle_x += BMI_GET_GYRO_X() * ((time_us - last_microseconds) / 1000000.0);
 	gyro_data.angle_y += BMI_GET_GYRO_Y() * ((time_us - last_microseconds) / 1000000.0);
 	gyro_data.angle_z += BMI_GET_GYRO_Z() * ((time_us - last_microseconds) / 1000000.0);
+
 	last_microseconds = time_us;
 }
 
-double BMI_GET_GYRO_X(){
+double BMI_GET_GYRO_X(){		// return angular velocity in degrees per second (gyro)
 	return (gyro_data.gyro_x_raw / 32767.0) * 2000.0;
 }
 double BMI_GET_GYRO_Y(){
@@ -219,7 +217,7 @@ double BMI_GET_GYRO_Z(){
 	return (gyro_data.gyro_z_raw / 32767.0) * 2000.0;
 }
 
-double BMI_GET_GYRO_X_ANGLE(){
+double BMI_GET_GYRO_X_ANGLE(){		// return angle in degrees (gyro + maybe accelerometer)
 	return gyro_data.angle_x;
 }
 double BMI_GET_GYRO_Y_ANGLE(){
@@ -229,26 +227,14 @@ double BMI_GET_GYRO_Z_ANGLE(){
 	return gyro_data.angle_z;
 }
 
-double BMI_GET_ACCEL_X(){
+double BMI_GET_ACCEL_X(){			// return acceleration (accelerometer)
 	return accel_data.accel_x_mg;
 }
-
 double BMI_GET_ACCEL_Y(){
 	return accel_data.accel_y_mg;
 }
-
 double BMI_GET_ACCEL_Z(){
 	return accel_data.accel_z_mg;
-}
-
-int16_t BMI_GET_GYRO_X_RAW(){
-	return gyro_data.gyro_x_raw;
-}
-int16_t BMI_GET_GYRO_Y_RAW(){
-	return gyro_data.gyro_y_raw;
-}
-int16_t BMI_GET_GYRO_Z_RAW(){
-	return gyro_data.gyro_z_raw;
 }
 
 void BMI_GYRO_SOFT_RESET(){

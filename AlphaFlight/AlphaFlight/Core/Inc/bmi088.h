@@ -28,27 +28,20 @@ typedef struct {		// all accelerometer data is stored in here
     double accel_z_mg;
 } Accel_Data;
 
-extern Accel_Data accel_data;
-extern Gyro_Data gyro_data;
-
 int BMI_INIT_GYRO(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN);
 int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN);
-int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN);
-void BMI_READ_GYRO_DATA();
-void BMI_READ_ACCEL_DATA();
-void BMI_CALCULATE_ANGLE(uint32_t time_us);
+int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN);		// initializes the whole chip (calls BMI_INIT_GYRO and then BMI_INIT_ACCEL)
+void BMI_READ_GYRO_DATA();		// reads from gyro registers
+void BMI_READ_ACCEL_DATA();		// reads from accel registers
+void BMI_CALCULATE_ANGLE(uint32_t time_us);		// calculates angles from gyro (integrates each axis)
 
-double BMI_GET_GYRO_X();
+double BMI_GET_GYRO_X();		// returns struct values
 double BMI_GET_GYRO_Y();
 double BMI_GET_GYRO_Z();
 
 double BMI_GET_GYRO_X_ANGLE();
 double BMI_GET_GYRO_Y_ANGLE();
 double BMI_GET_GYRO_Z_ANGLE();
-
-int16_t BMI_GET_GYRO_X_RAW();
-int16_t BMI_GET_GYRO_Y_RAW();
-int16_t BMI_GET_GYRO_Z_RAW();
 
 double BMI_GET_ACCEL_X();
 double BMI_GET_ACCEL_Y();
@@ -62,6 +55,8 @@ void BMI_ACCEL_SOFT_RESET(void);
 #define READ_BYTE 0x80
 
 // -------------------------------------- all gyro setting addresses and values -------------------------------
+#define GYRO_RATE_DATA_ADDRESS 0x02
+
 #define GYRO_RANGE_ADDRESS 0x0F
 #define GYRO_RANGE_2000_DEG_PER_SECOND 0x00
 #define GYRO_RANGE_1000_DEG_PER_SECOND 0x01
@@ -85,6 +80,8 @@ void BMI_ACCEL_SOFT_RESET(void);
 // ------------------------------------------------------------------------------------------------------------
 
 // -------------------------------------- all gyro setting addresses and values -------------------------------
+#define ACCEL_ACCELERATION_DATA_ADDRESS 0x12
+
 #define ACCEL_CONFIG_ADDRESS 0x40
 #define ACCEL_CONFIG_OVERSAMPLING_OSR4 0x08
 #define ACCEL_CONFIG_OVERSAMPLING_OSR2 0x09

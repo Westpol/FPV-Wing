@@ -28,6 +28,7 @@
 #include "bmi088.h"
 #include "stdint.h"
 #include "string.h"
+#include "math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -175,7 +176,7 @@ int main(void)
 	  	uint16_t ch0 = CRSF_GetChannel(0);
 	  	printf("Ch 0: %d\n", ch0);*/
 	  	BMI_READ_ACCEL_DATA();
-	  	snprintf(message, sizeof(message), "Register value: %f G %f G %f G\r\n", BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z());
+	  	snprintf(message, sizeof(message), "%f, %f, %f, %f\r\n", BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z(), sqrt(pow(BMI_GET_ACCEL_X(), 2) + pow(BMI_GET_ACCEL_Y(), 2) + pow(BMI_GET_ACCEL_Z(), 2)));
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 		//snprintf(message, sizeof(message), "Accelerometer values: %f G  %f G  %f G\r\n", BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z());
 		//CDC_Transmit_FS((uint8_t *)message, strlen(message));
