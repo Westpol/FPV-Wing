@@ -9,6 +9,7 @@
 #define INC_BMP390_H_
 
 #include "stm32f7xx_hal.h"
+#include "math.h"
 
 typedef struct {
 	double pressure;
@@ -16,7 +17,7 @@ typedef struct {
 
 extern Baro_Data baro_data;
 
-int BMP_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN);
+int BMP_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *BARO_GPIOx, uint16_t BARO_PIN);
 void BMP_READ_DATA();
 void BMP_CALCULATE_VALUES(uint32_t time_us);
 

@@ -26,6 +26,7 @@
 #include "usbd_cdc_if.h"
 #include "crossfire.h"
 #include "bmi088.h"
+#include "bmp390.h"
 #include "stdint.h"
 #include "string.h"
 #include "math.h"
@@ -156,6 +157,10 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_Delay(100);
   CRSF_Init(&huart1);
+
+  while(BMP_INIT(&hspi1, GPIOC, GPIO_PIN_4)){
+	  HAL_Delay(100);
+  }
 
   while(BMI_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, true)){
 	  HAL_Delay(100);
