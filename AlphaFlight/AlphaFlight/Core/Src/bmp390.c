@@ -85,9 +85,9 @@ int BMP_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *BARO_GPIOx, uint16_t BARO_PI
 	}
 
 	write_address(bmp390_spi, baro_port, baro_pin, POWER_CONTROL_REGISTER, POWER_CONTROL_PRESS_EN_TEMP_EN_NORMAL_MODE);
-	write_address(bmp390_spi, baro_port, baro_pin, OVERSAMPLING_REGISTER, OSR_P_16X_OSR_T_4X);
-	write_address(bmp390_spi, baro_port, baro_pin, OUTPUT_DATA_RATE_REGISTER, OUTPUT_DATA_RATE_200);
-	write_address(bmp390_spi, baro_port, baro_pin, IIR_FILTER_REGISTER, IIR_FILTER_COEF_127);
+	write_address(bmp390_spi, baro_port, baro_pin, OVERSAMPLING_REGISTER, OSR_P_16X_T_2X);
+	write_address(bmp390_spi, baro_port, baro_pin, OUTPUT_DATA_RATE_REGISTER, OUTPUT_DATA_RATE_25_HZ);
+	write_address(bmp390_spi, baro_port, baro_pin, IIR_FILTER_REGISTER, IIR_FILTER_COEF_3);
 
 	uint8_t calib_tx_buffer[23];
 	uint8_t calib_rx_buffer[23];

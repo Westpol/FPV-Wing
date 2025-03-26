@@ -73,13 +73,13 @@ void BMP_SOFT_RESET(void);
 #define POWER_CONTROL_PRESS_EN_TEMP_EN_NORMAL_MODE 0b00110011
 
 #define OVERSAMPLING_REGISTER 0x1C
-#define OSR_P_16X_OSR_T_4X 0b00001100
+#define OSR_P_16X_T_2X 0b00001100
 
 #define OUTPUT_DATA_RATE_REGISTER 0x1D
-#define OUTPUT_DATA_RATE_200 0x03
+#define OUTPUT_DATA_RATE_25_HZ 0x03
 
 #define IIR_FILTER_REGISTER 0x1F
-#define IIR_FILTER_COEF_127 0b00000100
+#define IIR_FILTER_COEF_3 0b00000100
 //-----------------------------------------------------------------------------------------------------------
 
 
