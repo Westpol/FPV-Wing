@@ -31,28 +31,6 @@ typedef struct {
 	int16_t NVM_PAR_P9;
 	int8_t NVM_PAR_P10;
 	int8_t NVM_PAR_P11;
-	float pressure;
-	float temperature;
-	uint32_t raw_temp;
-	uint32_t raw_press;
-	int64_t t_fine;
-} Baro_Calibration;
-
-typedef struct {
-	uint16_t NVM_PAR_T1;
-	uint16_t NVM_PAR_T2;
-	int8_t NVM_PAR_T3;
-	int16_t NVM_PAR_P1;
-	int16_t NVM_PAR_P2;
-	int8_t NVM_PAR_P3;
-	int8_t NVM_PAR_P4;
-	uint16_t NVM_PAR_P5;
-	uint16_t NVM_PAR_P6;
-	int8_t NVM_PAR_P7;
-	int8_t NVM_PAR_P8;
-	int16_t NVM_PAR_P9;
-	int8_t NVM_PAR_P10;
-	int8_t NVM_PAR_P11;
 	float par_t1;
 	float par_t2;
 	float par_t3;
@@ -75,8 +53,6 @@ typedef struct {
 } Baro_Calibration_Float;
 
 int BMP_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *BARO_GPIOx, uint16_t BARO_PIN);
-void BMP_READ_DATA();
-void BMP_CALCULATE_VALUES(uint32_t time_us);
 
 double BMP_GET_HEIGHT();
 double BMP_GET_PRESS();
@@ -84,8 +60,9 @@ double BMP_GET_TEMP();
 
 void BMP_GET_DATA(void);
 
-void BMP_SOFT_RESET();
+void BMP_SOFT_RESET(void);
 
+//---------------------------------------- register defines -------------------------------------------------
 #define WRITE_BYTE 0x7F
 #define READ_BYTE 0x80
 
@@ -103,6 +80,7 @@ void BMP_SOFT_RESET();
 
 #define IIR_FILTER_REGISTER 0x1F
 #define IIR_FILTER_COEF_127 0b00000100
+//-----------------------------------------------------------------------------------------------------------
 
 
 #endif /* INC_BMP390_H_ */

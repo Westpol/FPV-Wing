@@ -31,7 +31,7 @@ static void write_address(SPI_HandleTypeDef *hspi, GPIO_TypeDef *DEVICE_GPIOx, u
 	HAL_GPIO_WritePin(DEVICE_GPIOx, DEVICE_PIN, GPIO_PIN_SET);
 }
 
-static float BMP_COMPENSATE_TEMPERATURE_FLOAT(uint32_t uncomp_temp, Baro_Calibration_Float *calib_data){
+static float BMP_COMPENSATE_TEMPERATURE(uint32_t uncomp_temp, Baro_Calibration_Float *calib_data){
 	float partial_data1;
 	float partial_data2;
 	partial_data1 = (float)(uncomp_temp - calib_data->par_t1);
@@ -43,7 +43,7 @@ static float BMP_COMPENSATE_TEMPERATURE_FLOAT(uint32_t uncomp_temp, Baro_Calibra
 	return calib_data->t_lin;
 }
 
-static float BMP_COMPENSATE_PRESSURE_FLOAT(uint32_t uncomp_press, Baro_Calibration_Float *calib_data){
+static float BMP_COMPENSATE_PRESSURE(uint32_t uncomp_press, Baro_Calibration_Float *calib_data){
 	/* Variable to store the compensated pressure */
 	float comp_press;
 	/* Temporary variables used for compensation */
@@ -136,10 +136,10 @@ void BMP_GET_DATA(){
 	uint64_t raw_temp = ((uint32_t)rx_buffer[7] << 16) | ((uint32_t)rx_buffer[6] << 8) | rx_buffer[5];
 	uint64_t raw_press = ((uint32_t)rx_buffer[4] << 16) | ((uint32_t)rx_buffer[3] << 8) | rx_buffer[2];
 
-	baro_data.temperature = BMP_COMPENSATE_TEMPERATURE_FLOAT(raw_temp, &baro_calibration);
-	baro_data.pressure = BMP_COMPENSATE_PRESSURE_FLOAT(raw_press, &baro_calibration);
-
+	baro_data.temperature = BMP_COMPENSATE_TEMPERATURE(raw_temp, &baro_calibration);
+	baro_data.pressure = BMP_COMPENSATE_PRESSURE(raw_press, &baro_calibration);
 }
+
 
 double BMP_GET_HEIGHT(){
 	return (101640.0 - baro_data.pressure) / 12.015397;
@@ -150,6 +150,7 @@ double BMP_GET_PRESS(){
 double BMP_GET_TEMP(){
 	return baro_data.temperature;
 }
+
 
 void BMP_SOFT_RESET(){
 	write_address(bmp390_spi, baro_port, baro_pin, 0x7E, 0xB6);
