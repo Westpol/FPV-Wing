@@ -155,19 +155,14 @@ int main(void)
   MX_FATFS_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_Delay(100);
+
   CRSF_Init(&huart1);
 
-  while(BMP_INIT(&hspi1, GPIOC, GPIO_PIN_4)){
-	  HAL_Delay(100);
-  }
-
-  while(BMI_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, true)){
-	  HAL_Delay(100);
-  }
+  while(BMP_INIT(&hspi1, GPIOC, GPIO_PIN_4)){HAL_Delay(100);}
+  while(BMI_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, true)){HAL_Delay(100);}
 
   HAL_TIM_Base_Start(&htim2);
-  //uint64_t delay_loop = (1000 * 1000);
+
   char message[1024];
   /* USER CODE END 2 */
 
@@ -179,24 +174,10 @@ int main(void)
   while (1)
   {
 	  /*CRSF_Process();
-	  	uint16_t ch0 = CRSF_GetChannel(0);
-	  	printf("Ch 0: %d\n", ch0);*/
-	  	/*snprintf(message, sizeof(message), "%f, %f, %f, %f\r\n", BMI_GET_GYRO_X_ANGLE(), -atan2f(BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z()) * 180.0f / M_PI, BMI_GET_GYRO_Y_ANGLE(), -atan2f(-BMI_GET_ACCEL_X(), sqrtf(BMI_GET_ACCEL_Y() * BMI_GET_ACCEL_Y() + BMI_GET_ACCEL_Z() * BMI_GET_ACCEL_Z())) * 180.0f / M_PI);
-		CDC_Transmit_FS((uint8_t *)message, strlen(message));*/
-	  	snprintf(message, sizeof(message), "%f°C   %f Pa   %f m\r\n", BMP_GET_TEMP(), BMP_GET_PRESS(), BMP_GET_HEIGHT());
+	  	uint16_t ch0 = CRSF_GetChannel(0);*/
+
+	  	snprintf(message, sizeof(message), "%f°C,   %f Pa,   %f m\r\n", BMP_GET_TEMP(), BMP_GET_PRESS(), BMP_GET_HEIGHT());
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
-
-		/*if(vector_len > 950 && vector_len < 1050){
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
-		}
-		else {
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
-		}*/
-		//snprintf(message, sizeof(message), "Accelerometer values: %f G  %f G  %f G\r\n", BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z());
-		//CDC_Transmit_FS((uint8_t *)message, strlen(message));
-
-		//snprintf(message, sizeof(message), "Gyrometer values: %f °/s  %f °/s  %f °/s\r\n", BMI_GET_GYRO_X_ANGLE(), BMI_GET_GYRO_Y_ANGLE(), BMI_GET_GYRO_Z_ANGLE());
-		//CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
 		HAL_Delay(10);
 
