@@ -38,6 +38,42 @@ typedef struct {
 	int64_t t_fine;
 } Baro_Calibration;
 
+typedef struct {
+	uint16_t NVM_PAR_T1;
+	uint16_t NVM_PAR_T2;
+	int8_t NVM_PAR_T3;
+	int16_t NVM_PAR_P1;
+	int16_t NVM_PAR_P2;
+	int8_t NVM_PAR_P3;
+	int8_t NVM_PAR_P4;
+	uint16_t NVM_PAR_P5;
+	uint16_t NVM_PAR_P6;
+	int8_t NVM_PAR_P7;
+	int8_t NVM_PAR_P8;
+	int16_t NVM_PAR_P9;
+	int8_t NVM_PAR_P10;
+	int8_t NVM_PAR_P11;
+	float par_t1;
+	float par_t2;
+	float par_t3;
+	float par_p1;
+	float par_p2;
+	float par_p3;
+	float par_p4;
+	float par_p5;
+	float par_p6;
+	float par_p7;
+	float par_p8;
+	float par_p9;
+	float par_p10;
+	float par_p11;
+	float pressure;
+	float temperature;
+	uint32_t raw_temp;
+	uint32_t raw_press;
+	float t_lin;
+} Baro_Calibration_Float;
+
 int BMP_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *BARO_GPIOx, uint16_t BARO_PIN);
 void BMP_READ_DATA();
 void BMP_CALCULATE_VALUES(uint32_t time_us);

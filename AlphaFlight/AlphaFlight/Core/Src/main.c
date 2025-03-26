@@ -183,7 +183,7 @@ int main(void)
 	  	printf("Ch 0: %d\n", ch0);*/
 	  	/*snprintf(message, sizeof(message), "%f, %f, %f, %f\r\n", BMI_GET_GYRO_X_ANGLE(), -atan2f(BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z()) * 180.0f / M_PI, BMI_GET_GYRO_Y_ANGLE(), -atan2f(-BMI_GET_ACCEL_X(), sqrtf(BMI_GET_ACCEL_Y() * BMI_GET_ACCEL_Y() + BMI_GET_ACCEL_Z() * BMI_GET_ACCEL_Z())) * 180.0f / M_PI);
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));*/
-	  	snprintf(message, sizeof(message), "%f°C   %f Pa\r\n", BMP_GET_TEMP(), BMP_GET_PRESS());
+	  	snprintf(message, sizeof(message), "%f°C   %f Pa   %f m\r\n", BMP_GET_TEMP(), BMP_GET_PRESS(), BMP_GET_HEIGHT());
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
 		/*if(vector_len > 950 && vector_len < 1050){

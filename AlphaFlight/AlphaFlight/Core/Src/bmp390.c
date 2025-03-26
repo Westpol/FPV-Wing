@@ -3,6 +3,8 @@
  *
  *  Created on: Mar 21, 2025
  *      Author: benno
+ *
+ *      TODO: set correct BMP setup (oversampling, iirc filter, etc.)
  */
 
 #include "bmp390.h"
@@ -12,7 +14,7 @@ static GPIO_TypeDef *baro_port;
 static uint16_t baro_pin;
 
 static Baro_Data baro_data = {0};
-static Baro_Calibration baro_calibration = {0};
+static Baro_Calibration_Float baro_calibration = {0};
 
 static void read_address(SPI_HandleTypeDef *hspi, GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t *txbuffer, uint8_t *rxbuffer, uint8_t readLength){
 	txbuffer[0] = txbuffer[0] | READ_BYTE;
@@ -29,64 +31,45 @@ static void write_address(SPI_HandleTypeDef *hspi, GPIO_TypeDef *DEVICE_GPIOx, u
 	HAL_GPIO_WritePin(DEVICE_GPIOx, DEVICE_PIN, GPIO_PIN_SET);
 }
 
-static void BMP_COMPENSATE_TEMPERATURE(){
-	uint64_t partial_data1;
-	uint64_t partial_data2;
-	uint64_t partial_data3;
-	int64_t partial_data4;
-	int64_t partial_data5;
-	int64_t partial_data6;
-
-	/* calculate compensate temperature */
-	partial_data1 = (uint64_t)(baro_calibration.raw_temp - (256 * (uint64_t)(baro_calibration.NVM_PAR_T1)));
-	partial_data2 = (uint64_t)(baro_calibration.NVM_PAR_T2 * partial_data1);
-	partial_data3 = (uint64_t)(partial_data1 * partial_data1);
-	partial_data4 = (int64_t)(((int64_t)partial_data3) * ((int64_t)baro_calibration.NVM_PAR_T3));
-	partial_data5 = ((int64_t)(((int64_t)partial_data2) * 262144) + (int64_t)partial_data4);
-	partial_data6 = (int64_t)(((int64_t)partial_data5) / 4294967296U);
-	baro_calibration.t_fine = partial_data6;
-	baro_data.temperature = (int64_t)((partial_data6 * 25)  / 16384) / 100.0;
-	baro_calibration.temperature = (int64_t)((partial_data6 * 25)  / 16384);
+static float BMP_COMPENSATE_TEMPERATURE_FLOAT(uint32_t uncomp_temp, Baro_Calibration_Float *calib_data){
+	float partial_data1;
+	float partial_data2;
+	partial_data1 = (float)(uncomp_temp - calib_data->par_t1);
+	partial_data2 = (float)(partial_data1 * calib_data->par_t2);
+	/* Update the compensated temperature in calib structure since this is
+	* needed for pressure calculation */
+	calib_data->t_lin = partial_data2 + (partial_data1 * partial_data1) * calib_data->par_t3;
+	/* Returns compensated temperature */
+	return calib_data->t_lin;
 }
 
-static void BMP_COMPENSATE_PRESSURE(){
-	int64_t partial_data1;
-	int64_t partial_data2;
-	int64_t partial_data3;
-	int64_t partial_data4;
-	int64_t partial_data5;
-	int64_t partial_data6;
-	int64_t offset;
-	int64_t sensitivity;
-	uint64_t comp_press;
-
-	/* calculate compensate pressure */
-	partial_data1 = baro_calibration.t_fine * baro_calibration.t_fine;
-	partial_data2 = partial_data1 / 64;
-	partial_data3 = (partial_data2 * baro_calibration.t_fine) / 256;
-	partial_data4 = (baro_calibration.NVM_PAR_P8 * partial_data3) / 32;
-	partial_data5 = (baro_calibration.NVM_PAR_P7 * partial_data1) * 16;
-	partial_data6 = (baro_calibration.NVM_PAR_P6 * baro_calibration.t_fine) * 4194304;
-	offset = (int64_t)((int64_t)(baro_calibration.NVM_PAR_P5) * (int64_t)140737488355328U) + partial_data4 + partial_data5 + partial_data6;
-	partial_data2 = (((int64_t)baro_calibration.NVM_PAR_P4) * partial_data3) / 32;
-	partial_data4 = (baro_calibration.NVM_PAR_P3 * partial_data1) * 4;
-	partial_data5 = ((int64_t)(baro_calibration.NVM_PAR_P2) - 16384) * ((int64_t)baro_calibration.t_fine) * 2097152;
-	sensitivity = (((int64_t)(baro_calibration.NVM_PAR_P1) - 16384) * (int64_t)70368744177664U) + partial_data2 + partial_data4 + partial_data5;
-	partial_data1 = (sensitivity / 16777216) * baro_calibration.raw_press;
-	partial_data2 = (int64_t)(baro_calibration.NVM_PAR_P10) * (int64_t)(baro_calibration.t_fine);
-	partial_data3 = partial_data2 + (65536 * (int64_t)(baro_calibration.NVM_PAR_P9));
-	partial_data4 = (partial_data3 * baro_calibration.raw_press) / 8192;
-	partial_data5 = (partial_data4 * baro_calibration.raw_press) / 512;
-	partial_data6 = (int64_t)((uint64_t)baro_calibration.raw_press * (uint64_t)baro_calibration.raw_press);
-	partial_data2 = ((int64_t)(baro_calibration.NVM_PAR_P11) * (int64_t)(partial_data6)) / 65536;
-	partial_data3 = (partial_data2 * baro_calibration.raw_press) / 128;
-	partial_data4 = (offset / 4) + partial_data1 + partial_data5 + partial_data3;
-	comp_press = (((uint64_t)partial_data4 * 25) / (uint64_t)1099511627776U);
-
-	baro_calibration.pressure = comp_press / 100.0;
-	baro_data.pressure = comp_press / 100.0;
+static float BMP_COMPENSATE_PRESSURE_FLOAT(uint32_t uncomp_press, Baro_Calibration_Float *calib_data){
+	/* Variable to store the compensated pressure */
+	float comp_press;
+	/* Temporary variables used for compensation */
+	float partial_data1;
+	float partial_data2;
+	float partial_data3;
+	float partial_data4;
+	float partial_out1;
+	float partial_out2;
+	/* Calibration data */
+	partial_data1 = calib_data->par_p6 * calib_data->t_lin;
+	partial_data2 = calib_data->par_p7 * (calib_data->t_lin * calib_data->t_lin);
+	partial_data3 = calib_data->par_p8 * (calib_data->t_lin * calib_data->t_lin * calib_data->t_lin);
+	partial_out1 = calib_data->par_p5 + partial_data1 + partial_data2 + partial_data3;
+	partial_data1 = calib_data->par_p2 * calib_data->t_lin;
+	partial_data2 = calib_data->par_p3 * (calib_data->t_lin * calib_data->t_lin);
+	partial_data3 = calib_data->par_p4 * (calib_data->t_lin * calib_data->t_lin * calib_data->t_lin);
+	partial_out2 = (float)uncomp_press *
+	(calib_data->par_p1 + partial_data1 + partial_data2 + partial_data3);
+	partial_data1 = (float)uncomp_press * (float)uncomp_press;
+	partial_data2 = calib_data->par_p9 + calib_data->par_p10 * calib_data->t_lin;
+	partial_data3 = partial_data1 * partial_data2;
+	partial_data4 = partial_data3 + ((float)uncomp_press * (float)uncomp_press * (float)uncomp_press) * calib_data->par_p11;
+	comp_press = partial_out1 + partial_out2 + partial_data4;
+	return comp_press;
 }
-
 
 int BMP_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *BARO_GPIOx, uint16_t BARO_PIN){
 	bmp390_spi = hspi;
@@ -126,6 +109,20 @@ int BMP_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *BARO_GPIOx, uint16_t BARO_PI
 	baro_calibration.NVM_PAR_P10 = (int8_t)calib_rx_buffer[21];
 	baro_calibration.NVM_PAR_P11 = (int8_t)calib_rx_buffer[22];
 
+	baro_calibration.par_t1 = (float)baro_calibration.NVM_PAR_T1 / pow(2, -8);
+	baro_calibration.par_t2 = (float)baro_calibration.NVM_PAR_T2 / pow(2, 30);
+	baro_calibration.par_t3 = (float)baro_calibration.NVM_PAR_T3 / pow(2, 48);
+	baro_calibration.par_p1 = ((float)baro_calibration.NVM_PAR_P1 - pow(2, 14)) / pow(2, 20);
+	baro_calibration.par_p2 = ((float)baro_calibration.NVM_PAR_P2 - pow(2, 14)) / pow(2, 29);
+	baro_calibration.par_p3 = (float)baro_calibration.NVM_PAR_P3 / pow(2, 32);
+	baro_calibration.par_p4 = (float)baro_calibration.NVM_PAR_P4 / pow(2, 37);
+	baro_calibration.par_p5 = (float)baro_calibration.NVM_PAR_P5 / pow(2, -3);
+	baro_calibration.par_p6 = (float)baro_calibration.NVM_PAR_P6 / pow(2, 6);
+	baro_calibration.par_p7 = (float)baro_calibration.NVM_PAR_P7 / pow(2, 8);
+	baro_calibration.par_p8 = (float)baro_calibration.NVM_PAR_P8 / pow(2, 15);
+	baro_calibration.par_p9 = (float)baro_calibration.NVM_PAR_P9 / pow(2, 48);
+	baro_calibration.par_p10 = (float)baro_calibration.NVM_PAR_P10 / pow(2, 48);
+	baro_calibration.par_p11 = (float)baro_calibration.NVM_PAR_P11 / pow(2, 65);
 	return 0;
 }
 
@@ -136,15 +133,16 @@ void BMP_GET_DATA(){
 
 	read_address(bmp390_spi, baro_port, baro_pin, tx_buffer, rx_buffer, 8);
 
-	baro_calibration.raw_temp = ((uint32_t)rx_buffer[7] << 16) | ((uint32_t)rx_buffer[6] << 8) | rx_buffer[5];
+	uint64_t raw_temp = ((uint32_t)rx_buffer[7] << 16) | ((uint32_t)rx_buffer[6] << 8) | rx_buffer[5];
+	uint64_t raw_press = ((uint32_t)rx_buffer[4] << 16) | ((uint32_t)rx_buffer[3] << 8) | rx_buffer[2];
 
-	BMP_COMPENSATE_TEMPERATURE();
-	BMP_COMPENSATE_PRESSURE();
+	baro_data.temperature = BMP_COMPENSATE_TEMPERATURE_FLOAT(raw_temp, &baro_calibration);
+	baro_data.pressure = BMP_COMPENSATE_PRESSURE_FLOAT(raw_press, &baro_calibration);
 
 }
 
 double BMP_GET_HEIGHT(){
-	return 0;
+	return (101640.0 - baro_data.pressure) / 12.015397;
 }
 double BMP_GET_PRESS(){
 	return baro_data.pressure;
