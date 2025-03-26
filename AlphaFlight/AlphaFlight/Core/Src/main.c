@@ -181,10 +181,10 @@ int main(void)
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);
 	  	printf("Ch 0: %d\n", ch0);*/
-	  	snprintf(message, sizeof(message), "%f, %f, %f, %f\r\n", BMI_GET_GYRO_X_ANGLE(), -atan2f(BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z()) * 180.0f / M_PI, BMI_GET_GYRO_Y_ANGLE(), -atan2f(-BMI_GET_ACCEL_X(), sqrtf(BMI_GET_ACCEL_Y() * BMI_GET_ACCEL_Y() + BMI_GET_ACCEL_Z() * BMI_GET_ACCEL_Z())) * 180.0f / M_PI);
-		CDC_Transmit_FS((uint8_t *)message, strlen(message));
-	  	/*snprintf(message, sizeof(message), "%f, %f, %f, %f, %f, %f\r\n", BMI_GET_GYRO_X_ANGLE(), BMI_GET_GYRO_Y_ANGLE(), BMI_GET_GYRO_Z_ANGLE(), BMI_GET_ACCEL_X(), BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z());
+	  	/*snprintf(message, sizeof(message), "%f, %f, %f, %f\r\n", BMI_GET_GYRO_X_ANGLE(), -atan2f(BMI_GET_ACCEL_Y(), BMI_GET_ACCEL_Z()) * 180.0f / M_PI, BMI_GET_GYRO_Y_ANGLE(), -atan2f(-BMI_GET_ACCEL_X(), sqrtf(BMI_GET_ACCEL_Y() * BMI_GET_ACCEL_Y() + BMI_GET_ACCEL_Z() * BMI_GET_ACCEL_Z())) * 180.0f / M_PI);
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));*/
+	  	snprintf(message, sizeof(message), "%f°C   %f Pa\r\n", BMP_GET_TEMP(), BMP_GET_PRESS());
+		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
 		/*if(vector_len > 950 && vector_len < 1050){
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
@@ -939,6 +939,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 int gyro_call_counter = 0;
+int baro_call_counter = 0;
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == GPIO_PIN_13) {  // If interrupt came from PC13
@@ -951,6 +952,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     	  	gyro_call_counter = 0;
     	}
     	gyro_call_counter += 1;
+    	if(baro_call_counter >= 10){
+    		BMP_GET_DATA();
+    		baro_call_counter = 0;
+    	}
+    	baro_call_counter += 1;
     	BMI_CALCULATE_ANGLE(__HAL_TIM_GET_COUNTER(&htim2));
 	}
 }

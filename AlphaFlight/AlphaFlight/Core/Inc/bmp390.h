@@ -13,9 +13,30 @@
 
 typedef struct {
 	double pressure;
+	double temperature;
 } Baro_Data;
 
-extern Baro_Data baro_data;
+typedef struct {
+	uint16_t NVM_PAR_T1;
+	uint16_t NVM_PAR_T2;
+	int8_t NVM_PAR_T3;
+	int16_t NVM_PAR_P1;
+	int16_t NVM_PAR_P2;
+	int8_t NVM_PAR_P3;
+	int8_t NVM_PAR_P4;
+	uint16_t NVM_PAR_P5;
+	uint16_t NVM_PAR_P6;
+	int8_t NVM_PAR_P7;
+	int8_t NVM_PAR_P8;
+	int16_t NVM_PAR_P9;
+	int8_t NVM_PAR_P10;
+	int8_t NVM_PAR_P11;
+	float pressure;
+	float temperature;
+	uint32_t raw_temp;
+	uint32_t raw_press;
+	int64_t t_fine;
+} Baro_Calibration;
 
 int BMP_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *BARO_GPIOx, uint16_t BARO_PIN);
 void BMP_READ_DATA();
@@ -25,10 +46,27 @@ double BMP_GET_HEIGHT();
 double BMP_GET_PRESS();
 double BMP_GET_TEMP();
 
-void BMI_GYRO_SOFT_RESET();
+void BMP_GET_DATA(void);
+
+void BMP_SOFT_RESET();
 
 #define WRITE_BYTE 0x7F
 #define READ_BYTE 0x80
+
+#define PRESSURE_DATA_REGISTER 0x04
+#define TEMPERATURE_DATA_REGISTER 0x07
+
+#define POWER_CONTROL_REGISTER 0x1B
+#define POWER_CONTROL_PRESS_EN_TEMP_EN_NORMAL_MODE 0b00110011
+
+#define OVERSAMPLING_REGISTER 0x1C
+#define OSR_P_16X_OSR_T_4X 0x00
+
+#define OUTPUT_DATA_RATE_REGISTER 0x1D
+#define OUTPUT_DATA_RATE_200 0x00
+
+#define IIR_FILTER_REGISTER 0x1F
+#define IIR_FILTER_COEF_127 0x00
 
 
 #endif /* INC_BMP390_H_ */
