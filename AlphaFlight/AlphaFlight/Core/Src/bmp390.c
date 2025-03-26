@@ -61,8 +61,7 @@ static float BMP_COMPENSATE_PRESSURE(uint32_t uncomp_press, Baro_Calibration_Flo
 	partial_data1 = calib_data->par_p2 * calib_data->t_lin;
 	partial_data2 = calib_data->par_p3 * (calib_data->t_lin * calib_data->t_lin);
 	partial_data3 = calib_data->par_p4 * (calib_data->t_lin * calib_data->t_lin * calib_data->t_lin);
-	partial_out2 = (float)uncomp_press *
-	(calib_data->par_p1 + partial_data1 + partial_data2 + partial_data3);
+	partial_out2 = (float)uncomp_press * (calib_data->par_p1 + partial_data1 + partial_data2 + partial_data3);
 	partial_data1 = (float)uncomp_press * (float)uncomp_press;
 	partial_data2 = calib_data->par_p9 + calib_data->par_p10 * calib_data->t_lin;
 	partial_data3 = partial_data1 * partial_data2;
@@ -126,7 +125,7 @@ int BMP_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *BARO_GPIOx, uint16_t BARO_PI
 	return 0;
 }
 
-void BMP_GET_DATA(){
+void BMP_GET_DATA(){		// reads temperature and pressure data and calculates temperature and pressure
 	uint8_t tx_buffer[8];
 	tx_buffer[0] = 0x04 | READ_BYTE;
 	uint8_t rx_buffer[8];
@@ -141,18 +140,18 @@ void BMP_GET_DATA(){
 }
 
 
-double BMP_GET_HEIGHT(){
-	return (101640.0 - baro_data.pressure) / 12.015397;
+double BMP_GET_HEIGHT(double ground_pressure_pa){		// outputs height in meters compared to pressure at ground level
+	return (ground_pressure_pa - baro_data.pressure) / 12.015397;		// calculates height at air temperature of 15°C
 }
-double BMP_GET_PRESS(){
+double BMP_GET_PRESS(){		// outputs pressure in pascal
 	return baro_data.pressure;
 }
-double BMP_GET_TEMP(){
+double BMP_GET_TEMP(){		// outputs temperature in celsius
 	return baro_data.temperature;
 }
 
 
-void BMP_SOFT_RESET(){
+void BMP_SOFT_RESET(){		// clears all registers and "resets" the chip
 	write_address(bmp390_spi, baro_port, baro_pin, 0x7E, 0xB6);
 }
 

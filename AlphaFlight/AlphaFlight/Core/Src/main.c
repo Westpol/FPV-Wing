@@ -176,7 +176,7 @@ int main(void)
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);*/
 
-	  	snprintf(message, sizeof(message), "%f°C,   %f Pa,   %f m\r\n", BMP_GET_TEMP(), BMP_GET_PRESS(), BMP_GET_HEIGHT());
+	  	snprintf(message, sizeof(message), "%f°C,   %f Pa,   %f m\r\n", BMP_GET_TEMP(), BMP_GET_PRESS(), BMP_GET_HEIGHT(1024.0));
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
 		HAL_Delay(10);

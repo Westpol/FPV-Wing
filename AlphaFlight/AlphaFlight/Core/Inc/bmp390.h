@@ -45,16 +45,12 @@ typedef struct {
 	float par_p9;
 	float par_p10;
 	float par_p11;
-	float pressure;
-	float temperature;
-	uint32_t raw_temp;
-	uint32_t raw_press;
 	float t_lin;
 } Baro_Calibration_Float;
 
 int BMP_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *BARO_GPIOx, uint16_t BARO_PIN);
 
-double BMP_GET_HEIGHT();
+double BMP_GET_HEIGHT(double ground_pressure_pa);
 double BMP_GET_PRESS();
 double BMP_GET_TEMP();
 
