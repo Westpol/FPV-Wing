@@ -27,6 +27,7 @@
 #include "crossfire.h"
 #include "bmi088.h"
 #include "bmp390.h"
+#include "servo.h"
 #include "stdint.h"
 #include "string.h"
 #include "math.h"
