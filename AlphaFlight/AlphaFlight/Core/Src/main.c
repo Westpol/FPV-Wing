@@ -58,6 +58,8 @@ SD_HandleTypeDef hsd1;
 
 SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
+DMA_HandleTypeDef hdma_spi1_tx;
+DMA_HandleTypeDef hdma_spi1_rx;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
@@ -104,7 +106,8 @@ static void MX_TIM10_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+uint64_t sensorReadTimeStart = 0;
+uint64_t sensorReadTimeEnd = 0;
 /* USER CODE END 0 */
 
 /**
@@ -166,9 +169,9 @@ int main(void)
 
   char message[1024];
 
-  SERVO_ADD(GPIOB, 2);
-  SERVO_ADD(GPIOB, 12);
-  SERVO_ADD(GPIOB, 14);
+  SERVO_ADD(GPIOB, GPIO_PIN_2);
+  SERVO_ADD(GPIOB, GPIO_PIN_12);
+  SERVO_ADD(GPIOB, GPIO_PIN_14);
   SERVO_SET(0, 1200);
   SERVO_SET(1, 1300);
   SERVO_SET(2, 1400);
@@ -185,7 +188,7 @@ int main(void)
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);*/
 
-	  	snprintf(message, sizeof(message), "%f°C,   %f Pa,   %f m\r\n", BMP_GET_TEMP(), BMP_GET_PRESS(), BMP_GET_HEIGHT(1024.0));
+	  	snprintf(message, sizeof(message), "%d us\r\n", (int)(sensorReadTimeEnd - sensorReadTimeStart));
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
 		HAL_Delay(10);
@@ -594,11 +597,11 @@ static void MX_TIM10_Init(void)
 
   /* USER CODE END TIM10_Init 1 */
   htim10.Instance = TIM10;
-  htim10.Init.Prescaler = 107;
+  htim10.Init.Prescaler = 215;
   htim10.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim10.Init.Period = 65535;
+  htim10.Init.Period = 20000;
   htim10.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim10.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim10.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim10) != HAL_OK)
   {
     Error_Handler();
@@ -816,6 +819,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
+  /* DMA2_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
   /* DMA2_Stream1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
@@ -825,6 +831,9 @@ static void MX_DMA_Init(void)
   /* DMA2_Stream3_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+  /* DMA2_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream5_IRQn);
   /* DMA2_Stream7_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
@@ -940,9 +949,9 @@ int baro_call_counter = 0;
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == GPIO_PIN_13) {  // If interrupt came from PC13
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-    	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
-    	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
+    	sensorReadTimeStart = __HAL_TIM_GET_COUNTER(&htim2);
+    	GPIOB->BSRR = GPIO_PIN_0 | GPIO_PIN_1;
+		GPIOC->BSRR = GPIO_PIN_4;
     	BMI_READ_GYRO_DATA();
     	if(gyro_call_counter >= 2){
     	  	BMI_READ_ACCEL_DATA();
@@ -955,6 +964,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     	}
     	baro_call_counter += 1;
     	BMI_CALCULATE_ANGLE(__HAL_TIM_GET_COUNTER(&htim2));
+    	sensorReadTimeEnd = __HAL_TIM_GET_COUNTER(&htim2);
 	}
 }
 

@@ -14,12 +14,12 @@
 
 typedef struct{
 	GPIO_TypeDef *servo_port;
-	uint8_t servo_pin;
+	uint16_t servo_pin;
 	uint16_t servo_microseconds;
 }Servo;
 
 int SERVOS_INIT(TIM_HandleTypeDef *HTIMx);
-int SERVO_ADD(GPIO_TypeDef *servo_port, uint8_t servo_pin);
+int SERVO_ADD(GPIO_TypeDef *servo_port, uint16_t servo_pin);
 int SERVO_SET(uint8_t SERVO_NUM, uint16_t TIME_US);
 
 
