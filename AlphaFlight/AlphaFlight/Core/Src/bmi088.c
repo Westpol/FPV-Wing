@@ -147,7 +147,7 @@ void BMI_READ_ACCEL_DATA(){
 		accel_data.accel_y_mg = ((double)accel_data.accel_y_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5);
 		accel_data.accel_z_mg = ((double)accel_data.accel_z_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5);
 
-		double g_force_all_axis = sqrt(pow(accel_data.accel_x_mg, 2) + pow(accel_data.accel_y_mg, 2) + pow(accel_data.accel_z_mg, 2));
+		double g_force_all_axis = sqrtf((accel_data.accel_x_mg * accel_data.accel_x_mg) + (accel_data.accel_y_mg * accel_data.accel_y_mg) + (accel_data.accel_z_mg * accel_data.accel_z_mg));
 		if(g_force_all_axis > 950 && g_force_all_axis < 1050){
 			accel_right_for_calibration = true;
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);

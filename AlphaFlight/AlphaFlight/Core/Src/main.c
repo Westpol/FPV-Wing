@@ -24,10 +24,13 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
+
 #include "crossfire.h"
 #include "bmi088.h"
 #include "bmp390.h"
 #include "servo.h"
+#include "dma-sensor-read.h"
+
 #include "stdint.h"
 #include "string.h"
 #include "math.h"
@@ -950,9 +953,9 @@ int baro_call_counter = 0;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == GPIO_PIN_13) {  // If interrupt came from PC13
     	sensorReadTimeStart = __HAL_TIM_GET_COUNTER(&htim2);
-    	GPIOB->BSRR = GPIO_PIN_0 | GPIO_PIN_1;
-		GPIOC->BSRR = GPIO_PIN_4;
-    	BMI_READ_GYRO_DATA();
+    	DMA_READ_SPI_SENSORS(&hspi1);
+    	sensorReadTimeEnd = __HAL_TIM_GET_COUNTER(&htim2);
+    	/*BMI_READ_GYRO_DATA();
     	if(gyro_call_counter >= 2){
     	  	BMI_READ_ACCEL_DATA();
     	  	gyro_call_counter = 0;
@@ -963,8 +966,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     		baro_call_counter = 0;
     	}
     	baro_call_counter += 1;
-    	BMI_CALCULATE_ANGLE(__HAL_TIM_GET_COUNTER(&htim2));
-    	sensorReadTimeEnd = __HAL_TIM_GET_COUNTER(&htim2);
+    	BMI_CALCULATE_ANGLE(__HAL_TIM_GET_COUNTER(&htim2));*/
 	}
 }
 
