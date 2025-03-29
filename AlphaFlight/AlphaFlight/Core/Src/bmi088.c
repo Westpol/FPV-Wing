@@ -16,7 +16,6 @@ static GPIO_TypeDef *accel_port;
 static uint16_t accel_pin;
 bool gyro_accel_calibration = false;
 bool accel_right_for_calibration = false;
-bool fucked_accel_reading = false;
 
 uint32_t last_microseconds = 0;		// time where x was calculated, time where y was calculated, time where z was calculated
 
@@ -118,46 +117,48 @@ int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PI
 }
 
 void BMI_READ_GYRO_DATA(){
-	fucked_accel_reading = true;
 	HAL_GPIO_WritePin(accel_port, accel_pin, GPIO_PIN_SET);
 	uint8_t tx_buffer[7] = {GYRO_RATE_DATA_ADDRESS, 0, 0, 0, 0, 0, 0};
 	uint8_t rx_buffer[7];
 
 	read_address(bmi088_spi, gyro_port, gyro_pin, tx_buffer, rx_buffer, 7);
 
-	gyro_data.gyro_x_raw = ((int16_t)rx_buffer[2] << 8) | rx_buffer[1];
-	gyro_data.gyro_y_raw = ((int16_t)rx_buffer[4] << 8) | rx_buffer[3];
-	gyro_data.gyro_z_raw = ((int16_t)rx_buffer[6] << 8) | rx_buffer[5];
+	BMI_CONVERT_GYRO_DATA(rx_buffer);
 
 }
 
+void BMI_CONVERT_GYRO_DATA(uint8_t *rx_buffer){
+	gyro_data.gyro_x_raw = ((int16_t)*(rx_buffer + 2) << 8) | *(rx_buffer + 1);
+	gyro_data.gyro_y_raw = ((int16_t)*(rx_buffer + 4) << 8) | *(rx_buffer + 3);
+	gyro_data.gyro_z_raw = ((int16_t)*(rx_buffer + 6) << 8) | *(rx_buffer + 5);
+}
+
 void BMI_READ_ACCEL_DATA(){
-	fucked_accel_reading = false;
 	uint8_t tx_buffer[8] = {ACCEL_ACCELERATION_DATA_ADDRESS, 0, 0, 0, 0, 0, 0, 0};
 	uint8_t rx_buffer[8];
 
 	read_address(bmi088_spi, accel_port, accel_pin, tx_buffer, rx_buffer, 8);
+	BMI_CONVERT_ACCEL_DATA(rx_buffer);
+}
 
-	if(fucked_accel_reading == false){		// check if gyro interrupt happened while accel read
-		accel_data.accel_x_raw = ((int16_t)rx_buffer[3] << 8) | rx_buffer[2];
-		accel_data.accel_y_raw = ((int16_t)rx_buffer[5] << 8) | rx_buffer[4];
-		accel_data.accel_z_raw = ((int16_t)rx_buffer[7] << 8) | rx_buffer[6];
+void BMI_CONVERT_ACCEL_DATA(uint8_t *rx_buffer){
+	accel_data.accel_x_raw = ((int16_t)*(rx_buffer + 3) << 8) | *(rx_buffer + 2);
+	accel_data.accel_y_raw = ((int16_t)*(rx_buffer + 5) << 8) | *(rx_buffer + 4);
+	accel_data.accel_z_raw = ((int16_t)*(rx_buffer + 7) << 8) | *(rx_buffer + 6);
 
-		accel_data.accel_x_mg = ((double)accel_data.accel_x_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5);	// replace 4 with (1 << (<0x41>+1) (content of 0x41's register)
-		accel_data.accel_y_mg = ((double)accel_data.accel_y_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5);
-		accel_data.accel_z_mg = ((double)accel_data.accel_z_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5);
+	accel_data.accel_x_mg = ((double)accel_data.accel_x_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5);	// replace 4 with (1 << (<0x41>+1) (content of 0x41's register)
+	accel_data.accel_y_mg = ((double)accel_data.accel_y_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5);
+	accel_data.accel_z_mg = ((double)accel_data.accel_z_raw / 32768.0 * 1000.0 * (1 << (1 + 1)) * 1.5);
 
-		double g_force_all_axis = sqrtf((accel_data.accel_x_mg * accel_data.accel_x_mg) + (accel_data.accel_y_mg * accel_data.accel_y_mg) + (accel_data.accel_z_mg * accel_data.accel_z_mg));
-		if(g_force_all_axis > 950 && g_force_all_axis < 1050){
-			accel_right_for_calibration = true;
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
-		}
-		else{
-			accel_right_for_calibration = false;
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
-		}
+	double g_force_all_axis = sqrtf((accel_data.accel_x_mg * accel_data.accel_x_mg) + (accel_data.accel_y_mg * accel_data.accel_y_mg) + (accel_data.accel_z_mg * accel_data.accel_z_mg));
+	if(g_force_all_axis > 950 && g_force_all_axis < 1050){
+		accel_right_for_calibration = true;
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
 	}
-
+	else{
+		accel_right_for_calibration = false;
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+	}
 }
 
 void BMI_CALCULATE_ANGLE(uint32_t time_us){		// calculates angles from gyro (integrates each axis) (for best results call after each BMI_READ_GYRO_DATA call)

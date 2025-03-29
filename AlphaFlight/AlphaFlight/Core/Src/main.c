@@ -111,6 +111,12 @@ static void MX_TIM10_Init(void);
 /* USER CODE BEGIN 0 */
 uint64_t sensorReadTimeStart = 0;
 uint64_t sensorReadTimeEnd = 0;
+typedef struct {
+	uint8_t gyro_rx[7];
+	uint8_t accel_rx[8];
+	uint8_t baro_rx[8];
+}Sensor_Data;
+Sensor_Data sensor_data;
 /* USER CODE END 0 */
 
 /**
@@ -190,8 +196,20 @@ int main(void)
   {
 	  /*CRSF_Process();
 	  	uint16_t ch0 = CRSF_GetChannel(0);*/
+	  if(ACCEL_NEW_DATA() == true){
+		BMI_CONVERT_ACCEL_DATA(sensor_data.accel_rx);
+	  }
+	  if(GYRO_NEW_DATA() == true){
+	    BMI_CONVERT_GYRO_DATA(sensor_data.gyro_rx);
+	    BMI_CALCULATE_ANGLE(__HAL_TIM_GET_COUNTER(&htim2));
+	  }
+	  if(BARO_NEW_DATA() == true){
+		  BMP_CONVERT_DATA(sensor_data.baro_rx);
+	  }
 
 	  	snprintf(message, sizeof(message), "%d us\r\n", (int)(sensorReadTimeEnd - sensorReadTimeStart));
+		CDC_Transmit_FS((uint8_t *)message, strlen(message));
+		snprintf(message, sizeof(message), "%X\r\n", sensor_data.gyro_rx[2]);
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
 		HAL_Delay(10);
@@ -953,7 +971,7 @@ int baro_call_counter = 0;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == GPIO_PIN_13) {  // If interrupt came from PC13
     	sensorReadTimeStart = __HAL_TIM_GET_COUNTER(&htim2);
-    	DMA_READ_SPI_SENSORS(&hspi1);
+    	DMA_READ_SPI_SENSORS(&hspi1, sensor_data.gyro_rx, sensor_data.accel_rx, sensor_data.baro_rx);
     	sensorReadTimeEnd = __HAL_TIM_GET_COUNTER(&htim2);
     	/*BMI_READ_GYRO_DATA();
     	if(gyro_call_counter >= 2){

@@ -34,7 +34,9 @@ int BMI_INIT_GYRO(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GY
 int BMI_INIT_ACCEL(SPI_HandleTypeDef *hspi, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN);
 int BMI_INIT(SPI_HandleTypeDef *hspi, GPIO_TypeDef *GYRO_GPIOx, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_GPIOx, uint16_t ACCEL_PIN, bool GYRO_ACCEL_CALIBRATION);		// initializes the whole chip (calls BMI_INIT_GYRO and then BMI_INIT_ACCEL)
 void BMI_READ_GYRO_DATA();		// reads from gyro registers
+void BMI_CONVERT_GYRO_DATA(uint8_t *rx_buffer);
 void BMI_READ_ACCEL_DATA();		// reads from accel registers
+void BMI_CONVERT_ACCEL_DATA(uint8_t *rx_buffer);
 void BMI_CALCULATE_ANGLE(uint32_t time_us);		// calculates angles from gyro (integrates each axis)
 
 double BMI_GET_GYRO_X();		// returns struct values

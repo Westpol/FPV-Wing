@@ -131,9 +131,12 @@ void BMP_GET_DATA(){		// reads temperature and pressure data and calculates temp
 	uint8_t rx_buffer[8];
 
 	read_address(bmp390_spi, baro_port, baro_pin, tx_buffer, rx_buffer, 8);
+	BMP_CONVERT_DATA(rx_buffer);
+}
 
-	uint64_t raw_temp = ((uint32_t)rx_buffer[7] << 16) | ((uint32_t)rx_buffer[6] << 8) | rx_buffer[5];
-	uint64_t raw_press = ((uint32_t)rx_buffer[4] << 16) | ((uint32_t)rx_buffer[3] << 8) | rx_buffer[2];
+void BMP_CONVERT_DATA(uint8_t *rx_buffer){
+	uint64_t raw_temp = ((uint32_t)*(rx_buffer + 7) << 16) | ((uint32_t)*(rx_buffer + 6) << 8) | *(rx_buffer + 5);
+	uint64_t raw_press = ((uint32_t)*(rx_buffer + 4) << 16) | ((uint32_t)*(rx_buffer + 3) << 8) | *(rx_buffer + 2);
 
 	baro_data.temperature = BMP_COMPENSATE_TEMPERATURE(raw_temp, &baro_calibration);
 	baro_data.pressure = BMP_COMPENSATE_PRESSURE(raw_press, &baro_calibration);

@@ -55,6 +55,7 @@ double BMP_GET_PRESS();
 double BMP_GET_TEMP();
 
 void BMP_GET_DATA(void);
+void BMP_CONVERT_DATA(uint8_t *rx_buffer);
 
 void BMP_SOFT_RESET(void);
 
