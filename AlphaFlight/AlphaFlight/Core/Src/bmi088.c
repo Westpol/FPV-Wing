@@ -153,11 +153,11 @@ void BMI_CONVERT_ACCEL_DATA(uint8_t *rx_buffer){
 	double g_force_all_axis = sqrtf((accel_data.accel_x_mg * accel_data.accel_x_mg) + (accel_data.accel_y_mg * accel_data.accel_y_mg) + (accel_data.accel_z_mg * accel_data.accel_z_mg));
 	if(g_force_all_axis > 950 && g_force_all_axis < 1050){
 		accel_right_for_calibration = true;
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
+		//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
 	}
 	else{
 		accel_right_for_calibration = false;
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+		//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
 	}
 }
 

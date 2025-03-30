@@ -198,8 +198,6 @@ int main(void)
 	  	uint16_t ch0 = CRSF_GetChannel(0);*/
 	  if(ACCEL_NEW_DATA() == true){
 		BMI_CONVERT_ACCEL_DATA(sensor_data.accel_rx);
-		snprintf(message, sizeof(message), "%X\r\n", sensor_data.gyro_rx[2]);
-		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 	  }
 	  if(GYRO_NEW_DATA() == true){
 	    BMI_CONVERT_GYRO_DATA(sensor_data.gyro_rx);
@@ -209,10 +207,12 @@ int main(void)
 		  BMP_CONVERT_DATA(sensor_data.baro_rx);
 	  }
 
-	  	snprintf(message, sizeof(message), "%d us\r\n", (int)(sensorReadTimeEnd - sensorReadTimeStart));
-		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
-		HAL_Delay(10);
+		//snprintf(message, sizeof(message), "%f\r\n", BMI_GET_ACCEL_X());
+		//CDC_Transmit_FS((uint8_t *)message, strlen(message));
+
+	  	//snprintf(message, sizeof(message), "%d us\r\n", (int)(sensorReadTimeEnd - sensorReadTimeStart));
+		//CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
     /* USER CODE END WHILE */
 
@@ -965,26 +965,14 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 
-int gyro_call_counter = 0;
-int baro_call_counter = 0;
+//int gyro_call_counter = 0;
+//int baro_call_counter = 0;
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == GPIO_PIN_13) {  // If interrupt came from PC13
-    	sensorReadTimeStart = __HAL_TIM_GET_COUNTER(&htim2);
-    	DMA_READ_SPI_SENSORS(&hspi1, sensor_data.gyro_rx, sensor_data.accel_rx, sensor_data.baro_rx);
-    	sensorReadTimeEnd = __HAL_TIM_GET_COUNTER(&htim2);
-    	/*BMI_READ_GYRO_DATA();
-    	if(gyro_call_counter >= 2){
-    	  	BMI_READ_ACCEL_DATA();
-    	  	gyro_call_counter = 0;
-    	}
-    	gyro_call_counter += 1;
-    	if(baro_call_counter >= 10){
-    		BMP_GET_DATA();
-    		baro_call_counter = 0;
-    	}
-    	baro_call_counter += 1;
-    	BMI_CALCULATE_ANGLE(__HAL_TIM_GET_COUNTER(&htim2));*/
+    	//sensorReadTimeStart = __HAL_TIM_GET_COUNTER(&htim2);
+		DMA_READ_SPI_SENSORS(&hspi1, sensor_data.gyro_rx, sensor_data.accel_rx, sensor_data.baro_rx);
+    	//sensorReadTimeEnd = __HAL_TIM_GET_COUNTER(&htim2);
 	}
 }
 
