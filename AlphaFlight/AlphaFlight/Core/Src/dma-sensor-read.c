@@ -53,19 +53,20 @@ void DMA_READ_SPI_SENSORS(SPI_HandleTypeDef *HSPIx, uint8_t *gyro_rx, uint8_t *a
 	uint8_t tx_buffer[7] = {GYRO_RATE_DATA_ADDRESS, 0, 0, 0, 0, 0, 0};
 	sensor_point = 1;
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
-	GYRO_NEW = true;
 	HAL_SPI_TransmitReceive_DMA(hspi, tx_buffer, recieve_data_pointers.gyro, 7);
 }
 
-void HAL_SPI_RxTxCpltCallback(SPI_HandleTypeDef *hspi){
-	if(hspi->Instance != SPI1) return;
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspix){
+	if(hspix->Instance != hspi->Instance){
+		return;
+	}
 	switch (sensor_point) {
 		case 1:
+			GYRO_NEW = true;
 			sensor_point = 2;
 			uint8_t tx_buffer_accel[8] = {ACCEL_ACCELERATION_DATA_ADDRESS, 0, 0, 0, 0, 0, 0, 0};
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
-			ACCEL_NEW = true;
 			HAL_SPI_TransmitReceive_DMA(hspi, tx_buffer_accel, recieve_data_pointers.accel, 8);
 			break;
 		case 2:
@@ -73,10 +74,11 @@ void HAL_SPI_RxTxCpltCallback(SPI_HandleTypeDef *hspi){
 			uint8_t tx_buffer_baro[8] = {0x04 | READ_BYTE, 0, 0, 0, 0, 0, 0, 0};
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
 			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);
-			BARO_NEW = true;
+			ACCEL_NEW = true;
 			HAL_SPI_TransmitReceive_DMA(hspi, tx_buffer_baro, recieve_data_pointers.baro, 8);
 			break;
 		default:
+			BARO_NEW = true;
 			HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_SET);
 			break;
 	}

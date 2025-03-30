@@ -198,6 +198,8 @@ int main(void)
 	  	uint16_t ch0 = CRSF_GetChannel(0);*/
 	  if(ACCEL_NEW_DATA() == true){
 		BMI_CONVERT_ACCEL_DATA(sensor_data.accel_rx);
+		snprintf(message, sizeof(message), "%X\r\n", sensor_data.gyro_rx[2]);
+		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 	  }
 	  if(GYRO_NEW_DATA() == true){
 	    BMI_CONVERT_GYRO_DATA(sensor_data.gyro_rx);
@@ -208,8 +210,6 @@ int main(void)
 	  }
 
 	  	snprintf(message, sizeof(message), "%d us\r\n", (int)(sensorReadTimeEnd - sensorReadTimeStart));
-		CDC_Transmit_FS((uint8_t *)message, strlen(message));
-		snprintf(message, sizeof(message), "%X\r\n", sensor_data.gyro_rx[2]);
 		CDC_Transmit_FS((uint8_t *)message, strlen(message));
 
 		HAL_Delay(10);
