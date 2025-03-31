@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "debug.h"
+#include "onboard-sensors.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -150,14 +151,17 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
-
+  while(SENSORS_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
+	  HAL_Delay(100);
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1){
     /* USER CODE END WHILE */
-
+	  HAL_Delay(1000);
+	  USB_PRINTLN("This works!");
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

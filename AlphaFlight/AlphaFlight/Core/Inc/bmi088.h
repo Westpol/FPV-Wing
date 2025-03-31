@@ -87,7 +87,7 @@ void BMI_ACCEL_SOFT_RESET(void);
 #define GYRO_POWER_MODE_SUSPEND 0x80
 // ------------------------------------------------------------------------------------------------------------
 
-// -------------------------------------- all gyro setting addresses and values -------------------------------
+// -------------------------------------- all accel setting addresses and values -------------------------------
 #define ACCEL_ACCELERATION_DATA_ADDRESS 0x12
 
 #define ACCEL_CONFIG_ADDRESS 0x40
