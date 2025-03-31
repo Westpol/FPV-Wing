@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "debug.h"
 #include "onboard-sensors.h"
+#include "m10-gps.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -154,6 +155,8 @@ int main(void)
   while(SENSORS_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
 	  HAL_Delay(100);
   }
+  GPS_INIT(&huart2);
+  GPS_DMA_READ_START();
   /* USER CODE END 2 */
 
   /* Infinite loop */
