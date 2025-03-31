@@ -160,8 +160,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1){
     /* USER CODE END WHILE */
-	  HAL_Delay(1000);
-	  USB_PRINTLN("This works!");
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

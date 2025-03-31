@@ -43,9 +43,34 @@ typedef struct {
 	float t_lin;
 } Baro_Calibration;
 
+typedef struct{
+	float gyro_x;		// rotational velocity in °/s
+	float gyro_y;
+	float gyro_z;
+	float angle_x;		// angle in °
+	float angle_y;
+	float angle_z;
+	float accel_x;		// acceleration in mg (9.81mm/s²)
+	float accel_y;
+	float accel_z;
+	float temp;
+	float pressure;
+}Sensor_Data;
+
+typedef struct{
+	int16_t gyro_x_raw;
+	int16_t gyro_y_raw;
+	int16_t gyro_z_raw;
+	int16_t accel_x_raw;
+    int16_t accel_y_raw;
+    int16_t accel_z_raw;
+    uint64_t baro_temp_raw;
+    uint64_t baro_pressure_raw;
+}Raw_Data;
+
 int8_t SENSORS_INIT(SPI_HandleTypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN);
 
-
+void UPDATE_FUNCTION(void);		// ALWAYS call in main loop to regularly update values
 
 #define WRITE_BYTE 0x7F		// for write: packet = value & WRITE_BYTE  / for read: packet = value | READ_BYTE
 #define READ_BYTE 0x80

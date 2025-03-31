@@ -7,6 +7,7 @@
 #include "onboard-sensors.h"
 #include "debug.h"
 #include "math.h"
+#include "stdbool.h"
 
 static SPI_HandleTypeDef *sensor_spi;
 static GPIO_TypeDef *gyro_cs_port;
@@ -16,7 +17,16 @@ static uint16_t accel_cs_pin;
 static GPIO_TypeDef *baro_cs_port;
 static uint16_t baro_cs_pin;
 
+static bool new_gyro_data = false;
+static bool new_accel_data = false;
+static bool new_baro_data = false;
+
+static uint8_t gyro_to_accel_counter = 0;
+static uint8_t gyro_to_baro_counter = 0;
+
 static Baro_Calibration baro_calibration = {0};
+static Sensor_Data sensor_data = {0};
+static Raw_Data raw_data = {0};
 
 static void read_address(SPI_HandleTypeDef *hspi, GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t *txbuffer, uint8_t *rxbuffer, uint8_t readLength){
 	txbuffer[0] = txbuffer[0] | READ_BYTE;
@@ -135,6 +145,46 @@ static int8_t BMP_BARO_INIT(){
 
 	return 0;
 }
+
+static float BMP_COMPENSATE_TEMPERATURE(uint32_t uncomp_temp, Baro_Calibration *calib_data){
+	float partial_data1;
+	float partial_data2;
+	partial_data1 = (float)(uncomp_temp - calib_data->par_t1);
+	partial_data2 = (float)(partial_data1 * calib_data->par_t2);
+	/* Update the compensated temperature in calib structure since this is
+	* needed for pressure calculation */
+	calib_data->t_lin = partial_data2 + (partial_data1 * partial_data1) * calib_data->par_t3;
+	/* Returns compensated temperature */
+	return calib_data->t_lin;
+}
+
+static float BMP_COMPENSATE_PRESSURE(uint32_t uncomp_press, Baro_Calibration *calib_data){
+	/* Variable to store the compensated pressure */
+	float comp_press;
+	/* Temporary variables used for compensation */
+	float partial_data1;
+	float partial_data2;
+	float partial_data3;
+	float partial_data4;
+	float partial_out1;
+	float partial_out2;
+	/* Calibration data */
+	partial_data1 = calib_data->par_p6 * calib_data->t_lin;
+	partial_data2 = calib_data->par_p7 * (calib_data->t_lin * calib_data->t_lin);
+	partial_data3 = calib_data->par_p8 * (calib_data->t_lin * calib_data->t_lin * calib_data->t_lin);
+	partial_out1 = calib_data->par_p5 + partial_data1 + partial_data2 + partial_data3;
+	partial_data1 = calib_data->par_p2 * calib_data->t_lin;
+	partial_data2 = calib_data->par_p3 * (calib_data->t_lin * calib_data->t_lin);
+	partial_data3 = calib_data->par_p4 * (calib_data->t_lin * calib_data->t_lin * calib_data->t_lin);
+	partial_out2 = (float)uncomp_press * (calib_data->par_p1 + partial_data1 + partial_data2 + partial_data3);
+	partial_data1 = (float)uncomp_press * (float)uncomp_press;
+	partial_data2 = calib_data->par_p9 + calib_data->par_p10 * calib_data->t_lin;
+	partial_data3 = partial_data1 * partial_data2;
+	partial_data4 = partial_data3 + ((float)uncomp_press * (float)uncomp_press * (float)uncomp_press) * calib_data->par_p11;
+	comp_press = partial_out1 + partial_out2 + partial_data4;
+	return comp_press;
+}
+
 int8_t SENSORS_INIT(SPI_HandleTypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN){
 	sensor_spi = HSPIx;
 	gyro_cs_port = GYRO_PORT;
@@ -148,11 +198,15 @@ int8_t SENSORS_INIT(SPI_HandleTypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t 
 	return_code_sum += BMI_ACCEL_INIT();
 	return_code_sum += BMP_BARO_INIT();
 	return_code_sum += BMI_GYRO_INIT_DATA_READY_PIN_ENABLED();
-	USB_PRINTLN("return_code_sum: %d", return_code_sum);
 	if(return_code_sum == 0){
 		return 0;
 	}
 	else{
 		return 1;
 	}
+}
+
+void UPDATE_FUNCTION(){
+	sensor_data.temp = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
+	sensor_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
 }
