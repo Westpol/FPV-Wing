@@ -23,18 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "usbd_cdc_if.h"
-
-#include "crossfire.h"
-#include "bmi088.h"
-#include "bmp390.h"
-#include "servo.h"
-#include "dma-sensor-read.h"
-
-#include "stdint.h"
-#include "string.h"
-#include "math.h"
-#include "stdbool.h"
+#include "debug.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -109,14 +98,7 @@ static void MX_TIM10_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-uint64_t sensorReadTimeStart = 0;
-uint64_t sensorReadTimeEnd = 0;
-typedef struct {
-	uint8_t gyro_rx[7];
-	uint8_t accel_rx[8];
-	uint8_t baro_rx[8];
-}Sensor_Data;
-Sensor_Data sensor_data;
+
 /* USER CODE END 0 */
 
 /**
@@ -169,51 +151,11 @@ int main(void)
   MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
 
-  CRSF_Init(&huart1);
-
-  while(BMP_INIT(&hspi1, GPIOC, GPIO_PIN_4)){HAL_Delay(100);}
-  while(BMI_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, true)){HAL_Delay(100);}
-
-  HAL_TIM_Base_Start(&htim2);
-
-  char message[1024];
-
-  SERVO_ADD(GPIOB, GPIO_PIN_2);
-  SERVO_ADD(GPIOB, GPIO_PIN_12);
-  SERVO_ADD(GPIOB, GPIO_PIN_14);
-  SERVO_SET(0, 1200);
-  SERVO_SET(1, 1300);
-  SERVO_SET(2, 1400);
-  SERVOS_INIT(&htim10);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
-
-
-  while (1)
-  {
-	  /*CRSF_Process();
-	  	uint16_t ch0 = CRSF_GetChannel(0);*/
-	  if(ACCEL_NEW_DATA() == true){
-		BMI_CONVERT_ACCEL_DATA(sensor_data.accel_rx);
-	  }
-	  if(GYRO_NEW_DATA() == true){
-	    BMI_CONVERT_GYRO_DATA(sensor_data.gyro_rx);
-	    BMI_CALCULATE_ANGLE(__HAL_TIM_GET_COUNTER(&htim2));
-	  }
-	  if(BARO_NEW_DATA() == true){
-		  BMP_CONVERT_DATA(sensor_data.baro_rx);
-	  }
-
-
-		//snprintf(message, sizeof(message), "%f\r\n", BMI_GET_ACCEL_X());
-		//CDC_Transmit_FS((uint8_t *)message, strlen(message));
-
-	  	//snprintf(message, sizeof(message), "%d us\r\n", (int)(sensorReadTimeEnd - sensorReadTimeStart));
-		//CDC_Transmit_FS((uint8_t *)message, strlen(message));
-
+  while (1){
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -964,18 +906,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-//int gyro_call_counter = 0;
-//int baro_call_counter = 0;
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    if (GPIO_Pin == GPIO_PIN_13) {  // If interrupt came from PC13
-    	//sensorReadTimeStart = __HAL_TIM_GET_COUNTER(&htim2);
-		DMA_READ_SPI_SENSORS(&hspi1, sensor_data.gyro_rx, sensor_data.accel_rx, sensor_data.baro_rx);
-    	//sensorReadTimeEnd = __HAL_TIM_GET_COUNTER(&htim2);
-	}
-}
-
 
 /* USER CODE END 4 */
 
