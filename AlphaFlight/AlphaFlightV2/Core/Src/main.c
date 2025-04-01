@@ -157,13 +157,16 @@ int main(void)
   }
   GPS_INIT(&huart2);
   GPS_DMA_READ_START();
+  GPS_Data *data = GPS_GET_DATA();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1){
     /* USER CODE END WHILE */
-
+	  EXTRACT_PACKAGES();
+	  USB_PRINTLN("%d", data->satellites);
+	  HAL_Delay(100);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
