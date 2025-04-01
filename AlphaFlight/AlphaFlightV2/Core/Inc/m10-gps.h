@@ -12,6 +12,9 @@
 #include "stdint.h"
 #include "stdbool.h"
 
+#define BUFFER_SIZE 1024
+#define OVERFLOW_BUFFER_SIZE BUFFER_SIZE / 2
+
 typedef struct {
     float latitude;
     char lat_dir;
@@ -23,11 +26,9 @@ typedef struct {
     float speed;  // Knots
     char time[10];
     char date[10];
-    uint8_t raw_buffer_data[256];
+    uint8_t raw_buffer_data[BUFFER_SIZE];
 } GPS_Data;
 
-#define BUFFER_SIZE 256
-#define OVERFLOW_BUFFER_SIZE 128
 
 void GPS_INIT(UART_HandleTypeDef *HUARTx);
 void GPS_DMA_READ_START(void);

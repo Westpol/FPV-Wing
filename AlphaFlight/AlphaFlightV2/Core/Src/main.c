@@ -158,14 +158,16 @@ int main(void)
   GPS_INIT(&huart2);
   GPS_DMA_READ_START();
   GPS_Data *data = GPS_GET_DATA();
+  HAL_Delay(10000);
+  DUMP_BUFFER();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1){
 	  EXTRACT_PACKAGES();
-	  USB_PRINTLN("Fix quality: %d | Speed: %f", data->fix_quality, data->speed);
-	  HAL_Delay(100);
+	  USB_PRINTLN_RAW(data->raw_buffer_data, BUFFER_SIZE);
+	  HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
