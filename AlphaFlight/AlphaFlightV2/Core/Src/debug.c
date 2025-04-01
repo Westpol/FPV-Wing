@@ -25,6 +25,10 @@ void USB_PRINTLN(const char *format, ...) {
     CDC_Transmit_FS((uint8_t *)message, len);
 }
 
+void USB_PRINTLN_RAW(uint8_t *message, uint16_t len){
+    CDC_Transmit_FS(message, len);
+}
+
 void STATUS_LED_GREEN_ON(){
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
 }

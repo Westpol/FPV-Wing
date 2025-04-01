@@ -23,6 +23,7 @@ typedef struct {
     float speed;  // Knots
     char time[10];
     char date[10];
+    uint8_t raw_buffer_data[256];
 } GPS_Data;
 
 #define BUFFER_SIZE 256
@@ -32,5 +33,6 @@ void GPS_INIT(UART_HandleTypeDef *HUARTx);
 void GPS_DMA_READ_START(void);
 void EXTRACT_PACKAGES();
 GPS_Data* GPS_GET_DATA(void);
+void DUMP_BUFFER();
 
 #endif /* INC_M10_GPS_H_ */

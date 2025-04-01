@@ -11,8 +11,10 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include "stdint.h"
 
 void USB_PRINTLN(const char *format, ...);
+void USB_PRINTLN_RAW(uint8_t *message, uint16_t len);
 
 void STATUS_LED_GREEN_ON();
 void STATUS_LED_GREEN_OFF();

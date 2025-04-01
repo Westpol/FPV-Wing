@@ -45,6 +45,7 @@ static void PARSE_PACKAGE(){
 	buffer[buffer_index] = '\0';
 
     if (strncmp((char*)buffer, "$GNGGA", 6) == 0) {
+    	STATUS_LED_GREEN_ON();
         char *token = strtok((char*)buffer, ",");
         int field = 0;
 
@@ -109,6 +110,10 @@ void EXTRACT_PACKAGES(){
 		}
 		second_half_new_data = false;
 	}
+}
+
+void DUMP_BUFFER(){
+	memcpy(gps_data.raw_buffer_data, dma_buffer, 256);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *HUARTx) {
