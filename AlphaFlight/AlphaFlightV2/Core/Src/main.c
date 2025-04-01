@@ -165,8 +165,8 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1){
-	  EXTRACT_PACKAGES();
-	  USB_PRINTLN_RAW(data->raw_buffer_data, BUFFER_SIZE);
+	  //USB_PRINTLN_RAW(data->raw_buffer_data, BUFFER_SIZE);
+	  USB_PRINTLN("Sats: %d | Longitude: %f", data->satellites, data->longitude);
 	  HAL_Delay(1000);
     /* USER CODE END WHILE */
 

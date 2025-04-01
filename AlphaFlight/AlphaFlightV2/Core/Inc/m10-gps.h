@@ -32,7 +32,7 @@ typedef struct {
 
 void GPS_INIT(UART_HandleTypeDef *HUARTx);
 void GPS_DMA_READ_START(void);
-void EXTRACT_PACKAGES();
+//void EXTRACT_PACKAGES(uint8_t *new_data, uint16_t length);
 GPS_Data* GPS_GET_DATA(void);
 void DUMP_BUFFER();
 

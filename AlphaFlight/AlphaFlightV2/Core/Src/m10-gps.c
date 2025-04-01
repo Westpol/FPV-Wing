@@ -9,44 +9,44 @@
 #include "string.h"
 #include "stdlib.h"
 
-static uint8_t dma_buffer[BUFFER_SIZE] = {0};
-static uint8_t first_half_buffer[BUFFER_SIZE / 2] = {0};
-static uint8_t second_half_buffer[BUFFER_SIZE / 2] = {0};
-static bool first_half_new_data = false;
-static bool second_half_new_data = false;
-static uint8_t buffer[OVERFLOW_BUFFER_SIZE] = {0};
-static uint8_t buffer_index = 0;
+static uint8_t dma_buffer[BUFFER_SIZE] = {0}; // DMA Buffer
+static uint8_t circular_buffer[OVERFLOW_BUFFER_SIZE] = {0}; // Circular Buffer
+static uint16_t buffer_index = 0; // Index for Circular Buffer
 
 static UART_HandleTypeDef *huart;
 
 static GPS_Data gps_data = {0};
 
-static void MOVE_DATA_FIRST_HALF(){
-	memcpy(first_half_buffer, dma_buffer, BUFFER_SIZE / 2);
-}
-
-static void MOVE_DATA_SECOND_HALF(){
-	memcpy(second_half_buffer, &dma_buffer[BUFFER_SIZE / 2], BUFFER_SIZE / 2);
-}
-
+/**
+ * @brief Initialize GPS UART interface.
+ */
 void GPS_INIT(UART_HandleTypeDef *HUARTx){
 	huart = HUARTx;
 }
 
+/**
+ * @brief Start receiving GPS data via DMA.
+ */
 void GPS_DMA_READ_START(void){
 	HAL_UART_Receive_DMA(huart, dma_buffer, BUFFER_SIZE);
 }
 
+/**
+ * @brief Returns pointer to the latest GPS data struct.
+ */
 GPS_Data* GPS_GET_DATA(void) {
     return &gps_data;
 }
 
+/**
+ * @brief Parses a complete NMEA sentence stored in circular_buffer.
+ */
 static void PARSE_PACKAGE(){
-	buffer[buffer_index] = '\0';
+	circular_buffer[buffer_index] = '\0'; // Null-terminate the string
 
-    if (strncmp((char*)buffer, "$GNGGA", 6) == 0) {
+	if (strncmp((char*)circular_buffer, "$GNGGA", 6) == 0) {
     	STATUS_LED_GREEN_ON();
-        char *token = strtok((char*)buffer, ",");
+        char *token = strtok((char*)circular_buffer, ",");
         int field = 0;
 
         while (token != NULL) {
@@ -64,8 +64,8 @@ static void PARSE_PACKAGE(){
             field++;
         }
     }
-    else if (strncmp((char*)buffer, "$GNRMC", 6) == 0) {
-        char *token = strtok((char*)buffer, ",");
+    else if (strncmp((char*)circular_buffer, "$GNRMC", 6) == 0) {
+        char *token = strtok((char*)circular_buffer, ",");
         int field = 0;
 
         while (token != NULL) {
@@ -84,48 +84,59 @@ static void PARSE_PACKAGE(){
         }
     }
 
-    buffer_index = 0; // Reset buffer index after parsing
+    buffer_index = 0; // Reset buffer index for next message
 }
 
-void EXTRACT_PACKAGES(){
-	if(first_half_new_data){
-		for(int i = 0; i < BUFFER_SIZE / 2; i++){
-			if(first_half_buffer[i] == '$'){
+/**
+ * @brief Processes new data from DMA and extracts complete NMEA sentences.
+ */
+static void EXTRACT_PACKAGES(uint8_t *new_data, uint16_t length){
+	for (uint16_t i = 0; i < length; i++) {
+		if (new_data[i] == '$') {
+			// If a new sentence starts, process the previous one (if any)
+			if (buffer_index > 0) {
 				PARSE_PACKAGE();
 			}
-			buffer[buffer_index] = first_half_buffer[i];
-			buffer_index += 1;
-			if(buffer_index >= OVERFLOW_BUFFER_SIZE) buffer_index = 0;
+			buffer_index = 0; // Reset buffer index for new sentence
 		}
-		first_half_new_data = false;
-	}
-	if(second_half_new_data){
-		for(int i = 0; i < BUFFER_SIZE / 2; i++){
-			if(second_half_buffer[i] == '$'){
-				PARSE_PACKAGE();
-			}
-			buffer[buffer_index] = second_half_buffer[i];
-			buffer_index += 1;
-			if(buffer_index >= OVERFLOW_BUFFER_SIZE) buffer_index = 0;
+
+		// Store character in circular buffer
+		circular_buffer[buffer_index] = new_data[i];
+		buffer_index++;
+
+		// If sentence is complete, parse it
+		if (new_data[i] == '\n') {
+			PARSE_PACKAGE();
 		}
-		second_half_new_data = false;
+
+		// Prevent overflow
+		if (buffer_index >= OVERFLOW_BUFFER_SIZE) {
+			buffer_index = 0;
+		}
 	}
 }
 
-void DUMP_BUFFER(){
-	memcpy(gps_data.raw_buffer_data, dma_buffer, 256);
-}
-
+/**
+ * @brief DMA Full Buffer Complete Callback
+ */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *HUARTx) {
-    if(HUARTx->Instance == huart->Instance){
-    	MOVE_DATA_SECOND_HALF();
-    	second_half_new_data = true;
+    if (HUARTx->Instance == huart->Instance) {
+    	EXTRACT_PACKAGES(&dma_buffer[BUFFER_SIZE / 2], BUFFER_SIZE / 2);
     }
 }
 
+/**
+ * @brief DMA Half Buffer Complete Callback
+ */
 void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *HUARTx){
-	if(HUARTx->Instance == huart->Instance){
-		MOVE_DATA_FIRST_HALF();
-		first_half_new_data = true;
+	if (HUARTx->Instance == huart->Instance) {
+		EXTRACT_PACKAGES(dma_buffer, BUFFER_SIZE / 2);
 	}
+}
+
+/**
+ * @brief Dumps raw buffer data for debugging.
+ */
+void DUMP_BUFFER(){
+	memcpy(gps_data.raw_buffer_data, dma_buffer, 256);
 }
