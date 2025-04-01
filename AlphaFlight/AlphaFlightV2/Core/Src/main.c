@@ -158,15 +158,13 @@ int main(void)
   GPS_INIT(&huart2);
   GPS_DMA_READ_START();
   GPS_Data *data = GPS_GET_DATA();
-  HAL_Delay(10000);
-  DUMP_BUFFER();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1){
 	  //USB_PRINTLN_RAW(data->raw_buffer_data, BUFFER_SIZE);
-	  USB_PRINTLN("Sats: %d | Longitude: %f", data->satellites, data->longitude);
+	  USB_PRINTLN("Lat: %f | Lon: %f | Alt: %f | Speed: %f | Sats: %d", data->latitude, data->longitude, data->altitude, data->speed, data->satellites);
 	  HAL_Delay(1000);
     /* USER CODE END WHILE */
 
