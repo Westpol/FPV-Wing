@@ -28,6 +28,15 @@ static Baro_Calibration baro_calibration = {0};
 static Sensor_Data sensor_data = {0};
 static Raw_Data raw_data = {0};
 
+static uint8_t gyro_rx[7] = {0};
+static uint8_t gyro_tx[7] = {0x02 | READ_BYTE, 0, 0, 0, 0, 0, 0};
+
+static uint8_t accel_rx[8] = {0};
+static uint8_t accel_tx[8] = {0x12 | READ_BYTE, 0, 0, 0, 0, 0, 0, 0};
+
+static uint8_t baro_rx[8] = {0};
+static uint8_t baro_tx[8] = {0x04 | READ_BYTE, 0, 0, 0, 0, 0, 0, 0};
+
 static void read_address(SPI_HandleTypeDef *hspi, GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t *txbuffer, uint8_t *rxbuffer, uint8_t readLength){
 	txbuffer[0] = txbuffer[0] | READ_BYTE;
 	HAL_GPIO_WritePin(DEVICE_GPIOx, DEVICE_PIN, GPIO_PIN_RESET);
@@ -185,6 +194,21 @@ static float BMP_COMPENSATE_PRESSURE(uint32_t uncomp_press, Baro_Calibration *ca
 	return comp_press;
 }
 
+static void BYTES_TO_VALUES(){
+	if(new_gyro_data){
+
+		new_gyro_data = false;
+	}
+	if(new_accel_data){
+
+		new_accel_data = false;
+	}
+	if(new_baro_data){
+
+		new_baro_data = false;
+	}
+}
+
 int8_t SENSORS_INIT(SPI_HandleTypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN){
 	sensor_spi = HSPIx;
 	gyro_cs_port = GYRO_PORT;
@@ -206,7 +230,30 @@ int8_t SENSORS_INIT(SPI_HandleTypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t 
 	}
 }
 
-void UPDATE_FUNCTION(){
-	sensor_data.temp = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
-	sensor_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
+void SENSORS_READ(){
+	gyro_to_accel_counter++;
+	gyro_to_baro_counter++;
+	new_gyro_data = true;
+	HAL_GPIO_WritePin(gyro_cs_port, gyro_cs_pin, GPIO_PIN_RESET);
+	HAL_SPI_TransmitReceive_DMA(sensor_spi, gyro_tx, gyro_rx, 7);
+}
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspix){
+	if(hspix->Instance != sensor_spi->Instance)return;
+	BYTES_TO_VALUES();
+	HAL_GPIO_WritePin(gyro_cs_port, gyro_cs_pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(accel_cs_port, accel_cs_pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(baro_cs_port, baro_cs_pin, GPIO_PIN_SET);
+	if(gyro_to_accel_counter >= GYRO_PER_ACCEL_READ){
+		new_accel_data = true;
+		gyro_to_accel_counter = 0;
+		HAL_GPIO_WritePin(accel_cs_port, accel_cs_pin, GPIO_PIN_RESET);
+		HAL_SPI_TransmitReceive_DMA(sensor_spi, accel_tx, accel_rx, 8);
+	}
+	if(gyro_to_baro_counter >= GYRO_PER_BARO_READ){
+		new_baro_data = true;
+		gyro_to_baro_counter = 0;
+		HAL_GPIO_WritePin(baro_cs_port, baro_cs_pin, GPIO_PIN_RESET);
+		HAL_SPI_TransmitReceive_DMA(sensor_spi, baro_tx, baro_rx, 8);
+	}
 }

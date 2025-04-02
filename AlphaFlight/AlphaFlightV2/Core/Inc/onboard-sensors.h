@@ -70,7 +70,10 @@ typedef struct{
 
 int8_t SENSORS_INIT(SPI_HandleTypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN);
 
-void UPDATE_FUNCTION(void);		// ALWAYS call in main loop to regularly update values
+void SENSORS_READ(void);
+
+#define GYRO_PER_ACCEL_READ 2
+#define GYRO_PER_BARO_READ 10
 
 #define WRITE_BYTE 0x7F		// for write: packet = value & WRITE_BYTE  / for read: packet = value | READ_BYTE
 #define READ_BYTE 0x80

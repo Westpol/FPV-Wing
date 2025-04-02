@@ -176,7 +176,7 @@ int main(void)
 	  USB_PRINTLN("Lat: %f | Lon: %f | Alt: %f | Speed: %f | Sats: %d", data->latitude, data->longitude, data->altitude, data->speed, data->satellites);
 	  servo_thing += 10;
 	  SERVO_SET(0, 1500 + servo_thing * 3);
-	  HAL_Delay(100);
+	  HAL_Delay(200);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -927,7 +927,11 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+    if (GPIO_Pin == GPIO_PIN_13) {  // If interrupt came from PC13
+		SENSORS_READ();
+	}
+}
 /* USER CODE END 4 */
 
  /* MPU Configuration */
