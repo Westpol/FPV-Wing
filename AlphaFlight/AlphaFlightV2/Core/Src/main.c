@@ -176,7 +176,7 @@ int main(void)
 		  new_sensor_read = false;  // Clear flag
 		  SENSORS_READ();           // Call function outside of interrupt
 	  }
-	  USB_PRINTLN("%f°/s", sensor_data->gyro_x);
+	  USB_PRINTLN("%f°/s x  |  %f°C   |   %fPa", sensor_data->gyro_x, sensor_data->temp, sensor_data->pressure);
 	  servo_thing += 10;
 	  SERVO_SET(0, 1500 + servo_thing * 3);
 	  HAL_Delay(200);

@@ -22,7 +22,7 @@ static bool new_accel_data = false;
 static bool new_baro_data = false;
 
 static uint8_t gyro_to_accel_counter = 0;
-static uint8_t gyro_to_baro_counter = 0;
+static uint8_t gyro_to_baro_counter = 1;
 
 static Baro_Calibration baro_calibration = {0};
 static Sensor_Data sensor_data = {0};
@@ -155,10 +155,10 @@ static int8_t BMP_BARO_INIT(){
 	return 0;
 }
 
-static float BMP_COMPENSATE_TEMPERATURE(Baro_Calibration *calib_data){
+static float BMP_COMPENSATE_TEMPERATURE(uint32_t uncomp_temp, Baro_Calibration *calib_data){
 	float partial_data1;
 	float partial_data2;
-	partial_data1 = (float)(raw_data.baro_temp_raw - calib_data->par_t1);
+	partial_data1 = (float)(uncomp_temp - calib_data->par_t1);
 	partial_data2 = (float)(partial_data1 * calib_data->par_t2);
 	/* Update the compensated temperature in calib structure since this is
 	* needed for pressure calculation */
@@ -167,7 +167,7 @@ static float BMP_COMPENSATE_TEMPERATURE(Baro_Calibration *calib_data){
 	return calib_data->t_lin;
 }
 
-static float BMP_COMPENSATE_PRESSURE(Baro_Calibration *calib_data){
+static float BMP_COMPENSATE_PRESSURE(uint32_t uncomp_press, Baro_Calibration *calib_data){
 	/* Variable to store the compensated pressure */
 	float comp_press;
 	/* Temporary variables used for compensation */
@@ -185,11 +185,11 @@ static float BMP_COMPENSATE_PRESSURE(Baro_Calibration *calib_data){
 	partial_data1 = calib_data->par_p2 * calib_data->t_lin;
 	partial_data2 = calib_data->par_p3 * (calib_data->t_lin * calib_data->t_lin);
 	partial_data3 = calib_data->par_p4 * (calib_data->t_lin * calib_data->t_lin * calib_data->t_lin);
-	partial_out2 = (float)raw_data.baro_pressure_raw * (calib_data->par_p1 + partial_data1 + partial_data2 + partial_data3);
-	partial_data1 = (float)raw_data.baro_pressure_raw * (float)raw_data.baro_pressure_raw;
+	partial_out2 = (float)uncomp_press * (calib_data->par_p1 + partial_data1 + partial_data2 + partial_data3);
+	partial_data1 = (float)uncomp_press * (float)uncomp_press;
 	partial_data2 = calib_data->par_p9 + calib_data->par_p10 * calib_data->t_lin;
 	partial_data3 = partial_data1 * partial_data2;
-	partial_data4 = partial_data3 + ((float)raw_data.baro_pressure_raw * (float)raw_data.baro_pressure_raw * (float)raw_data.baro_pressure_raw) * calib_data->par_p11;
+	partial_data4 = partial_data3 + ((float)uncomp_press * (float)uncomp_press * (float)uncomp_press) * calib_data->par_p11;
 	comp_press = partial_out1 + partial_out2 + partial_data4;
 	return comp_press;
 }
@@ -213,8 +213,8 @@ static void BYTES_TO_VALUES(){
 	if(new_baro_data){
 		raw_data.baro_temp_raw = ((uint32_t)baro_rx[7] << 16) | ((uint32_t)baro_rx[6] << 8) | baro_rx[5];
 		raw_data.baro_pressure_raw = ((uint32_t)baro_rx[4] << 16) | ((uint32_t)baro_rx[3] << 8) | baro_rx[2];
-		sensor_data.temp = BMP_COMPENSATE_TEMPERATURE(&baro_calibration);
-		sensor_data.pressure = BMP_COMPENSATE_PRESSURE(&baro_calibration);
+		sensor_data.temp = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
+		sensor_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
 		new_baro_data = false;
 	}
 }
@@ -245,7 +245,6 @@ Sensor_Data* SENSOR_DATA_STRUCT(){
 }
 
 void SENSORS_READ(){
-	STATUS_LED_GREEN_OFF();
 	gyro_to_accel_counter++;
 	gyro_to_baro_counter++;
 	new_gyro_data = true;
@@ -255,11 +254,10 @@ void SENSORS_READ(){
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspix){
 	if(hspix->Instance != sensor_spi->Instance)return;
-	STATUS_LED_GREEN_ON();
-	BYTES_TO_VALUES();
 	HAL_GPIO_WritePin(gyro_cs_port, gyro_cs_pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(accel_cs_port, accel_cs_pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(baro_cs_port, baro_cs_pin, GPIO_PIN_SET);
+	BYTES_TO_VALUES();
 	if(gyro_to_accel_counter >= GYRO_PER_ACCEL_READ){
 		new_accel_data = true;
 		gyro_to_accel_counter = 0;
