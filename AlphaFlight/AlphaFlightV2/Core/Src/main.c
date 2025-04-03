@@ -25,7 +25,6 @@
 /* USER CODE BEGIN Includes */
 #include "debug.h"
 #include "onboard-sensors.h"
-#include "m10-gps.h"
 #include "servo.h"
 /* USER CODE END Includes */
 
@@ -157,9 +156,7 @@ int main(void)
 	  HAL_Delay(100);
   }
 
-  GPS_INIT(&huart2);
-  GPS_DMA_READ_START();
-  GPS_Data *data = GPS_GET_DATA();
+
 
   SERVO_ADD(GPIOB, GPIO_PIN_2);
   SERVO_SET(0, 1500);
@@ -173,7 +170,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1){
 	  //USB_PRINTLN_RAW(data->raw_buffer_data, BUFFER_SIZE);
-	  USB_PRINTLN("Lat: %f | Lon: %f | Alt: %f | Speed: %f | Sats: %d", data->latitude, data->longitude, data->altitude, data->speed, data->satellites);
+	  //USB_PRINTLN("Lat: %f | Lon: %f | Alt: %f | Speed: %f | Sats: %d", data->latitude, data->longitude, data->altitude, data->speed, data->satellites);
 	  servo_thing += 10;
 	  SERVO_SET(0, 1500 + servo_thing * 3);
 	  HAL_Delay(200);
