@@ -26,6 +26,7 @@
 #include "debug.h"
 #include "onboard-sensors.h"
 #include "servo.h"
+#include "stdbool.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -101,6 +102,7 @@ static void MX_TIM10_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+volatile bool new_sensor_read = false;  // Flag for main loop
 /* USER CODE END 0 */
 
 /**
@@ -156,7 +158,7 @@ int main(void)
 	  HAL_Delay(100);
   }
 
-
+  Sensor_Data* sensor_data = SENSOR_DATA_STRUCT();
 
   SERVO_ADD(GPIOB, GPIO_PIN_2);
   SERVO_SET(0, 1500);
@@ -170,7 +172,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1){
 	  //USB_PRINTLN_RAW(data->raw_buffer_data, BUFFER_SIZE);
-	  //USB_PRINTLN("Lat: %f | Lon: %f | Alt: %f | Speed: %f | Sats: %d", data->latitude, data->longitude, data->altitude, data->speed, data->satellites);
+	  if (new_sensor_read) {
+		  new_sensor_read = false;  // Clear flag
+		  SENSORS_READ();           // Call function outside of interrupt
+	  }
+	  USB_PRINTLN("%f°/s", sensor_data->gyro_x);
 	  servo_thing += 10;
 	  SERVO_SET(0, 1500 + servo_thing * 3);
 	  HAL_Delay(200);
@@ -926,7 +932,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (GPIO_Pin == GPIO_PIN_13) {  // If interrupt came from PC13
-		SENSORS_READ();
+    	new_sensor_read = true;
 	}
 }
 /* USER CODE END 4 */

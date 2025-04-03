@@ -64,13 +64,15 @@ typedef struct{
 	int16_t accel_x_raw;
     int16_t accel_y_raw;
     int16_t accel_z_raw;
-    uint64_t baro_temp_raw;
-    uint64_t baro_pressure_raw;
+    uint32_t baro_temp_raw;
+    uint32_t baro_pressure_raw;
 }Raw_Data;
 
 int8_t SENSORS_INIT(SPI_HandleTypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN);
 
 void SENSORS_READ(void);
+
+Sensor_Data* SENSOR_DATA_STRUCT();
 
 #define GYRO_PER_ACCEL_READ 2
 #define GYRO_PER_BARO_READ 10
