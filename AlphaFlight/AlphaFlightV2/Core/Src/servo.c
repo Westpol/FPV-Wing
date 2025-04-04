@@ -68,8 +68,18 @@ int SERVOS_INIT(TIM_HandleTypeDef *HTIMx){
 	htim_used = HTIMx;
 	HAL_TIM_OC_Start_IT(htim_used, TIM_CHANNEL_1);
 	HAL_TIM_Base_Start_IT(htim_used);
-	HAL_TIM_Base_Start(htim_used);
 	return 0;
+}
+
+void SERVOS_START_TRANSMISSION(){
+    transmissionActive = true;
+
+	for(int i = 0; i < num_active_servos; i++){
+		HAL_GPIO_WritePin(servo[i].servo_port, servo[i].servo_pin, GPIO_PIN_SET);
+	}
+
+	__HAL_TIM_SET_COMPARE(htim_used, TIM_CHANNEL_1, servos_sorted[current_servo].servo_microseconds);
+	current_servo += 1;
 }
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
@@ -89,17 +99,4 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
 			sort_servos();
 		}
 	}
-}
-
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    if (htim != htim_used) return;
-
-    transmissionActive = true;
-
-	for(int i = 0; i < num_active_servos; i++){
-		HAL_GPIO_WritePin(servo[i].servo_port, servo[i].servo_pin, GPIO_PIN_SET);
-	}
-
-	__HAL_TIM_SET_COMPARE(htim_used, TIM_CHANNEL_1, servos_sorted[current_servo].servo_microseconds);
-	current_servo += 1;
 }

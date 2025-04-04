@@ -59,6 +59,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define GYRO_DATA_READY_Pin GPIO_PIN_13
+#define GYRO_DATA_READY_GPIO_Port GPIOC
 #define VBAT_SENSE_Pin GPIO_PIN_0
 #define VBAT_SENSE_GPIO_Port GPIOC
 #define RGB_R_Pin GPIO_PIN_3
