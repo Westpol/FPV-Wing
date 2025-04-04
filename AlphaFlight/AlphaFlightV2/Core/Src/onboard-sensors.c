@@ -208,6 +208,18 @@ static void BYTES_TO_VALUES(){
 		raw_data.accel_x_raw = ((int16_t)accel_rx[3] << 8) | accel_rx[2];
 		raw_data.accel_y_raw = ((int16_t)accel_rx[5] << 8) | accel_rx[4];
 		raw_data.accel_z_raw = ((int16_t)accel_rx[7] << 8) | accel_rx[6];
+		sensor_data.accel_x = (float)raw_data.accel_x_raw / 32768 * 1000 * 4 * 1.5;
+		sensor_data.accel_y = (float)raw_data.accel_y_raw / 32768 * 1000 * 4 * 1.5;
+		sensor_data.accel_z = (float)raw_data.accel_z_raw / 32768 * 1000 * 4 * 1.5;
+
+		float overall_force = sqrtf(sensor_data.accel_x * sensor_data.accel_x + sensor_data.accel_y * sensor_data.accel_y + sensor_data.accel_z * sensor_data.accel_z);
+
+		if(overall_force >= 950 && overall_force <= 1050){
+			STATUS_LED_GREEN_ON();
+		}
+		else{
+			STATUS_LED_GREEN_OFF();
+		}
 		new_accel_data = false;
 	}
 	if(new_baro_data){
