@@ -30,9 +30,9 @@ void USB_PRINTLN_RAW(uint8_t *message, uint16_t len){
 }
 
 void STATUS_LED_GREEN_ON(){
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
+	GPIOB->BSRR |= GPIO_PIN_9 << 16;
 }
 
 void STATUS_LED_GREEN_OFF(){
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_SET);
+	GPIOB->BSRR |= GPIO_PIN_9;
 }
