@@ -30,16 +30,15 @@ extern "C" {
 #include "stm32f7xx_hal.h"
 
 #include "stm32f7xx_ll_spi.h"
+#include "stm32f7xx_ll_system.h"
+#include "stm32f7xx_ll_gpio.h"
+#include "stm32f7xx_ll_exti.h"
 #include "stm32f7xx_ll_bus.h"
 #include "stm32f7xx_ll_cortex.h"
 #include "stm32f7xx_ll_rcc.h"
-#include "stm32f7xx_ll_system.h"
 #include "stm32f7xx_ll_utils.h"
 #include "stm32f7xx_ll_pwr.h"
-#include "stm32f7xx_ll_gpio.h"
 #include "stm32f7xx_ll_dma.h"
-
-#include "stm32f7xx_ll_exti.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -71,43 +70,43 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define VBAT_SENSE_Pin GPIO_PIN_0
+#define VBAT_SENSE_Pin LL_GPIO_PIN_0
 #define VBAT_SENSE_GPIO_Port GPIOC
-#define RGB_R_Pin GPIO_PIN_3
+#define RGB_R_Pin LL_GPIO_PIN_3
 #define RGB_R_GPIO_Port GPIOC
-#define SD_CD_Pin GPIO_PIN_4
+#define SD_CD_Pin LL_GPIO_PIN_4
 #define SD_CD_GPIO_Port GPIOA
-#define BARO_CS_Pin GPIO_PIN_4
+#define BARO_CS_Pin LL_GPIO_PIN_4
 #define BARO_CS_GPIO_Port GPIOC
-#define GYRO_CS_Pin GPIO_PIN_0
+#define GYRO_CS_Pin LL_GPIO_PIN_0
 #define GYRO_CS_GPIO_Port GPIOB
-#define ACCEL_CS_Pin GPIO_PIN_1
+#define ACCEL_CS_Pin LL_GPIO_PIN_1
 #define ACCEL_CS_GPIO_Port GPIOB
-#define SERVO1_Pin GPIO_PIN_2
+#define SERVO1_Pin LL_GPIO_PIN_2
 #define SERVO1_GPIO_Port GPIOB
-#define SERVO2_Pin GPIO_PIN_12
+#define SERVO2_Pin LL_GPIO_PIN_12
 #define SERVO2_GPIO_Port GPIOB
-#define SERVO3_Pin GPIO_PIN_14
+#define SERVO3_Pin LL_GPIO_PIN_14
 #define SERVO3_GPIO_Port GPIOB
-#define SERVO4_Pin GPIO_PIN_15
+#define SERVO4_Pin LL_GPIO_PIN_15
 #define SERVO4_GPIO_Port GPIOB
-#define MOTOR1_Pin GPIO_PIN_8
+#define MOTOR1_Pin LL_GPIO_PIN_8
 #define MOTOR1_GPIO_Port GPIOA
-#define SERVO7_Pin GPIO_PIN_13
+#define SERVO7_Pin LL_GPIO_PIN_13
 #define SERVO7_GPIO_Port GPIOA
-#define SEVO5_Pin GPIO_PIN_14
+#define SEVO5_Pin LL_GPIO_PIN_14
 #define SEVO5_GPIO_Port GPIOA
-#define SERVO6_Pin GPIO_PIN_15
+#define SERVO6_Pin LL_GPIO_PIN_15
 #define SERVO6_GPIO_Port GPIOA
-#define CS_EXT_3_Pin GPIO_PIN_3
+#define CS_EXT_3_Pin LL_GPIO_PIN_3
 #define CS_EXT_3_GPIO_Port GPIOB
-#define CS_EXT_2_Pin GPIO_PIN_4
+#define CS_EXT_2_Pin LL_GPIO_PIN_4
 #define CS_EXT_2_GPIO_Port GPIOB
-#define CS_EXT_1_Pin GPIO_PIN_5
+#define CS_EXT_1_Pin LL_GPIO_PIN_5
 #define CS_EXT_1_GPIO_Port GPIOB
-#define RGB_B_Pin GPIO_PIN_8
+#define RGB_B_Pin LL_GPIO_PIN_8
 #define RGB_B_GPIO_Port GPIOB
-#define RGB_G_Pin GPIO_PIN_9
+#define RGB_G_Pin LL_GPIO_PIN_9
 #define RGB_G_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */

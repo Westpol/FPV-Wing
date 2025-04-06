@@ -9,7 +9,7 @@
 #include "math.h"
 #include "stdbool.h"
 
-static SPI_HandleTypeDef *sensor_spi;
+static SPI_TypeDef *sensor_spi;
 static GPIO_TypeDef *gyro_cs_port;
 static uint16_t gyro_cs_pin;
 static GPIO_TypeDef *accel_cs_port;
@@ -20,9 +20,6 @@ static uint16_t baro_cs_pin;
 static bool new_gyro_data = false;
 static bool new_accel_data = false;
 static bool new_baro_data = false;
-
-static uint8_t gyro_to_accel_counter = 0;
-static uint8_t gyro_to_baro_counter = 1;
 
 static Baro_Calibration baro_calibration = {0};
 static Sensor_Data sensor_data = {0};
@@ -37,66 +34,76 @@ static uint8_t accel_tx[8] = {0x12 | READ_BYTE, 0, 0, 0, 0, 0, 0, 0};
 static uint8_t baro_rx[8] = {0};
 static uint8_t baro_tx[8] = {0x04 | READ_BYTE, 0, 0, 0, 0, 0, 0, 0};
 
-static void read_address(SPI_HandleTypeDef *hspi, GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t *txbuffer, uint8_t *rxbuffer, uint8_t readLength){
-	txbuffer[0] = txbuffer[0] | READ_BYTE;
-	HAL_GPIO_WritePin(DEVICE_GPIOx, DEVICE_PIN, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(hspi, txbuffer, rxbuffer, readLength, 100);
-	HAL_GPIO_WritePin(DEVICE_GPIOx, DEVICE_PIN, GPIO_PIN_SET);
+static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t *rxbuffer, uint8_t readLength){
+	reg |= READ_BYTE;
+	DEVICE_GPIOx->BSRR = (DEVICE_PIN << 16);
+	while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
+	LL_SPI_TransmitData8(sensor_spi, reg);
+	while (!LL_SPI_IsActiveFlag_RXNE(sensor_spi));
+	(void)LL_SPI_ReceiveData8(sensor_spi);
+
+	for(int i = 0; i < readLength; i++){
+		while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
+		LL_SPI_TransmitData8(sensor_spi, 0x00);
+		while (!LL_SPI_IsActiveFlag_RXNE(sensor_spi));
+		rxbuffer[i] = LL_SPI_ReceiveData8(sensor_spi);
+	}
+	DEVICE_GPIOx->BSRR = (DEVICE_PIN);
 }
 
-static void write_address(SPI_HandleTypeDef *hspi, GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t data){
+static void write_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t data){
 	uint8_t txbuffer[2] = {reg & WRITE_BYTE, data};
-	uint8_t rxbuffer[2];
-	HAL_GPIO_WritePin(DEVICE_GPIOx, DEVICE_PIN, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive(hspi, txbuffer, rxbuffer, 2, 100);
-	HAL_GPIO_WritePin(DEVICE_GPIOx, DEVICE_PIN, GPIO_PIN_SET);
+	while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
+	DEVICE_GPIOx->BSRR = (DEVICE_PIN << 16);
+	while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
+	LL_SPI_TransmitData8(sensor_spi, txbuffer[0]);
+	while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
+	LL_SPI_TransmitData8(sensor_spi, txbuffer[1]);
+	while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
+	DEVICE_GPIOx->BSRR = (DEVICE_PIN);
 }
 
 static int8_t BMI_GYRO_INIT_DATA_READY_PIN_ENABLED(){
-	uint8_t tx_buffer[2] = {0x00, 0x00};
-	uint8_t rx_buffer[2] = {0x00, 0x00};
+	uint8_t rx_buffer = 0;
 
-	read_address(sensor_spi, gyro_cs_port, gyro_cs_pin, tx_buffer, rx_buffer, 2);		// reads chip ID, if chip doesn't correctly return ID, return error code
+	read_address(gyro_cs_port, gyro_cs_pin, 0x00, &rx_buffer, 1);		// reads chip ID, if chip doesn't correctly return ID, return error code
 
-	if(rx_buffer[1] != 0x0F){
+	if(rx_buffer != 0x0F){
 		return 1;
 	}
 
 	// dummy setup here
-	write_address(sensor_spi, gyro_cs_port, gyro_cs_pin, GYRO_RANGE_ADDRESS, GYRO_RANGE_2000_DEG_PER_SECOND);		// setting gyro range
-	write_address(sensor_spi, gyro_cs_port, gyro_cs_pin, GYRO_ODR_FILTER_ADDRESS, GYRO_ODR_100_HZ_FILTER_12_HZ);	// setting up filter
-	write_address(sensor_spi, gyro_cs_port, gyro_cs_pin, GYRO_POWER_MODE_ADDRESS, GYRO_POWER_MODE_NORMAL);		// setting up power mode
-	write_address(sensor_spi, gyro_cs_port, gyro_cs_pin, 0x15, 0x80);		// enabling interrupt
-	write_address(sensor_spi, gyro_cs_port, gyro_cs_pin, 0x16, 0b00001011);		// INT4 IO Config
-	write_address(sensor_spi, gyro_cs_port, gyro_cs_pin, 0x18, 0x80);		// data ready interrupt mapped to INT4
+	write_address(gyro_cs_port, gyro_cs_pin, GYRO_RANGE_ADDRESS, GYRO_RANGE_2000_DEG_PER_SECOND);		// setting gyro range
+	write_address(gyro_cs_port, gyro_cs_pin, GYRO_ODR_FILTER_ADDRESS, GYRO_ODR_100_HZ_FILTER_12_HZ);	// setting up filter
+	write_address(gyro_cs_port, gyro_cs_pin, GYRO_POWER_MODE_ADDRESS, GYRO_POWER_MODE_NORMAL);		// setting up power mode
+	write_address(gyro_cs_port, gyro_cs_pin, 0x15, 0x80);		// enabling interrupt
+	write_address(gyro_cs_port, gyro_cs_pin, 0x16, 0b00001011);		// INT4 IO Config
+	write_address(gyro_cs_port, gyro_cs_pin, 0x18, 0x80);		// data ready interrupt mapped to INT4
 	// need to add real Setup here
 	return 0;
 }
 
-static int8_t BMI_ACCEL_INIT(){
-	uint8_t tx_buffer[3] = {0x00, 0x00, 0x00};	// dummy read to get the Accelerometer into SPI mode
-	uint8_t rx_buffer[3] = {0x00, 0x00, 0x00};
+static int8_t BMI_ACCEL_INIT(){	// dummy read to get the Accelerometer into SPI mode
+	uint8_t rx_buffer[2] = {0};
 
-	read_address(sensor_spi, accel_cs_port, accel_cs_pin, tx_buffer, rx_buffer, 3);
+	read_address(accel_cs_port, accel_cs_pin, 0x00, rx_buffer, 2);
 
 	HAL_Delay(1);
 
-	tx_buffer[0] = 0x00;
+	read_address(accel_cs_port, accel_cs_pin, 0x00, rx_buffer, 2);
 
-	read_address(sensor_spi, accel_cs_port, accel_cs_pin, tx_buffer, rx_buffer, 3);
-
-	if(rx_buffer[2] != 0x1E){
+	if(rx_buffer[1] != 0x1E){
 		return 1;
 	}
 	HAL_Delay(2);
 
 	// dummy setup here
-	write_address(sensor_spi, accel_cs_port, accel_cs_pin, ACCEL_ENABLE_SENSOR_ADDRESS, ACCEL_ENABLE_SENSOR_ON);		// turning on sensor
+	write_address(accel_cs_port, accel_cs_pin, ACCEL_ENABLE_SENSOR_ADDRESS, ACCEL_ENABLE_SENSOR_ON);		// turning on sensor
 	HAL_Delay(2);
-	write_address(sensor_spi, accel_cs_port, accel_cs_pin, ACCEL_CONFIG_ADDRESS, ACCEL_CONFIG_ODR_1600_HZ | ACCEL_CONFIG_OVERSAMPLING_OSR4);		// setting up sampling rate and oversampling
-	write_address(sensor_spi, accel_cs_port, accel_cs_pin, ACCEL_RANGE_ADDRESS, ACCEL_RANGE_6G);		// setting up sampling range
+	write_address(accel_cs_port, accel_cs_pin, ACCEL_CONFIG_ADDRESS, ACCEL_CONFIG_ODR_1600_HZ | ACCEL_CONFIG_OVERSAMPLING_OSR4);		// setting up sampling rate and oversampling
+	write_address(accel_cs_port, accel_cs_pin, ACCEL_RANGE_ADDRESS, ACCEL_RANGE_6G);		// setting up sampling range
 	HAL_Delay(2);
-	write_address(sensor_spi, accel_cs_port, accel_cs_pin, ACCEL_POWER_MODE_ADDRESS, ACCEL_POWER_MODE_ACTIVE);		// set to normal power mode
+	write_address(accel_cs_port, accel_cs_pin, ACCEL_POWER_MODE_ADDRESS, ACCEL_POWER_MODE_ACTIVE);		// set to normal power mode
 	// need to add real Setup here
 
 	return 0;
@@ -104,38 +111,35 @@ static int8_t BMI_ACCEL_INIT(){
 
 static int8_t BMP_BARO_INIT(){
 
-	uint8_t tx_buffer[3] = {0x00, 0x00, 0x00};
-	uint8_t rx_buffer[3] = {0x00, 0x00, 0x00};
-	read_address(sensor_spi, baro_cs_port, baro_cs_pin, tx_buffer, rx_buffer, 3);
+	uint8_t rx_buffer[2] = {0};
+	read_address(baro_cs_port, baro_cs_pin, 0x00, rx_buffer, 2);
 
-	if(rx_buffer[2] != 0x60){
+	if(rx_buffer[1] != 0x60){
 		return 1;
 	}
 
-	write_address(sensor_spi, baro_cs_port, baro_cs_pin, POWER_CONTROL_REGISTER, POWER_CONTROL_PRESS_EN_TEMP_EN_NORMAL_MODE);
-	write_address(sensor_spi, baro_cs_port, baro_cs_pin, OVERSAMPLING_REGISTER, OSR_P_16X_T_2X);
-	write_address(sensor_spi, baro_cs_port, baro_cs_pin, OUTPUT_DATA_RATE_REGISTER, OUTPUT_DATA_RATE_25_HZ);
-	write_address(sensor_spi, baro_cs_port, baro_cs_pin, IIR_FILTER_REGISTER, IIR_FILTER_COEF_3);
+	write_address(baro_cs_port, baro_cs_pin, POWER_CONTROL_REGISTER, POWER_CONTROL_PRESS_EN_TEMP_EN_NORMAL_MODE);
+	write_address(baro_cs_port, baro_cs_pin, OVERSAMPLING_REGISTER, OSR_P_16X_T_2X);
+	write_address(baro_cs_port, baro_cs_pin, OUTPUT_DATA_RATE_REGISTER, OUTPUT_DATA_RATE_25_HZ);
+	write_address(baro_cs_port, baro_cs_pin, IIR_FILTER_REGISTER, IIR_FILTER_COEF_3);
 
-	uint8_t calib_tx_buffer[23];
-	uint8_t calib_rx_buffer[23];
-	calib_tx_buffer[0] = 0x31 | READ_BYTE;
+	uint8_t calib_rx_buffer[22];
 
-	read_address(sensor_spi, baro_cs_port, baro_cs_pin, calib_tx_buffer, calib_rx_buffer, 22);
-	baro_calibration.NVM_PAR_T1 = ((uint16_t)calib_rx_buffer[3] << 8) | calib_rx_buffer[2];
-	baro_calibration.NVM_PAR_T2 = ((uint16_t)calib_rx_buffer[5] << 8) | calib_rx_buffer[4];
-	baro_calibration.NVM_PAR_T3 = (int8_t)calib_rx_buffer[6];
-	baro_calibration.NVM_PAR_P1 = (int16_t)((uint16_t)calib_rx_buffer[8] << 8) | calib_rx_buffer[7];
-	baro_calibration.NVM_PAR_P2 = (int16_t)((uint16_t)calib_rx_buffer[10] << 8) | calib_rx_buffer[9];
-	baro_calibration.NVM_PAR_P3 = (int8_t)calib_rx_buffer[11];
-	baro_calibration.NVM_PAR_P4 = (int8_t)calib_rx_buffer[12];
-	baro_calibration.NVM_PAR_P5 = ((uint16_t)calib_rx_buffer[14] << 8) | calib_rx_buffer[13];
-	baro_calibration.NVM_PAR_P6 = ((uint16_t)calib_rx_buffer[16] << 8) | calib_rx_buffer[15];
-	baro_calibration.NVM_PAR_P7 = (int8_t)calib_rx_buffer[17];
-	baro_calibration.NVM_PAR_P8 = (int8_t)calib_rx_buffer[18];
-	baro_calibration.NVM_PAR_P9 = (int16_t)((uint16_t)calib_rx_buffer[20] << 8) | calib_rx_buffer[19];
-	baro_calibration.NVM_PAR_P10 = (int8_t)calib_rx_buffer[21];
-	baro_calibration.NVM_PAR_P11 = (int8_t)calib_rx_buffer[22];
+	read_address(baro_cs_port, baro_cs_pin, 0x31, calib_rx_buffer, 22);
+	baro_calibration.NVM_PAR_T1 = ((uint16_t)calib_rx_buffer[2] << 8) | calib_rx_buffer[1];
+	baro_calibration.NVM_PAR_T2 = ((uint16_t)calib_rx_buffer[4] << 8) | calib_rx_buffer[3];
+	baro_calibration.NVM_PAR_T3 = (int8_t)calib_rx_buffer[5];
+	baro_calibration.NVM_PAR_P1 = (int16_t)((uint16_t)calib_rx_buffer[7] << 8) | calib_rx_buffer[6];
+	baro_calibration.NVM_PAR_P2 = (int16_t)((uint16_t)calib_rx_buffer[9] << 8) | calib_rx_buffer[8];
+	baro_calibration.NVM_PAR_P3 = (int8_t)calib_rx_buffer[10];
+	baro_calibration.NVM_PAR_P4 = (int8_t)calib_rx_buffer[11];
+	baro_calibration.NVM_PAR_P5 = ((uint16_t)calib_rx_buffer[13] << 8) | calib_rx_buffer[12];
+	baro_calibration.NVM_PAR_P6 = ((uint16_t)calib_rx_buffer[15] << 8) | calib_rx_buffer[14];
+	baro_calibration.NVM_PAR_P7 = (int8_t)calib_rx_buffer[16];
+	baro_calibration.NVM_PAR_P8 = (int8_t)calib_rx_buffer[17];
+	baro_calibration.NVM_PAR_P9 = (int16_t)((uint16_t)calib_rx_buffer[19] << 8) | calib_rx_buffer[18];
+	baro_calibration.NVM_PAR_P10 = (int8_t)calib_rx_buffer[20];
+	baro_calibration.NVM_PAR_P11 = (int8_t)calib_rx_buffer[21];
 
 	baro_calibration.par_t1 = (float)baro_calibration.NVM_PAR_T1 / pow(2, -8);
 	baro_calibration.par_t2 = (float)baro_calibration.NVM_PAR_T2 / pow(2, 30);
@@ -231,7 +235,7 @@ static void BYTES_TO_VALUES(){
 	}
 }
 
-int8_t SENSORS_INIT(SPI_HandleTypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN){
+int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN){
 	sensor_spi = HSPIx;
 	gyro_cs_port = GYRO_PORT;
 	gyro_cs_pin = GYRO_PIN;
@@ -254,32 +258,4 @@ int8_t SENSORS_INIT(SPI_HandleTypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t 
 
 Sensor_Data* SENSOR_DATA_STRUCT(){
 	return &sensor_data;
-}
-
-void SENSORS_READ(){
-	gyro_to_accel_counter++;
-	gyro_to_baro_counter++;
-	new_gyro_data = true;
-	HAL_GPIO_WritePin(gyro_cs_port, gyro_cs_pin, GPIO_PIN_RESET);
-	HAL_SPI_TransmitReceive_DMA(sensor_spi, gyro_tx, gyro_rx, 7);
-}
-
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspix){
-	if(hspix->Instance != sensor_spi->Instance)return;
-	HAL_GPIO_WritePin(gyro_cs_port, gyro_cs_pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(accel_cs_port, accel_cs_pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(baro_cs_port, baro_cs_pin, GPIO_PIN_SET);
-	BYTES_TO_VALUES();
-	if(gyro_to_accel_counter >= GYRO_PER_ACCEL_READ){
-		new_accel_data = true;
-		gyro_to_accel_counter = 0;
-		HAL_GPIO_WritePin(accel_cs_port, accel_cs_pin, GPIO_PIN_RESET);
-		HAL_SPI_TransmitReceive_DMA(sensor_spi, accel_tx, accel_rx, 8);
-	}
-	if(gyro_to_baro_counter >= GYRO_PER_BARO_READ){
-		new_baro_data = true;
-		gyro_to_baro_counter = 0;
-		HAL_GPIO_WritePin(baro_cs_port, baro_cs_pin, GPIO_PIN_RESET);
-		HAL_SPI_TransmitReceive_DMA(sensor_spi, baro_tx, baro_rx, 8);
-	}
 }

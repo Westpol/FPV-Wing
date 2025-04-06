@@ -10,6 +10,16 @@
 
 #include "stm32f7xx_hal.h"
 #include "stdint.h"
+#include "stm32f7xx_ll_spi.h"
+#include "stm32f7xx_ll_system.h"
+#include "stm32f7xx_ll_gpio.h"
+#include "stm32f7xx_ll_exti.h"
+#include "stm32f7xx_ll_bus.h"
+#include "stm32f7xx_ll_cortex.h"
+#include "stm32f7xx_ll_rcc.h"
+#include "stm32f7xx_ll_utils.h"
+#include "stm32f7xx_ll_pwr.h"
+#include "stm32f7xx_ll_dma.h"
 
 typedef struct {
 	uint16_t NVM_PAR_T1;
@@ -68,7 +78,7 @@ typedef struct{
     uint32_t baro_pressure_raw;
 }Raw_Data;
 
-int8_t SENSORS_INIT(SPI_HandleTypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN);
+int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN);
 
 void SENSORS_READ(void);
 
