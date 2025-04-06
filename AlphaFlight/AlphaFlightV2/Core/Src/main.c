@@ -14,6 +14,8 @@
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
+  *
+  * TODO: Search for timer pins
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
@@ -56,7 +58,7 @@ SPI_HandleTypeDef hspi2;
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim10;
-DMA_HandleTypeDef hdma_tim1_ch1;
+TIM_HandleTypeDef htim12;
 
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart1;
@@ -86,12 +88,13 @@ static void MX_USART6_UART_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI2_Init(void);
-static void MX_TIM1_Init(void);
 static void MX_UART4_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM10_Init(void);
+static void MX_TIM1_Init(void);
+static void MX_TIM12_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -142,7 +145,6 @@ int main(void)
   MX_SPI1_Init();
   MX_I2C1_Init();
   MX_SPI2_Init();
-  MX_TIM1_Init();
   MX_UART4_Init();
   MX_USART3_UART_Init();
   MX_ADC1_Init();
@@ -150,6 +152,8 @@ int main(void)
   MX_FATFS_Init();
   MX_TIM2_Init();
   MX_TIM10_Init();
+  MX_TIM1_Init();
+  MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
   while(SENSORS_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
 	  HAL_Delay(100);
@@ -157,13 +161,15 @@ int main(void)
 
   Sensor_Data* sensor_data = SENSOR_DATA_STRUCT();
 
-  SERVO_ADD(GPIOB, GPIO_PIN_2);
+  SERVO_ADD(&htim1, TIM_CHANNEL_1);
+  SERVO_ADD(&htim2, TIM_CHANNEL_1);
+  SERVO_ADD(&htim12, TIM_CHANNEL_2);
   SERVO_SET(0, 1500);
-  SERVOS_INIT(&htim10);
+  SERVO_SET(1, 1000);
+  SERVO_SET(2, 1500);
+  SERVOS_START_TRANSMISSION();
 
   int8_t servo_thing = 0;
-
-  HAL_TIM_Base_Start_IT(&htim11);
 
   /* USER CODE END 2 */
 
@@ -494,6 +500,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 0 */
 
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig = {0};
@@ -502,12 +509,21 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
+  htim1.Init.Prescaler = 215;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
+  htim1.Init.Period = 20000;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
   if (HAL_TIM_PWM_Init(&htim1) != HAL_OK)
   {
     Error_Handler();
@@ -566,6 +582,7 @@ static void MX_TIM2_Init(void)
 
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
 
@@ -573,7 +590,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 107;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 4294967295;
+  htim2.Init.Period = 20000;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -585,15 +602,28 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
+  if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN TIM2_Init 2 */
 
   /* USER CODE END TIM2_Init 2 */
+  HAL_TIM_MspPostInit(&htim2);
 
 }
 
@@ -639,6 +669,58 @@ static void MX_TIM10_Init(void)
   /* USER CODE BEGIN TIM10_Init 2 */
 
   /* USER CODE END TIM10_Init 2 */
+
+}
+
+/**
+  * @brief TIM12 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM12_Init(void)
+{
+
+  /* USER CODE BEGIN TIM12_Init 0 */
+
+  /* USER CODE END TIM12_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM12_Init 1 */
+
+  /* USER CODE END TIM12_Init 1 */
+  htim12.Instance = TIM12;
+  htim12.Init.Prescaler = 107;
+  htim12.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim12.Init.Period = 20000;
+  htim12.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim12.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  if (HAL_TIM_Base_Init(&htim12) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim12, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim12) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim12, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM12_Init 2 */
+
+  /* USER CODE END TIM12_Init 2 */
+  HAL_TIM_MspPostInit(&htim12);
 
 }
 
@@ -843,9 +925,6 @@ static void MX_DMA_Init(void)
   /* DMA2_Stream2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
-  /* DMA2_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
   /* DMA2_Stream7_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
@@ -879,10 +958,10 @@ static void MX_GPIO_Init(void)
                           |CS_EXT_1_Pin|RGB_B_Pin|RGB_G_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, SERVO1_Pin|SERVO2_Pin|SERVO3_Pin|SERVO4_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, SERVO1_Pin|SERVO2_Pin|SERVO4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SERVO7_Pin|SEVO5_Pin|SERVO6_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, SERVO7_Pin|SEVO5_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -917,15 +996,15 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SERVO2_Pin SERVO3_Pin SERVO4_Pin */
-  GPIO_InitStruct.Pin = SERVO2_Pin|SERVO3_Pin|SERVO4_Pin;
+  /*Configure GPIO pins : SERVO2_Pin SERVO4_Pin */
+  GPIO_InitStruct.Pin = SERVO2_Pin|SERVO4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SERVO7_Pin SEVO5_Pin SERVO6_Pin */
-  GPIO_InitStruct.Pin = SERVO7_Pin|SEVO5_Pin|SERVO6_Pin;
+  /*Configure GPIO pins : SERVO7_Pin SEVO5_Pin */
+  GPIO_InitStruct.Pin = SERVO7_Pin|SEVO5_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;

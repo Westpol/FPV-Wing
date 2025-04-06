@@ -91,8 +91,8 @@ void Error_Handler(void);
 #define SERVO3_GPIO_Port GPIOB
 #define SERVO4_Pin GPIO_PIN_15
 #define SERVO4_GPIO_Port GPIOB
-#define DSHOT_PIN_Pin GPIO_PIN_8
-#define DSHOT_PIN_GPIO_Port GPIOA
+#define MOTOR1_Pin GPIO_PIN_8
+#define MOTOR1_GPIO_Port GPIOA
 #define SERVO7_Pin GPIO_PIN_13
 #define SERVO7_GPIO_Port GPIOA
 #define SEVO5_Pin GPIO_PIN_14
