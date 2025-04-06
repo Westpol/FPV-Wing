@@ -29,6 +29,18 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal.h"
 
+#include "stm32f7xx_ll_spi.h"
+#include "stm32f7xx_ll_bus.h"
+#include "stm32f7xx_ll_cortex.h"
+#include "stm32f7xx_ll_rcc.h"
+#include "stm32f7xx_ll_system.h"
+#include "stm32f7xx_ll_utils.h"
+#include "stm32f7xx_ll_pwr.h"
+#include "stm32f7xx_ll_gpio.h"
+#include "stm32f7xx_ll_dma.h"
+
+#include "stm32f7xx_ll_exti.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -59,8 +71,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define GYRO_DATA_READY_Pin GPIO_PIN_13
-#define GYRO_DATA_READY_GPIO_Port GPIOC
 #define VBAT_SENSE_Pin GPIO_PIN_0
 #define VBAT_SENSE_GPIO_Port GPIOC
 #define RGB_R_Pin GPIO_PIN_3
