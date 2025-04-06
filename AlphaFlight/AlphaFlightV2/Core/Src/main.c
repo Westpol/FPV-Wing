@@ -155,9 +155,9 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
-  while(SENSORS_INIT(SPI1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
+  /*while(SENSORS_INIT(SPI1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
 	  HAL_Delay(100);
-  }
+  }*/
 
   Sensor_Data* sensor_data = SENSOR_DATA_STRUCT();
 
@@ -176,7 +176,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1){
 	  //USB_PRINTLN_RAW(data->raw_buffer_data, BUFFER_SIZE);
-	  USB_PRINTLN("%f°/s x  |  %f°C   |   %fPa", sensor_data->gyro_x, sensor_data->temp, sensor_data->pressure);
+	  //GYRO_READ();
+	  //USB_PRINTLN("%f°/s x  |  %f°C   |   %fPa", sensor_data->gyro_x, sensor_data->temp, sensor_data->pressure);
+	  STATUS_LED_GREEN_ON();
+	  USB_PRINTLN("Hello, world");
 	  servo_thing += 10;
 	  SERVO_SET(0, 1500 + servo_thing * 3);
 	  //SERVO_SET(1, 1500 + servo_thing * 3);

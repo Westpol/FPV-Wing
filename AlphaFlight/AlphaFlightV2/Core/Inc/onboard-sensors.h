@@ -81,6 +81,7 @@ typedef struct{
 int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN);
 
 void SENSORS_READ(void);
+void GYRO_READ(void);
 
 Sensor_Data* SENSOR_DATA_STRUCT();
 

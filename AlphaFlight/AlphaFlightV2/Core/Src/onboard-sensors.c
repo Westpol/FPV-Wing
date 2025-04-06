@@ -25,8 +25,7 @@ static Baro_Calibration baro_calibration = {0};
 static Sensor_Data sensor_data = {0};
 static Raw_Data raw_data = {0};
 
-static uint8_t gyro_rx[7] = {0};
-static uint8_t gyro_tx[7] = {0x02 | READ_BYTE, 0, 0, 0, 0, 0, 0};
+static uint8_t gyro_rx[6] = {0};
 
 static uint8_t accel_rx[8] = {0};
 static uint8_t accel_tx[8] = {0x12 | READ_BYTE, 0, 0, 0, 0, 0, 0, 0};
@@ -48,6 +47,7 @@ static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_
 		while (!LL_SPI_IsActiveFlag_RXNE(sensor_spi));
 		rxbuffer[i] = LL_SPI_ReceiveData8(sensor_spi);
 	}
+	while (LL_SPI_IsActiveFlag_BSY(sensor_spi));
 	DEVICE_GPIOx->BSRR = (DEVICE_PIN);
 }
 
@@ -59,7 +59,7 @@ static void write_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8
 	LL_SPI_TransmitData8(sensor_spi, txbuffer[0]);
 	while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
 	LL_SPI_TransmitData8(sensor_spi, txbuffer[1]);
-	while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
+	while (LL_SPI_IsActiveFlag_BSY(sensor_spi));
 	DEVICE_GPIOx->BSRR = (DEVICE_PIN);
 }
 
@@ -200,9 +200,9 @@ static float BMP_COMPENSATE_PRESSURE(uint32_t uncomp_press, Baro_Calibration *ca
 
 static void BYTES_TO_VALUES(){
 	if(new_gyro_data){
-		raw_data.gyro_x_raw = ((int16_t)gyro_rx[2] << 8) | gyro_rx[1];
-		raw_data.gyro_y_raw = ((int16_t)gyro_rx[4] << 8) | gyro_rx[3];
-		raw_data.gyro_z_raw = ((int16_t)gyro_rx[6] << 8) | gyro_rx[5];
+		raw_data.gyro_x_raw = ((int16_t)gyro_rx[1] << 8) | gyro_rx[0];
+		raw_data.gyro_y_raw = ((int16_t)gyro_rx[3] << 8) | gyro_rx[2];
+		raw_data.gyro_z_raw = ((int16_t)gyro_rx[5] << 8) | gyro_rx[4];
 		sensor_data.gyro_x = (raw_data.gyro_x_raw / 32767.0) * 2000.0;
 		sensor_data.gyro_y = (raw_data.gyro_y_raw / 32767.0) * 2000.0;
 		sensor_data.gyro_z = (raw_data.gyro_z_raw / 32767.0) * 2000.0;
@@ -254,6 +254,11 @@ int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_P
 	else{
 		return 1;
 	}
+}
+
+void GYRO_READ(){
+	read_address(gyro_cs_port, gyro_cs_pin, 0x02, gyro_rx, 6);
+	new_gyro_data = true;
 }
 
 Sensor_Data* SENSOR_DATA_STRUCT(){
