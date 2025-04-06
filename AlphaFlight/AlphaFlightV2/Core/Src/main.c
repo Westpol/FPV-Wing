@@ -910,15 +910,15 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(BARO_CS_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : GYRO_CS_Pin ACCEL_CS_Pin */
-  GPIO_InitStruct.Pin = GYRO_CS_Pin|ACCEL_CS_Pin;
+  /*Configure GPIO pins : GYRO_CS_Pin ACCEL_CS_Pin SERVO1_Pin */
+  GPIO_InitStruct.Pin = GYRO_CS_Pin|ACCEL_CS_Pin|SERVO1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SERVO1_Pin SERVO2_Pin SERVO3_Pin SERVO4_Pin */
-  GPIO_InitStruct.Pin = SERVO1_Pin|SERVO2_Pin|SERVO3_Pin|SERVO4_Pin;
+  /*Configure GPIO pins : SERVO2_Pin SERVO3_Pin SERVO4_Pin */
+  GPIO_InitStruct.Pin = SERVO2_Pin|SERVO3_Pin|SERVO4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
