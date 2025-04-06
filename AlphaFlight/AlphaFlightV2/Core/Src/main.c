@@ -155,15 +155,15 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
-  while(SENSORS_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
+  /*while(SENSORS_INIT(&hspi1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
 	  HAL_Delay(100);
-  }
+  }*/
 
   Sensor_Data* sensor_data = SENSOR_DATA_STRUCT();
 
   SERVO_ADD(&htim1, TIM_CHANNEL_1);
   SERVO_ADD(&htim2, TIM_CHANNEL_1);
-  SERVO_ADD(&htim12, TIM_CHANNEL_2);
+  SERVO_ADD(&htim12, TIM_CHANNEL_1);
   SERVO_SET(0, 1500);
   SERVO_SET(1, 1000);
   SERVO_SET(2, 1500);
@@ -180,6 +180,8 @@ int main(void)
 	  USB_PRINTLN("%f°/s x  |  %f°C   |   %fPa", sensor_data->gyro_x, sensor_data->temp, sensor_data->pressure);
 	  servo_thing += 10;
 	  SERVO_SET(0, 1500 + servo_thing * 3);
+	  SERVO_SET(1, 1500 + servo_thing * 3);
+	  SERVO_SET(2, 1500 + servo_thing * 3);
 	  HAL_Delay(100);
     /* USER CODE END WHILE */
 
