@@ -40,4 +40,7 @@ void SERVOS_START_TRANSMISSION(){
 	for(int i = 0; i < num_active_servos; i++){
 		HAL_TIM_PWM_Start(servo[i].servo_timer, servo[i].timer_channel);
 	}
+	for(int i = 0; i < num_active_servos; i++){
+		__HAL_TIM_SET_COMPARE(servo[num_active_servos].servo_timer, servo[num_active_servos].timer_channel, servo[num_active_servos].servo_microseconds);
+	}
 }
