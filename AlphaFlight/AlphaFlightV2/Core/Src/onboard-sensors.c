@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "math.h"
 #include "stdbool.h"
+#include "scheduler.h"
 
 static SPI_TypeDef *sensor_spi;
 static GPIO_TypeDef *gyro_cs_port;
@@ -17,18 +18,15 @@ static uint16_t accel_cs_pin;
 static GPIO_TypeDef *baro_cs_port;
 static uint16_t baro_cs_pin;
 
-static bool new_gyro_data = false;
-static bool new_accel_data = false;
-static bool new_baro_data = false;
+static bool accel_right_for_calibration = false;
 
 static Baro_Calibration baro_calibration = {0};
 static Sensor_Data sensor_data = {0};
 static Raw_Data raw_data = {0};
+static uint32_t last_integration_us = 0;
 
 static uint8_t gyro_rx[6] = {0};
-
 static uint8_t accel_rx[7] = {0};
-
 static uint8_t baro_rx[7] = {0};
 
 static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t *rxbuffer, uint8_t readLength){
@@ -224,59 +222,73 @@ static float BMP_COMPENSATE_PRESSURE(uint32_t uncomp_press, Baro_Calibration *ca
 	return comp_press;
 }
 
-static void BYTES_TO_VALUES(){
-	if(new_gyro_data){
-		raw_data.gyro_x_raw = ((int16_t)gyro_rx[1] << 8) | gyro_rx[0];
-		raw_data.gyro_y_raw = ((int16_t)gyro_rx[3] << 8) | gyro_rx[2];
-		raw_data.gyro_z_raw = ((int16_t)gyro_rx[5] << 8) | gyro_rx[4];
-		sensor_data.gyro_x = (raw_data.gyro_x_raw / 32767.0) * 2000.0;
-		sensor_data.gyro_y = (raw_data.gyro_y_raw / 32767.0) * 2000.0;
-		sensor_data.gyro_z = (raw_data.gyro_z_raw / 32767.0) * 2000.0;
-		new_gyro_data = false;
-	}
-	if(new_accel_data){
-		raw_data.accel_x_raw = ((int16_t)accel_rx[2] << 8) | accel_rx[1];
-		raw_data.accel_y_raw = ((int16_t)accel_rx[4] << 8) | accel_rx[3];
-		raw_data.accel_z_raw = ((int16_t)accel_rx[6] << 8) | accel_rx[5];
-		sensor_data.accel_x = (float)raw_data.accel_x_raw / 32768 * 1000 * 4 * 1.5;
-		sensor_data.accel_y = (float)raw_data.accel_y_raw / 32768 * 1000 * 4 * 1.5;
-		sensor_data.accel_z = (float)raw_data.accel_z_raw / 32768 * 1000 * 4 * 1.5;
+static void GYRO_CONVERT_DATA(){
+	raw_data.gyro_x_raw = ((int16_t)gyro_rx[1] << 8) | gyro_rx[0];
+	raw_data.gyro_y_raw = ((int16_t)gyro_rx[3] << 8) | gyro_rx[2];
+	raw_data.gyro_z_raw = ((int16_t)gyro_rx[5] << 8) | gyro_rx[4];
+	sensor_data.gyro_x = (raw_data.gyro_x_raw / 32767.0) * 2000.0;
+	sensor_data.gyro_y = -(raw_data.gyro_y_raw / 32767.0) * 2000.0;
+	sensor_data.gyro_z = (raw_data.gyro_z_raw / 32767.0) * 2000.0;
+}
 
-		float overall_force = sqrtf(sensor_data.accel_x * sensor_data.accel_x + sensor_data.accel_y * sensor_data.accel_y + sensor_data.accel_z * sensor_data.accel_z);
+static void ACCEL_CONVERT_DATA(){
+	raw_data.accel_x_raw = ((int16_t)accel_rx[2] << 8) | accel_rx[1];
+	raw_data.accel_y_raw = ((int16_t)accel_rx[4] << 8) | accel_rx[3];
+	raw_data.accel_z_raw = ((int16_t)accel_rx[6] << 8) | accel_rx[5];
+	sensor_data.accel_x = (float)raw_data.accel_x_raw / 32768 * 1000 * 4 * 1.5;
+	sensor_data.accel_y = (float)raw_data.accel_y_raw / 32768 * 1000 * 4 * 1.5;
+	sensor_data.accel_z = (float)raw_data.accel_z_raw / 32768 * 1000 * 4 * 1.5;
 
-		if(overall_force >= 950 && overall_force <= 1050){
-			STATUS_LED_GREEN_ON();
-		}
-		else{
-			STATUS_LED_GREEN_OFF();
-		}
-		new_accel_data = false;
+	float overall_force = sqrtf(sensor_data.accel_x * sensor_data.accel_x + sensor_data.accel_y * sensor_data.accel_y + sensor_data.accel_z * sensor_data.accel_z);
+
+	if(overall_force >= 950 && overall_force <= 1050){
+		STATUS_LED_GREEN_ON();
+		accel_right_for_calibration = true;
 	}
-	if(new_baro_data){
-		raw_data.baro_temp_raw = ((uint32_t)baro_rx[6] << 16) | ((uint32_t)baro_rx[5] << 8) | baro_rx[4];
-		raw_data.baro_pressure_raw = ((uint32_t)baro_rx[3] << 16) | ((uint32_t)baro_rx[2] << 8) | baro_rx[1];
-		sensor_data.temp = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
-		sensor_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
-		new_baro_data = false;
+	else{
+		STATUS_LED_GREEN_OFF();
+		accel_right_for_calibration = false;
 	}
+}
+
+static void BARO_CONVERT_DATA(){
+	raw_data.baro_temp_raw = ((uint32_t)baro_rx[6] << 16) | ((uint32_t)baro_rx[5] << 8) | baro_rx[4];
+	raw_data.baro_pressure_raw = ((uint32_t)baro_rx[3] << 16) | ((uint32_t)baro_rx[2] << 8) | baro_rx[1];
+	sensor_data.temp = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
+	sensor_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
 }
 
 void GYRO_READ(){
 	read_address(gyro_cs_port, gyro_cs_pin, 0x02, gyro_rx, 6);
-	new_gyro_data = true;
-	BYTES_TO_VALUES();
+	GYRO_CONVERT_DATA();
 }
 
 void ACCEL_READ(){
 	read_address(accel_cs_port, accel_cs_pin, 0x12, accel_rx, 7);
-	new_accel_data = true;
-	BYTES_TO_VALUES();
+	ACCEL_CONVERT_DATA();
 }
 
 void BARO_READ(){
 	read_address(baro_cs_port, baro_cs_pin, 0x04, baro_rx, 7);
-	new_baro_data = true;
-	BYTES_TO_VALUES();
+	BARO_CONVERT_DATA();
+}
+
+void GYRO_INTEGRATE(void){
+	uint32_t now = MICROS();
+	uint32_t delta_t = now - last_integration_us;
+	last_integration_us = now;
+	sensor_data.angle_x_fused += sensor_data.gyro_x * (delta_t / 1000000.0);
+	sensor_data.angle_y_fused += sensor_data.gyro_y * (delta_t / 1000000.0);
+	sensor_data.angle_z_fused += sensor_data.gyro_z * (delta_t / 1000000.0);
+}
+
+void GYRO_FUSION(){
+	if(accel_right_for_calibration){
+		sensor_data.angle_x_accel = atan2f(sensor_data.accel_y, sensor_data.accel_z) * 180.0f / M_PI;
+		sensor_data.angle_y_accel = -atan2f(-sensor_data.accel_x, sqrtf(sensor_data.accel_y * sensor_data.accel_y + sensor_data.accel_z * sensor_data.accel_z)) * 180.0f / M_PI;
+		sensor_data.angle_x_fused -= (sensor_data.angle_x_fused - sensor_data.angle_x_accel) * 0.005;
+		sensor_data.angle_y_fused -= (sensor_data.angle_y_fused - sensor_data.angle_y_accel) * 0.005;
+	}
 }
 
 Sensor_Data* SENSOR_DATA_STRUCT(){

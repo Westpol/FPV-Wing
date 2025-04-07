@@ -104,7 +104,7 @@ static void PRINT_DATA(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+Sensor_Data* sensor_data;
 /* USER CODE END 0 */
 
 /**
@@ -158,13 +158,13 @@ int main(void)
   MX_TIM12_Init();
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
+  sensor_data = SENSOR_DATA_STRUCT();
+
   LL_SPI_Enable(SPI1);
 
   while(SENSORS_INIT(SPI1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
 	  HAL_Delay(100);
   }
-
-  Sensor_Data* sensor_data = SENSOR_DATA_STRUCT();
 
   SERVO_ADD(&htim1, TIM_CHANNEL_1);
   SERVO_ADD(&htim2, TIM_CHANNEL_1);
@@ -174,11 +174,12 @@ int main(void)
   SERVO_SET(2, 1500);
   SERVOS_START_TRANSMISSION();
 
-  int8_t servo_thing = 0;
-  SCHEDULER_ADD_TASK(GYRO_READ, 1000);
-  SCHEDULER_ADD_TASK(ACCEL_READ, 5000);
-  SCHEDULER_ADD_TASK(BARO_READ, 50000);
-  SCHEDULER_ADD_TASK(PRINT_DATA, 100000);
+  SCHEDULER_ADD_TASK(GYRO_READ, 1000);		// 1 kHz
+  SCHEDULER_ADD_TASK(GYRO_INTEGRATE, 1000);	// 1 kHz
+  SCHEDULER_ADD_TASK(GYRO_FUSION, 2000);	// 500 Hz
+  SCHEDULER_ADD_TASK(ACCEL_READ, 4000);		// 250 Hz
+  SCHEDULER_ADD_TASK(BARO_READ, 40000);		// 250 Hz
+  SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
   SCHEDULER_INIT(&htim5);
   /* USER CODE END 2 */
 
@@ -1184,7 +1185,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 static void PRINT_DATA(){
-	USB_PRINTLN("Executed at: %ld", MICROS());
+	USB_PRINTLN("Executed at: %ld  |  Angle Accel Y: %f  |  Angle Gyro Y: %f", MICROS(), sensor_data->angle_y_accel, sensor_data->angle_y_fused);
 }
 /* USER CODE END 4 */
 

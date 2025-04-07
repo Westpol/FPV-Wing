@@ -57,9 +57,11 @@ typedef struct{
 	float gyro_x;		// rotational velocity in °/s
 	float gyro_y;
 	float gyro_z;
-	float angle_x;		// angle in °
-	float angle_y;
-	float angle_z;
+	float angle_x_fused;		// angle in °
+	float angle_y_fused;
+	float angle_z_fused;
+	float angle_x_accel;
+	float angle_y_accel;
 	float accel_x;		// acceleration in mg (9.81mm/s²)
 	float accel_y;
 	float accel_z;
@@ -84,6 +86,8 @@ void SENSORS_READ(void);
 void GYRO_READ(void);
 void ACCEL_READ(void);
 void BARO_READ(void);
+void GYRO_INTEGRATE(void);
+void GYRO_FUSION(void);
 
 Sensor_Data* SENSOR_DATA_STRUCT();
 
