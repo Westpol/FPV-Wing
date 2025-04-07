@@ -27,24 +27,23 @@ static Raw_Data raw_data = {0};
 
 static uint8_t gyro_rx[6] = {0};
 
-static uint8_t accel_rx[8] = {0};
-static uint8_t accel_tx[8] = {0x12 | READ_BYTE, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t accel_rx[7] = {0};
 
-static uint8_t baro_rx[8] = {0};
-static uint8_t baro_tx[8] = {0x04 | READ_BYTE, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t baro_rx[7] = {0};
 
 static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t *rxbuffer, uint8_t readLength){
 	reg |= READ_BYTE;
 	DEVICE_GPIOx->BSRR = (DEVICE_PIN << 16);
-	while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
+	while(!LL_SPI_IsActiveFlag_TXE(sensor_spi));
 	LL_SPI_TransmitData8(sensor_spi, reg);
-	while (!LL_SPI_IsActiveFlag_RXNE(sensor_spi));
-	(void)LL_SPI_ReceiveData8(sensor_spi);
+
+	while(!LL_SPI_IsActiveFlag_RXNE(sensor_spi));
+	(void)LL_SPI_ReceiveData8(sensor_spi);  // Clear RXNE from the address byte
 
 	for(int i = 0; i < readLength; i++){
-		while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
+		while(!LL_SPI_IsActiveFlag_TXE(sensor_spi));
 		LL_SPI_TransmitData8(sensor_spi, 0x00);
-		while (!LL_SPI_IsActiveFlag_RXNE(sensor_spi));
+		while(!LL_SPI_IsActiveFlag_RXNE(sensor_spi));
 		rxbuffer[i] = LL_SPI_ReceiveData8(sensor_spi);
 	}
 	while (LL_SPI_IsActiveFlag_BSY(sensor_spi));
@@ -52,13 +51,19 @@ static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_
 }
 
 static void write_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t data){
-	uint8_t txbuffer[2] = {reg & WRITE_BYTE, data};
-	while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
 	DEVICE_GPIOx->BSRR = (DEVICE_PIN << 16);
 	while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
-	LL_SPI_TransmitData8(sensor_spi, txbuffer[0]);
+	LL_SPI_TransmitData8(sensor_spi, reg);
+
+	while(!LL_SPI_IsActiveFlag_RXNE(sensor_spi));
+	(void)LL_SPI_ReceiveData8(sensor_spi);  // Clear RXNE from the address byte
+
 	while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
-	LL_SPI_TransmitData8(sensor_spi, txbuffer[1]);
+	LL_SPI_TransmitData8(sensor_spi, data);
+
+	while(!LL_SPI_IsActiveFlag_RXNE(sensor_spi));
+	(void)LL_SPI_ReceiveData8(sensor_spi);  // Clear RXNE from the address byte
+
 	while (LL_SPI_IsActiveFlag_BSY(sensor_spi));
 	DEVICE_GPIOx->BSRR = (DEVICE_PIN);
 }
@@ -209,9 +214,9 @@ static void BYTES_TO_VALUES(){
 		new_gyro_data = false;
 	}
 	if(new_accel_data){
-		raw_data.accel_x_raw = ((int16_t)accel_rx[3] << 8) | accel_rx[2];
-		raw_data.accel_y_raw = ((int16_t)accel_rx[5] << 8) | accel_rx[4];
-		raw_data.accel_z_raw = ((int16_t)accel_rx[7] << 8) | accel_rx[6];
+		raw_data.accel_x_raw = ((int16_t)accel_rx[2] << 8) | accel_rx[1];
+		raw_data.accel_y_raw = ((int16_t)accel_rx[4] << 8) | accel_rx[3];
+		raw_data.accel_z_raw = ((int16_t)accel_rx[6] << 8) | accel_rx[5];
 		sensor_data.accel_x = (float)raw_data.accel_x_raw / 32768 * 1000 * 4 * 1.5;
 		sensor_data.accel_y = (float)raw_data.accel_y_raw / 32768 * 1000 * 4 * 1.5;
 		sensor_data.accel_z = (float)raw_data.accel_z_raw / 32768 * 1000 * 4 * 1.5;
@@ -227,8 +232,8 @@ static void BYTES_TO_VALUES(){
 		new_accel_data = false;
 	}
 	if(new_baro_data){
-		raw_data.baro_temp_raw = ((uint32_t)baro_rx[7] << 16) | ((uint32_t)baro_rx[6] << 8) | baro_rx[5];
-		raw_data.baro_pressure_raw = ((uint32_t)baro_rx[4] << 16) | ((uint32_t)baro_rx[3] << 8) | baro_rx[2];
+		raw_data.baro_temp_raw = ((uint32_t)baro_rx[6] << 16) | ((uint32_t)baro_rx[5] << 8) | baro_rx[4];
+		raw_data.baro_pressure_raw = ((uint32_t)baro_rx[3] << 16) | ((uint32_t)baro_rx[2] << 8) | baro_rx[1];
 		sensor_data.temp = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
 		sensor_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
 		new_baro_data = false;
@@ -259,6 +264,19 @@ int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_P
 void GYRO_READ(){
 	read_address(gyro_cs_port, gyro_cs_pin, 0x02, gyro_rx, 6);
 	new_gyro_data = true;
+	BYTES_TO_VALUES();
+}
+
+void ACCEL_READ(){
+	read_address(accel_cs_port, accel_cs_pin, 0x12, accel_rx, 7);
+	new_accel_data = true;
+	BYTES_TO_VALUES();
+}
+
+void BARO_READ(){
+	read_address(baro_cs_port, baro_cs_pin, 0x04, baro_rx, 7);
+	new_baro_data = true;
+	BYTES_TO_VALUES();
 }
 
 Sensor_Data* SENSOR_DATA_STRUCT(){

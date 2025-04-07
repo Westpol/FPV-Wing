@@ -155,9 +155,11 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
-  /*while(SENSORS_INIT(SPI1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
+  LL_SPI_Enable(SPI1);
+
+  while(SENSORS_INIT(SPI1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
 	  HAL_Delay(100);
-  }*/
+  }
 
   Sensor_Data* sensor_data = SENSOR_DATA_STRUCT();
 
@@ -176,10 +178,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1){
 	  //USB_PRINTLN_RAW(data->raw_buffer_data, BUFFER_SIZE);
-	  //GYRO_READ();
-	  //USB_PRINTLN("%f°/s x  |  %f°C   |   %fPa", sensor_data->gyro_x, sensor_data->temp, sensor_data->pressure);
-	  STATUS_LED_GREEN_ON();
-	  USB_PRINTLN("Hello, world");
+	  GYRO_READ();
+	  BARO_READ();
+	  USB_PRINTLN("%f°/s x  |  %f°C   |   %fPa", sensor_data->gyro_x, sensor_data->temp, sensor_data->pressure);
+	  //USB_PRINTLN("Hello, world");
 	  servo_thing += 10;
 	  SERVO_SET(0, 1500 + servo_thing * 3);
 	  //SERVO_SET(1, 1500 + servo_thing * 3);
@@ -424,10 +426,6 @@ static void MX_SPI1_Init(void)
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   GPIO_InitStruct.Alternate = LL_GPIO_AF_5;
   LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /* SPI1 interrupt Init */
-  NVIC_SetPriority(SPI1_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),0, 0));
-  NVIC_EnableIRQ(SPI1_IRQn);
 
   /* USER CODE BEGIN SPI1_Init 1 */
 

@@ -82,6 +82,8 @@ int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_P
 
 void SENSORS_READ(void);
 void GYRO_READ(void);
+void ACCEL_READ(void);
+void BARO_READ(void);
 
 Sensor_Data* SENSOR_DATA_STRUCT();
 
