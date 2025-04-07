@@ -29,6 +29,7 @@
 #include "onboard-sensors.h"
 #include "servo.h"
 #include "stdbool.h"
+#include "scheduler.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,6 +58,7 @@ SPI_HandleTypeDef hspi2;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim10;
 TIM_HandleTypeDef htim12;
 
@@ -95,14 +97,14 @@ static void MX_TIM2_Init(void);
 static void MX_TIM10_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM12_Init(void);
+static void MX_TIM5_Init(void);
 /* USER CODE BEGIN PFP */
-
+static void PRINT_DATA(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-volatile bool new_sensor_read = false;  // Flag for main loop
 /* USER CODE END 0 */
 
 /**
@@ -154,6 +156,7 @@ int main(void)
   MX_TIM10_Init();
   MX_TIM1_Init();
   MX_TIM12_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
   LL_SPI_Enable(SPI1);
 
@@ -172,21 +175,17 @@ int main(void)
   SERVOS_START_TRANSMISSION();
 
   int8_t servo_thing = 0;
+  SCHEDULER_ADD_TASK(GYRO_READ, 1000);
+  SCHEDULER_ADD_TASK(ACCEL_READ, 5000);
+  SCHEDULER_ADD_TASK(BARO_READ, 50000);
+  SCHEDULER_ADD_TASK(PRINT_DATA, 100000);
+  SCHEDULER_INIT(&htim5);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1){
-	  //USB_PRINTLN_RAW(data->raw_buffer_data, BUFFER_SIZE);
-	  GYRO_READ();
-	  BARO_READ();
-	  USB_PRINTLN("%f°/s x  |  %f°C   |   %fPa", sensor_data->gyro_x, sensor_data->temp, sensor_data->pressure);
-	  //USB_PRINTLN("Hello, world");
-	  servo_thing += 10;
-	  SERVO_SET(0, 1500 + servo_thing * 3);
-	  //SERVO_SET(1, 1500 + servo_thing * 3);
-	  SERVO_SET(2, 1500 + servo_thing * 3);
-	  HAL_Delay(100);
+	  SCHEDULER_UPDATE();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -626,6 +625,51 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
+
+}
+
+/**
+  * @brief TIM5 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM5_Init(void)
+{
+
+  /* USER CODE BEGIN TIM5_Init 0 */
+
+  /* USER CODE END TIM5_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM5_Init 1 */
+
+  /* USER CODE END TIM5_Init 1 */
+  htim5.Instance = TIM5;
+  htim5.Init.Prescaler = 107;
+  htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim5.Init.Period = 4294967295;
+  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim5, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM5_Init 2 */
+
+  /* USER CODE END TIM5_Init 2 */
 
 }
 
@@ -1139,6 +1183,9 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static void PRINT_DATA(){
+	USB_PRINTLN("Executed at: %ld", MICROS());
+}
 /* USER CODE END 4 */
 
  /* MPU Configuration */

@@ -46,7 +46,7 @@ static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_
 		while(!LL_SPI_IsActiveFlag_RXNE(sensor_spi));
 		rxbuffer[i] = LL_SPI_ReceiveData8(sensor_spi);
 	}
-	while (LL_SPI_IsActiveFlag_BSY(sensor_spi));
+	while(LL_SPI_IsActiveFlag_BSY(sensor_spi));
 	DEVICE_GPIOx->BSRR = (DEVICE_PIN);
 }
 
@@ -56,13 +56,13 @@ static void write_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8
 	LL_SPI_TransmitData8(sensor_spi, reg);
 
 	while(!LL_SPI_IsActiveFlag_RXNE(sensor_spi));
-	(void)LL_SPI_ReceiveData8(sensor_spi);  // Clear RXNE from the address byte
+	(void)LL_SPI_ReceiveData8(sensor_spi);  // Clear RXNE
 
 	while (!LL_SPI_IsActiveFlag_TXE(sensor_spi));
 	LL_SPI_TransmitData8(sensor_spi, data);
 
 	while(!LL_SPI_IsActiveFlag_RXNE(sensor_spi));
-	(void)LL_SPI_ReceiveData8(sensor_spi);  // Clear RXNE from the address byte
+	(void)LL_SPI_ReceiveData8(sensor_spi);  // Clear RXNE
 
 	while (LL_SPI_IsActiveFlag_BSY(sensor_spi));
 	DEVICE_GPIOx->BSRR = (DEVICE_PIN);
@@ -164,6 +164,27 @@ static int8_t BMP_BARO_INIT(){
 	return 0;
 }
 
+int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN){
+	sensor_spi = HSPIx;
+	gyro_cs_port = GYRO_PORT;
+	gyro_cs_pin = GYRO_PIN;
+	accel_cs_port = ACCEL_PORT;
+	accel_cs_pin = ACCEL_PIN;
+	baro_cs_port = BARO_PORT;
+	baro_cs_pin = BARO_PIN;
+
+	int16_t return_code_sum = 0;
+	return_code_sum += BMI_ACCEL_INIT();
+	return_code_sum += BMP_BARO_INIT();
+	return_code_sum += BMI_GYRO_INIT_DATA_READY_PIN_ENABLED();
+	if(return_code_sum == 0){
+		return 0;
+	}
+	else{
+		return 1;
+	}
+}
+
 static float BMP_COMPENSATE_TEMPERATURE(uint32_t uncomp_temp, Baro_Calibration *calib_data){
 	float partial_data1;
 	float partial_data2;
@@ -237,27 +258,6 @@ static void BYTES_TO_VALUES(){
 		sensor_data.temp = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
 		sensor_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
 		new_baro_data = false;
-	}
-}
-
-int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN){
-	sensor_spi = HSPIx;
-	gyro_cs_port = GYRO_PORT;
-	gyro_cs_pin = GYRO_PIN;
-	accel_cs_port = ACCEL_PORT;
-	accel_cs_pin = ACCEL_PIN;
-	baro_cs_port = BARO_PORT;
-	baro_cs_pin = BARO_PIN;
-
-	int16_t return_code_sum = 0;
-	return_code_sum += BMI_ACCEL_INIT();
-	return_code_sum += BMP_BARO_INIT();
-	return_code_sum += BMI_GYRO_INIT_DATA_READY_PIN_ENABLED();
-	if(return_code_sum == 0){
-		return 0;
-	}
-	else{
-		return 1;
 	}
 }
 
