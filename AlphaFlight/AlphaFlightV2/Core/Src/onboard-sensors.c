@@ -258,6 +258,10 @@ static void BARO_CONVERT_DATA(){
 	sensor_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
 }
 
+static void BARO_CALCULATE_HEIGHT(){
+	sensor_data.height = (sensor_data.pressure_base - sensor_data.pressure) / 12.015397;
+}
+
 void GYRO_READ(){
 	read_address(gyro_cs_port, gyro_cs_pin, 0x02, gyro_rx, 6);
 	GYRO_CONVERT_DATA();
@@ -271,6 +275,7 @@ void ACCEL_READ(){
 void BARO_READ(){
 	read_address(baro_cs_port, baro_cs_pin, 0x04, baro_rx, 7);
 	BARO_CONVERT_DATA();
+	BARO_CALCULATE_HEIGHT();
 }
 
 void GYRO_INTEGRATE(){

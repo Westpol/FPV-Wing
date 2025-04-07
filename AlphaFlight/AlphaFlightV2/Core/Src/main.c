@@ -166,7 +166,7 @@ int main(void)
 	  HAL_Delay(100);
   }
 
-  HAL_Delay(200);
+  HAL_Delay(500);
 
   BARO_SET_BASE_PRESSURE();
 
@@ -1189,7 +1189,7 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 static void PRINT_DATA(){
-	USB_PRINTLN("Executed at: %ld  |  Angle Accel Y: %f  |  Angle Gyro Y: %f", MICROS(), sensor_data->angle_y_accel, sensor_data->angle_y_fused);
+	USB_PRINTLN("Executed at: %ld  |  Angle Accel Y: %f  |  Angle Gyro Y: %f  |  Height: %f m", MICROS(), sensor_data->angle_y_accel, sensor_data->angle_y_fused, sensor_data->height);
 }
 /* USER CODE END 4 */
 

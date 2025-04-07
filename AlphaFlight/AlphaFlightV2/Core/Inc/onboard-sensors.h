@@ -68,6 +68,7 @@ typedef struct{
 	float temp;
 	float pressure;
 	float pressure_base;
+	float height;
 }Sensor_Data;
 
 typedef struct{
