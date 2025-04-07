@@ -166,6 +166,10 @@ int main(void)
 	  HAL_Delay(100);
   }
 
+  HAL_Delay(200);
+
+  BARO_SET_BASE_PRESSURE();
+
   SERVO_ADD(&htim1, TIM_CHANNEL_1);
   SERVO_ADD(&htim2, TIM_CHANNEL_1);
   SERVO_ADD(&htim12, TIM_CHANNEL_1);

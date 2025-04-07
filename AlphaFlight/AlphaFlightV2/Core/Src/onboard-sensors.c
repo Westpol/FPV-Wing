@@ -77,7 +77,7 @@ static int8_t BMI_GYRO_INIT_DATA_READY_PIN_ENABLED(){
 
 	// dummy setup here
 	write_address(gyro_cs_port, gyro_cs_pin, GYRO_RANGE_ADDRESS, GYRO_RANGE_2000_DEG_PER_SECOND);		// setting gyro range
-	write_address(gyro_cs_port, gyro_cs_pin, GYRO_ODR_FILTER_ADDRESS, GYRO_ODR_100_HZ_FILTER_12_HZ);	// setting up filter
+	write_address(gyro_cs_port, gyro_cs_pin, GYRO_ODR_FILTER_ADDRESS, GYRO_ODR_1000_HZ_FILTER_116_HZ);	// setting up filter
 	write_address(gyro_cs_port, gyro_cs_pin, GYRO_POWER_MODE_ADDRESS, GYRO_POWER_MODE_NORMAL);		// setting up power mode
 	write_address(gyro_cs_port, gyro_cs_pin, 0x15, 0x80);		// enabling interrupt
 	write_address(gyro_cs_port, gyro_cs_pin, 0x16, 0b00001011);		// INT4 IO Config
@@ -273,7 +273,7 @@ void BARO_READ(){
 	BARO_CONVERT_DATA();
 }
 
-void GYRO_INTEGRATE(void){
+void GYRO_INTEGRATE(){
 	uint32_t now = MICROS();
 	uint32_t delta_t = now - last_integration_us;
 	last_integration_us = now;
@@ -288,6 +288,16 @@ void GYRO_FUSION(){
 		sensor_data.angle_y_accel = -atan2f(-sensor_data.accel_x, sqrtf(sensor_data.accel_y * sensor_data.accel_y + sensor_data.accel_z * sensor_data.accel_z)) * 180.0f / M_PI;
 		sensor_data.angle_x_fused -= (sensor_data.angle_x_fused - sensor_data.angle_x_accel) * 0.005;
 		sensor_data.angle_y_fused -= (sensor_data.angle_y_fused - sensor_data.angle_y_accel) * 0.005;
+	}
+}
+
+void BARO_SET_BASE_PRESSURE(){
+	while(1){
+		BARO_READ();
+		if(sensor_data.pressure > 0){
+			sensor_data.pressure_base = sensor_data.pressure;
+			return;
+		}
 	}
 }
 

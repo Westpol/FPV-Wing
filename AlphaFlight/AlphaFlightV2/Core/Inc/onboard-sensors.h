@@ -67,6 +67,7 @@ typedef struct{
 	float accel_z;
 	float temp;
 	float pressure;
+	float pressure_base;
 }Sensor_Data;
 
 typedef struct{
@@ -88,6 +89,7 @@ void ACCEL_READ(void);
 void BARO_READ(void);
 void GYRO_INTEGRATE(void);
 void GYRO_FUSION(void);
+void BARO_SET_BASE_PRESSURE();
 
 Sensor_Data* SENSOR_DATA_STRUCT();
 
