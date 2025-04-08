@@ -14,7 +14,7 @@
 #include "stdint.h"
 
 void USB_PRINTLN(const char *format, ...);
-void USB_PRINTLN_RAW(uint8_t *message, uint16_t len);
+void USB_PRINT(const char *format, ...);
 
 void STATUS_LED_GREEN_ON();
 void STATUS_LED_GREEN_OFF();

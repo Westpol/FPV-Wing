@@ -25,8 +25,19 @@ void USB_PRINTLN(const char *format, ...) {
     CDC_Transmit_FS((uint8_t *)message, len);
 }
 
-void USB_PRINTLN_RAW(uint8_t *message, uint16_t len){
-    CDC_Transmit_FS(message, len);
+void USB_PRINT(const char *format, ...) {
+    char message[USB_PRINT_BUFFER_SIZE];
+    va_list args;
+    va_start(args, format);
+    int len = vsnprintf(message, sizeof(message) - 2, format, args);  // Reserve space for \r\n
+    va_end(args);
+
+    // Ensure there's space to append "\r\n"
+    if (len > 0 && len < (USB_PRINT_BUFFER_SIZE - 2)) {
+        message[len] = '\0';
+    }
+
+    CDC_Transmit_FS((uint8_t *)message, len);
 }
 
 void STATUS_LED_GREEN_ON(){
