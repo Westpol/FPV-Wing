@@ -21,12 +21,11 @@ static uint16_t GPS_GET_DMA_POSITION(){
 }
 
 static void GPS_DECODE(){
-	/*
-	for(int i = 0; i < parse_struct.package_len; i++){
-		USB_PRINT("%X ", parse_struct.ubx_package[i]);
+
+	if(parse_struct.package_class == 0x01 && parse_struct.package_id == 0x07){
+		STATUS_LED_GREEN_ON();
+		USB_PRINTLN("%d", parse_struct.ubx_package[6+10]);
 	}
-	USB_PRINTLN("\r\n");*/
-	USB_PRINTLN("%X, %X", parse_struct.package_class, parse_struct.package_id);
 }
 
 void GPS_DUMP(){
@@ -39,6 +38,7 @@ void GPS_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 }
 
 void GPS_PARSE_BUFFER(void){
+	STATUS_LED_GREEN_OFF();
 	uint16_t dma_pos = GPS_GET_DMA_POSITION();
 	if(buffer_overflow_count == parse_struct.parser_overflow_count){		// if the buffer has not wrapped around
 		for(int i = parse_struct.parser_position; i < dma_pos - 6; i++){
@@ -54,7 +54,7 @@ void GPS_PARSE_BUFFER(void){
 					GPS_DECODE();
 				}
 				else{
-					parse_struct.parser_position = i;
+					parse_struct.parser_position = i - 5;
 					return;		// wait until the buffer is big enough to decode the whole message
 				}
 			}
