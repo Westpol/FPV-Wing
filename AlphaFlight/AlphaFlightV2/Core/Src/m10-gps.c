@@ -28,9 +28,6 @@ static void GPS_DECODE(){
 	}
 }
 
-void GPS_DUMP(){
-}
-
 void GPS_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 	gps_uart = UARTx;
 	gps_dma = UART_DMAx;

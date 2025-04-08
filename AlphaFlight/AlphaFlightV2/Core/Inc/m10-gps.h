@@ -13,7 +13,7 @@
 
 #define GPS_BUFFER_SIZE 512
 
-typedef struct {
+typedef struct __attribute__((packed)){
     uint32_t iTOW;
     uint16_t year;
     uint8_t  month;
@@ -58,7 +58,7 @@ typedef struct{
 	uint16_t package_len;
 	uint8_t ubx_package[GPS_BUFFER_SIZE / 2];
 }PARSE_STRUCT;
-void GPS_DUMP(void);
+
 void GPS_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx);
 void GPS_PARSE_BUFFER(void);
 void GPS_OVERFLOW_INCREMENT(void);
