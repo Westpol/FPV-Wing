@@ -30,6 +30,7 @@
 #include "servo.h"
 #include "stdbool.h"
 #include "scheduler.h"
+#include "m10-gps.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -178,12 +179,16 @@ int main(void)
   SERVO_SET(2, 1500);
   SERVOS_START_TRANSMISSION();
 
+  GPS_INIT(&huart2, &hdma_usart2_rx);
+
   SCHEDULER_ADD_TASK(GYRO_READ, 1000);		// 1 kHz
   SCHEDULER_ADD_TASK(GYRO_INTEGRATE, 1000);	// 1 kHz
   SCHEDULER_ADD_TASK(GYRO_FUSION, 2000);	// 500 Hz
   SCHEDULER_ADD_TASK(ACCEL_READ, 4000);		// 250 Hz
   SCHEDULER_ADD_TASK(BARO_READ, 40000);		// 250 Hz
-  SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
+  SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, 25000);	// 40 Hz
+  SCHEDULER_ADD_TASK(GPS_DUMP, 1000000);	// 1 Hz
+  //SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
   SCHEDULER_INIT(&htim5);
   /* USER CODE END 2 */
 
@@ -861,7 +866,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 38400;
+  huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -1188,6 +1193,12 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+	if(huart->Instance == USART2){
+		GPS_OVERFLOW_INCREMENT();
+	}
+}
+
 static void PRINT_DATA(){
 	USB_PRINTLN("Executed at: %ld  |  Angle Accel Y: %f  |  Angle Gyro Y: %f  |  Height: %f m", MICROS(), sensor_data->angle_y_accel, sensor_data->angle_y_fused, sensor_data->height);
 }
