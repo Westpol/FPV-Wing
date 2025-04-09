@@ -106,6 +106,7 @@ static void PRINT_DATA(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 Sensor_Data* sensor_data;
+GPS_NAV_PVT* gps_nav_pvt_data;
 /* USER CODE END 0 */
 
 /**
@@ -160,6 +161,7 @@ int main(void)
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
   sensor_data = SENSOR_DATA_STRUCT();
+  gps_nav_pvt_data = GPS_NAV_PVT_STRUCT_POINTER();
 
   LL_SPI_Enable(SPI1);
 
@@ -187,7 +189,7 @@ int main(void)
   SCHEDULER_ADD_TASK(ACCEL_READ, 4000);		// 250 Hz
   SCHEDULER_ADD_TASK(BARO_READ, 40000);		// 250 Hz
   SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, 40000);	// 25 Hz
-  //SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
+  SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
   SCHEDULER_INIT(&htim5);
   /* USER CODE END 2 */
 
@@ -1199,7 +1201,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 static void PRINT_DATA(){
-	USB_PRINTLN("Executed at: %ld  |  Angle Accel Y: %f  |  Angle Gyro Y: %f  |  Height: %f m", MICROS(), sensor_data->angle_y_accel, sensor_data->angle_y_fused, sensor_data->height);
+	USB_PRINTLN("Executed at: %ld  |  Angle Accel Y: %f  |  Angle Gyro Y: %f  |  Height: %f m  |  GPS Sats: %d", MICROS(), sensor_data->angle_y_accel, sensor_data->angle_y_fused, sensor_data->height, gps_nav_pvt_data->numSV);
 }
 /* USER CODE END 4 */
 

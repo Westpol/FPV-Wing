@@ -64,5 +64,6 @@ typedef struct{
 void GPS_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx);
 void GPS_PARSE_BUFFER(void);
 void GPS_OVERFLOW_INCREMENT(void);
+GPS_NAV_PVT* GPS_NAV_PVT_STRUCT_POINTER();
 
 #endif /* INC_M10_GPS_H_ */
