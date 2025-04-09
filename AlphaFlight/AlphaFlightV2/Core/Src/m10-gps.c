@@ -38,11 +38,12 @@ static uint16_t GPS_GET_DMA_POSITION() {
 }
 
 static void GPS_DECODE(){
-	if(parse_struct.package_class == 0x01 && parse_struct.package_id == 0x07 && parse_struct.payload_len == 92){
-		STATUS_LED_GREEN_ON();
+	STATUS_LED_GREEN_ON();
+	if(parse_struct.package_class == 0x01 && parse_struct.package_id == 0x07 && parse_struct.payload_len == 92 && UBX_ChecksumValid(parse_struct.ubx_package, parse_struct.payload_len)){
 		memcpy(&gps_nav_pvt, &parse_struct.ubx_package[6], parse_struct.payload_len);
 		//USB_PRINTLN("%d s", parse_struct.ubx_package[6 + 10]);
 		USB_PRINTLN("%d", gps_nav_pvt.fixType);
+		STATUS_LED_GREEN_OFF();
 	}
 }
 
@@ -52,7 +53,11 @@ void GPS_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 	HAL_UART_Receive_DMA(gps_uart, dma_buffer, GPS_BUFFER_SIZE);
 }
 
-static void memcpy_from_ringbuffer(uint8_t *dest, const uint8_t *src_ring, uint16_t start, uint16_t len, uint16_t buf_size) {
+static uint16_t ATB(uint64_t abs_index_val){		// absolute to buffer index values
+	return abs_index_val % GPS_BUFFER_SIZE;
+}
+
+static void MEMCPY_FROM_RINGBUFFER(uint8_t *dest, const uint8_t *src_ring, uint16_t start, uint16_t len, uint16_t buf_size) {
     if (start + len <= buf_size) {
         memcpy(dest, &src_ring[start], len);
     } else {
@@ -64,65 +69,39 @@ static void memcpy_from_ringbuffer(uint8_t *dest, const uint8_t *src_ring, uint1
 }
 
 void GPS_PARSE_BUFFER(void) {
-	STATUS_LED_GREEN_OFF();
-    uint16_t dma_pos = GPS_GET_DMA_POSITION();
-    uint32_t dma_wrap = buffer_wrap_around_count;
-    uint16_t pos = parse_struct.parser_position;
-    int iterations = 0;
+    uint64_t dma_pos_abs = GPS_GET_DMA_POSITION() + (buffer_wrap_around_count * GPS_BUFFER_SIZE);
+    uint8_t stuck_counter = 0;
 
-    while (iterations++ < MAX_PARSE_ITERATIONS) {
-        uint16_t available;
-        if (dma_wrap == parse_struct.parser_wrap_around_count) {
-            available = (dma_pos >= pos) ? (dma_pos - pos) : 0;
-        } else if (dma_wrap == parse_struct.parser_wrap_around_count + 1) {
-            available = (GPS_BUFFER_SIZE - pos) + dma_pos;
-        } else {
-            parse_struct.parser_position = 0;
-            parse_struct.parser_wrap_around_count = dma_wrap;
-            return;
-        }
+    while(stuck_counter < 50){
+		if(dma_pos_abs - parse_struct.parser_position > GPS_BUFFER_SIZE){
+			parse_struct.parser_position = dma_pos_abs - (GPS_BUFFER_SIZE / 2);
+		}
 
-        if (available < 8) return;
+		if(dma_pos_abs - 6 > parse_struct.parser_position){
+			if(dma_buffer[ATB(parse_struct.parser_position)] == 0xB5 && dma_buffer[ATB(parse_struct.parser_position + 1)] == 0x62){
+				parse_struct.package_class = dma_buffer[ATB(parse_struct.parser_position + 2)];
+				parse_struct.package_id = dma_buffer[ATB(parse_struct.parser_position + 3)];
+				parse_struct.package_len = ((uint16_t)dma_buffer[ATB(parse_struct.parser_position + 4)] | ((uint16_t)dma_buffer[ATB(parse_struct.parser_position + 5)] << 8)) + 8;
+				parse_struct.payload_len = ((uint16_t)dma_buffer[ATB(parse_struct.parser_position + 4)] | ((uint16_t)dma_buffer[ATB(parse_struct.parser_position + 5)] << 8));
 
-        uint8_t sync1 = dma_buffer[pos];
-        uint8_t sync2 = dma_buffer[(pos + 1) % GPS_BUFFER_SIZE];
+				if(parse_struct.parser_position + parse_struct.package_len > dma_pos_abs){
+					return;		// returns if DMA hasn't read enough data yet, a.k.a. reached the end of the GPS message
+				}
 
-        if (sync1 == 0xB5 && sync2 == 0x62) {
-            uint16_t len_low  = dma_buffer[(pos + 4) % GPS_BUFFER_SIZE];
-            uint16_t len_high = dma_buffer[(pos + 5) % GPS_BUFFER_SIZE];
-            uint16_t payload_len = len_low | (len_high << 8);
-            uint16_t total_len = payload_len + 8;
+				MEMCPY_FROM_RINGBUFFER(parse_struct.ubx_package, dma_buffer, parse_struct.parser_position, parse_struct.package_len, GPS_BUFFER_SIZE);
+				GPS_DECODE();
+				parse_struct.parser_position += parse_struct.package_len;
+			}
 
-            if (available < total_len) return;
+			while(dma_pos_abs - 1 > parse_struct.parser_position){
+				if(dma_buffer[ATB(parse_struct.parser_position)] == 0xB5 && dma_buffer[ATB(parse_struct.parser_position + 1)] == 0x62){
+					break;
+				}
 
-            memcpy_from_ringbuffer(parse_struct.ubx_package, dma_buffer, pos, total_len, GPS_BUFFER_SIZE);
-
-            // Optional: early sanity check on expected message class/ID/len before checksumming
-            uint8_t msg_class = parse_struct.ubx_package[2];
-            uint8_t msg_id = parse_struct.ubx_package[3];
-
-            if (UBX_ChecksumValid(parse_struct.ubx_package, payload_len)) {
-                parse_struct.package_class = msg_class;
-                parse_struct.package_id = msg_id;
-                parse_struct.payload_len = payload_len;
-
-                GPS_DECODE();  // will turn LED on for valid NAV-PVT
-
-                pos = (pos + total_len) % GPS_BUFFER_SIZE;
-                parse_struct.parser_position = pos;
-                parse_struct.parser_wrap_around_count = dma_wrap;
-                continue;
-            } else {
-                pos = (pos + 1) % GPS_BUFFER_SIZE;
-                parse_struct.parser_position = pos;
-                continue;
-            }
-        } else {
-            pos = (pos + 1) % GPS_BUFFER_SIZE;
-            parse_struct.parser_position = pos;
-
-            if (pos == dma_pos) return;
-        }
+				parse_struct.parser_position++;
+			}
+		}
+		stuck_counter++;
     }
 }
 

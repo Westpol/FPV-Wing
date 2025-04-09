@@ -11,7 +11,7 @@
 #include "stdint.h"
 #include "stm32f7xx_hal.h"
 
-#define GPS_BUFFER_SIZE 2048
+#define GPS_BUFFER_SIZE 1024
 #define MAX_PARSE_ITERATIONS 32  // Don't loop forever on garbage
 
 
@@ -53,8 +53,7 @@ typedef struct __attribute__((packed)){
 } GPS_NAV_PVT;
 
 typedef struct{
-	uint16_t parser_position;
-	uint32_t parser_wrap_around_count;
+	uint64_t parser_position;
 	uint8_t package_class;
 	uint8_t package_id;
 	uint16_t package_len;
