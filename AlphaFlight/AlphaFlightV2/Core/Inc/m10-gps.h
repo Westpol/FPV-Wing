@@ -12,6 +12,8 @@
 #include "stm32f7xx_hal.h"
 
 #define GPS_BUFFER_SIZE 2048
+#define MAX_PARSE_ITERATIONS 32  // Don't loop forever on garbage
+
 
 typedef struct __attribute__((packed)){
     uint32_t iTOW;
