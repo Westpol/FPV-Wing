@@ -38,8 +38,9 @@ static uint16_t GPS_GET_DMA_POSITION() {
 }
 
 static void GPS_DECODE(){
-	STATUS_LED_GREEN_ON();
+	//USB_PRINTLN("%X %X %X %X", parse_struct.ubx_package[0], parse_struct.ubx_package[1], parse_struct.package_class, parse_struct.package_id);
 	if(parse_struct.package_class == 0x01 && parse_struct.package_id == 0x07 && parse_struct.payload_len == 92 && UBX_ChecksumValid(parse_struct.ubx_package, parse_struct.payload_len)){
+		STATUS_LED_GREEN_ON();
 		memcpy(&gps_nav_pvt, &parse_struct.ubx_package[6], parse_struct.payload_len);
 		//USB_PRINTLN("%d s", parse_struct.ubx_package[6 + 10]);
 		USB_PRINTLN("%d", gps_nav_pvt.fixType);
@@ -88,7 +89,7 @@ void GPS_PARSE_BUFFER(void) {
 					return;		// returns if DMA hasn't read enough data yet, a.k.a. reached the end of the GPS message
 				}
 
-				MEMCPY_FROM_RINGBUFFER(parse_struct.ubx_package, dma_buffer, parse_struct.parser_position, parse_struct.package_len, GPS_BUFFER_SIZE);
+				MEMCPY_FROM_RINGBUFFER(parse_struct.ubx_package, dma_buffer, ATB(parse_struct.parser_position), parse_struct.package_len, GPS_BUFFER_SIZE);
 				GPS_DECODE();
 				parse_struct.parser_position += parse_struct.package_len;
 			}
