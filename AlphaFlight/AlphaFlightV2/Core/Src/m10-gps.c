@@ -11,7 +11,7 @@
 
 static UART_HandleTypeDef *gps_uart;
 static DMA_HandleTypeDef *gps_dma;
-static uint32_t buffer_overflow_count = 0;
+static uint32_t buffer_wrap_around_count = 0;
 static uint8_t dma_buffer[GPS_BUFFER_SIZE] = {0};
 
 static PARSE_STRUCT parse_struct = {0};
@@ -56,29 +56,69 @@ void GPS_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 void GPS_PARSE_BUFFER(void){
 	STATUS_LED_GREEN_OFF();
 	uint16_t dma_pos = GPS_GET_DMA_POSITION();
-	if(buffer_overflow_count == parse_struct.parser_overflow_count){		// if the buffer has not wrapped around
-		for(int i = parse_struct.parser_position; i < dma_pos - 6; i++){
-			if(dma_buffer[i] == 0xB5 && dma_buffer[i + 1] == 0x62){
+	uint32_t dma_wrap_around = buffer_wrap_around_count;
 
-				parse_struct.package_class = dma_buffer[i + 2];				// extracting important data
-				parse_struct.package_id = dma_buffer[i + 3];
-				parse_struct.package_len = ((uint16_t)dma_buffer[i + 4] | ((uint16_t)dma_buffer[i + 5] << 8)) + 8;
-				parse_struct.payload_len = ((uint16_t)dma_buffer[i + 4] | ((uint16_t)dma_buffer[i + 5] << 8));
+	if(parse_struct.parser_wrap_around_count == dma_wrap_around && dma_pos > parse_struct.parser_position){		// only proceed if on the same buffer wrap around and new data to parse
+		while(parse_struct.parser_position <= dma_pos - 6){
+			if(dma_buffer[parse_struct.parser_position] == 0xB5 && dma_buffer[parse_struct.parser_position + 1] == 0x62){
 
-				if(dma_pos - i >= parse_struct.package_len){		// only proceed if the whole package is in the DMA buffer
-					parse_struct.parser_position = i + 2;
-					memcpy(&parse_struct.ubx_package[0], &dma_buffer[i], parse_struct.package_len);
-					GPS_DECODE();
+				parse_struct.package_class = dma_buffer[parse_struct.parser_position + 2];
+				parse_struct.package_id = dma_buffer[parse_struct.parser_position + 3];
+				parse_struct.package_len = ((uint16_t)dma_buffer[parse_struct.parser_position + 4] | ((uint16_t)dma_buffer[parse_struct.parser_position + 5] << 8)) + 8;
+				parse_struct.payload_len = ((uint16_t)dma_buffer[parse_struct.parser_position + 4] | ((uint16_t)dma_buffer[parse_struct.parser_position + 5] << 8));
+
+				if(parse_struct.parser_position + parse_struct.package_len > dma_pos){
+					return;		// not enough data read yet
 				}
-				else{
-					parse_struct.parser_position = i;
-					return;		// wait until the buffer is big enough to decode the whole message
-				}
+
+				memcpy(&parse_struct.ubx_package[0], &dma_buffer[parse_struct.parser_position], parse_struct.package_len);
+				GPS_DECODE();
+				parse_struct.parser_position = parse_struct.parser_position + (parse_struct.package_len - 5);
+
+			}
+			parse_struct.parser_position++;
+			if(parse_struct.parser_position >= GPS_BUFFER_SIZE){
+				parse_struct.parser_position = 0;
+				parse_struct.parser_wrap_around_count = dma_wrap_around;
 			}
 		}
 	}
+	else if(parse_struct.parser_wrap_around_count + 1 == dma_wrap_around && dma_pos < parse_struct.parser_position){		// only proceed if dma has wrapped around but is still behind parser
+		while(parse_struct.parser_position < GPS_BUFFER_SIZE - 7){
+			if(dma_buffer[parse_struct.parser_position] == 0xB5 && dma_buffer[parse_struct.parser_position + 1] == 0x62){
+
+				parse_struct.package_class = dma_buffer[parse_struct.parser_position + 2];
+				parse_struct.package_id = dma_buffer[parse_struct.parser_position + 3];
+				parse_struct.package_len = ((uint16_t)dma_buffer[parse_struct.parser_position + 4] | ((uint16_t)dma_buffer[parse_struct.parser_position + 5] << 8)) + 8;
+				parse_struct.payload_len = ((uint16_t)dma_buffer[parse_struct.parser_position + 4] | ((uint16_t)dma_buffer[parse_struct.parser_position + 5] << 8));
+
+				if(parse_struct.parser_position + parse_struct.package_len > GPS_BUFFER_SIZE){
+					if((parse_struct.parser_position + parse_struct.package_len) - GPS_BUFFER_SIZE <= dma_pos){
+						memcpy(&parse_struct.ubx_package[0], &dma_buffer[parse_struct.parser_position], GPS_BUFFER_SIZE - parse_struct.parser_position);
+						memcpy(&parse_struct.ubx_package[GPS_BUFFER_SIZE - parse_struct.parser_position], &dma_buffer[0], (parse_struct.parser_position + parse_struct.package_len) - GPS_BUFFER_SIZE);
+						parse_struct.parser_position = 0;
+						parse_struct.parser_wrap_around_count = dma_wrap_around;
+						parse_struct.parser_position = parse_struct.parser_position + ((parse_struct.parser_position + parse_struct.package_len) - GPS_BUFFER_SIZE - 5);
+						GPS_DECODE();
+						return;
+					}
+				}
+				else{
+					memcpy(&parse_struct.ubx_package[0], &dma_buffer[parse_struct.parser_position], parse_struct.package_len);
+					GPS_DECODE();
+					parse_struct.parser_position = parse_struct.parser_position + (parse_struct.package_len - 5);
+					return;
+				}
+			}
+		}
+		parse_struct.parser_position++;
+		if(parse_struct.parser_position >= GPS_BUFFER_SIZE){
+			parse_struct.parser_position = 0;
+			parse_struct.parser_wrap_around_count = dma_wrap_around;
+		}
+	}
 	else{
-		parse_struct.parser_overflow_count = buffer_overflow_count;
+		parse_struct.parser_wrap_around_count = dma_wrap_around;
 		parse_struct.parser_position = 0;
 	}
 
@@ -92,5 +132,5 @@ void GPS_PARSE_BUFFER(void){
 }
 
 void GPS_OVERFLOW_INCREMENT(void){
-	buffer_overflow_count++;
+	buffer_wrap_around_count++;
 }

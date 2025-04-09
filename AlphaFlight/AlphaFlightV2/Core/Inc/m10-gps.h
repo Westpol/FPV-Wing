@@ -11,7 +11,7 @@
 #include "stdint.h"
 #include "stm32f7xx_hal.h"
 
-#define GPS_BUFFER_SIZE 512
+#define GPS_BUFFER_SIZE 2048
 
 typedef struct __attribute__((packed)){
     uint32_t iTOW;
@@ -52,7 +52,7 @@ typedef struct __attribute__((packed)){
 
 typedef struct{
 	uint16_t parser_position;
-	uint32_t parser_overflow_count;
+	uint32_t parser_wrap_around_count;
 	uint8_t package_class;
 	uint8_t package_id;
 	uint16_t package_len;
