@@ -1201,7 +1201,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 static void PRINT_DATA(){
-	USB_PRINTLN("Executed at: %ld  |  Angle Accel Y: %f  |  Angle Gyro Y: %f  |  Height: %f m  |  GPS Sats: %d", MICROS(), sensor_data->angle_y_accel, sensor_data->angle_y_fused, sensor_data->height, gps_nav_pvt_data->numSV);
+	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  Height: %f m  |  GPS Sats: %d  |  GPS speed: %f kmh", MICROS(), sensor_data->angle_y_fused, sensor_data->height, gps_nav_pvt_data->numSV, (((float)gps_nav_pvt_data->gSpeed / 1000.0) * 3.6));
 }
 /* USER CODE END 4 */
 
