@@ -31,6 +31,7 @@
 #include "stdbool.h"
 #include "scheduler.h"
 #include "m10-gps.h"
+#include "time-utils.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -190,7 +191,7 @@ int main(void)
   SCHEDULER_ADD_TASK(BARO_READ, 40000);		// 250 Hz
   SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, 40000);	// 25 Hz
   SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
-  SCHEDULER_INIT(&htim5);
+  SCHEDULER_INIT(&htim5);	// MICROS ONLY WORKS WHEN THIS IS ENABLED
   /* USER CODE END 2 */
 
   /* Infinite loop */

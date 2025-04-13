@@ -6,19 +6,16 @@
  */
 
 #include "scheduler.h"
+#include "time-utils.h"
 
 static task_t tasks[MAX_TASKS];
 static uint8_t task_count = 0;
 static uint32_t current_time = 0;
-static TIM_HandleTypeDef* htim;
 
-uint32_t MICROS(){
-	return htim->Instance->CNT;
-}
+
 
 void SCHEDULER_INIT(TIM_HandleTypeDef *HTIMx){
-	htim = HTIMx;
-	HAL_TIM_Base_Start(htim);
+	TIME_UTILS_MICROS_TIM_START(HTIMx);
 	current_time = MICROS();
 	for(int i = 0; i < task_count; i++){
 		tasks[i].time_last_execute = current_time;
