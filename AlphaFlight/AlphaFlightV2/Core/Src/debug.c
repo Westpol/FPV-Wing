@@ -40,6 +40,18 @@ void USB_PRINT(const char *format, ...) {
     CDC_Transmit_FS((uint8_t *)message, len);
 }
 
+void USB_PRINT_HEX(uint8_t *data, uint32_t len) {
+    char buffer[512]; // 3 chars per byte + \r\n + null terminator
+    char *ptr = buffer;
+
+    for (uint8_t i = 0; i < len; i++) {
+        ptr += sprintf(ptr, "%02X ", data[i]);
+    }
+
+    ptr += sprintf(ptr, "\r\n");  // Append \r\n at the end
+    CDC_Transmit_FS((uint8_t *)buffer, strlen(buffer));
+}
+
 void STATUS_LED_GREEN_ON(){
 	GPIOB->BSRR |= GPIO_PIN_9 << 16;
 }

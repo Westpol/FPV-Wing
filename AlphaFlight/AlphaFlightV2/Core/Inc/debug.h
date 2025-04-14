@@ -15,6 +15,7 @@
 
 void USB_PRINTLN(const char *format, ...);
 void USB_PRINT(const char *format, ...);
+void USB_PRINT_HEX(uint8_t *data, uint32_t len);
 
 void STATUS_LED_GREEN_ON();
 void STATUS_LED_GREEN_OFF();

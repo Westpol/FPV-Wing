@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "debug.h"
 #include "onboard-sensors.h"
+#include "crossfire.h"
 #include "servo.h"
 #include "stdbool.h"
 #include "scheduler.h"
@@ -182,6 +183,8 @@ int main(void)
   SERVO_SET(2, 1500);
   SERVOS_START_TRANSMISSION();
 
+  CRSF_INIT(&huart4, &hdma_uart4_rx);
+
   GPS_INIT(&huart2, &hdma_usart2_rx);
 
   SCHEDULER_ADD_TASK(GYRO_READ, 1000);		// 1 kHz
@@ -189,8 +192,9 @@ int main(void)
   SCHEDULER_ADD_TASK(GYRO_FUSION, 2000);	// 500 Hz
   SCHEDULER_ADD_TASK(ACCEL_READ, 4000);		// 250 Hz
   SCHEDULER_ADD_TASK(BARO_READ, 40000);		// 250 Hz
+  SCHEDULER_ADD_TASK(CRSF_PARSE_BUFFER, 1000000);	// 100 Hz
   SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, 40000);	// 25 Hz
-  SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
+  //SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
   SCHEDULER_INIT(&htim5);	// MICROS ONLY WORKS WHEN THIS IS ENABLED
   /* USER CODE END 2 */
 
@@ -1198,6 +1202,9 @@ static void MX_GPIO_Init(void)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	if(huart->Instance == USART2){
 		GPS_OVERFLOW_INCREMENT();
+	}
+	if(huart->Instance == UART4){
+		CRSF_OVERFLOW_INCREMENT();
 	}
 }
 
