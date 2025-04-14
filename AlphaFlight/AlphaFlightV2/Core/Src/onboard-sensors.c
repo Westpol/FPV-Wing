@@ -8,7 +8,7 @@
 #include "debug.h"
 #include "math.h"
 #include "stdbool.h"
-#include "scheduler.h"
+#include "time-utils.h"
 
 static SPI_TypeDef *sensor_spi;
 static GPIO_TypeDef *gyro_cs_port;
