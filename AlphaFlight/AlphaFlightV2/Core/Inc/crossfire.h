@@ -23,8 +23,15 @@ typedef struct{
 	uint8_t crsf_package[CRSF_BUFFER_SIZE];
 }CRSF_PARSE_STRUCT;
 
+typedef struct{
+	uint16_t channel[16];
+	uint64_t last_channel_update;
+	uint16_t rssi;
+}CRSF_DATA;
+
 void CRSF_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx);
 void CRSF_PARSE_BUFFER();
 void CRSF_OVERFLOW_INCREMENT();
+CRSF_DATA* CRSF_GET_DATA_STRUCT();
 
 #endif /* INC_CROSSFIRE_H_ */

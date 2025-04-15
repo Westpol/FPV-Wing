@@ -109,6 +109,7 @@ static void PRINT_DATA(void);
 /* USER CODE BEGIN 0 */
 Sensor_Data* sensor_data;
 GPS_NAV_PVT* gps_nav_pvt_data;
+CRSF_DATA* crsf_data;
 /* USER CODE END 0 */
 
 /**
@@ -164,6 +165,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   sensor_data = SENSOR_DATA_STRUCT();
   gps_nav_pvt_data = GPS_NAV_PVT_STRUCT_POINTER();
+  crsf_data = CRSF_GET_DATA_STRUCT();
 
   LL_SPI_Enable(SPI1);
 
@@ -192,9 +194,9 @@ int main(void)
   SCHEDULER_ADD_TASK(GYRO_FUSION, 2000);	// 500 Hz
   SCHEDULER_ADD_TASK(ACCEL_READ, 4000);		// 250 Hz
   SCHEDULER_ADD_TASK(BARO_READ, 40000);		// 250 Hz
-  SCHEDULER_ADD_TASK(CRSF_PARSE_BUFFER, 100000);	// 10 Hz
+  SCHEDULER_ADD_TASK(CRSF_PARSE_BUFFER, 10000);	// 100 Hz
   SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, 40000);	// 25 Hz
-  //SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
+  SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
   SCHEDULER_INIT(&htim5);	// MICROS ONLY WORKS WHEN THIS IS ENABLED
   /* USER CODE END 2 */
 
@@ -1209,7 +1211,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 static void PRINT_DATA(){
-	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  Height: %f m  |  GPS Sats: %d  |  GPS speed: %f kmh", MICROS(), sensor_data->angle_y_fused, sensor_data->height, gps_nav_pvt_data->numSV, (((float)gps_nav_pvt_data->gSpeed / 1000.0) * 3.6));
+	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  Height: %f m  |  GPS Sats: %d  |  CRSF Ch 1: %d", MICROS(), sensor_data->angle_y_fused, sensor_data->height, gps_nav_pvt_data->numSV, crsf_data->channel[0]);
 }
 /* USER CODE END 4 */
 

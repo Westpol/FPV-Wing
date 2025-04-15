@@ -8,12 +8,14 @@
 #include "crossfire.h"
 #include "debug.h"
 #include "stdbool.h"
+#include "time-utils.h"
 
 static UART_HandleTypeDef *crsf_uart;
 static DMA_HandleTypeDef *crsf_dma;
 static uint32_t buffer_wrap_around_count = 0;
 static uint8_t dma_buffer[CRSF_BUFFER_SIZE] = {0};
 static CRSF_PARSE_STRUCT parser = {0};
+static CRSF_DATA crsf_data = {0};
 
 static uint8_t crc8tab[256] = {
 	    0x00, 0xD5, 0x7F, 0xAA, 0xFE, 0x2B, 0x81, 0x54, 0x29, 0xFC, 0x56, 0x83, 0xD7, 0x02, 0xA8, 0x7D,
@@ -32,6 +34,25 @@ static uint8_t crc8tab[256] = {
 	    0x20, 0xF5, 0x5F, 0x8A, 0xDE, 0x0B, 0xA1, 0x74, 0x09, 0xDC, 0x76, 0xA3, 0xF7, 0x22, 0x88, 0x5D,
 	    0xD6, 0x03, 0xA9, 0x7C, 0x28, 0xFD, 0x57, 0x82, 0xFF, 0x2A, 0x80, 0x55, 0x01, 0xD4, 0x7E, 0xAB,
 	    0x84, 0x51, 0xFB, 0x2E, 0x7A, 0xAF, 0x05, 0xD0, 0xAD, 0x78, 0xD2, 0x07, 0x53, 0x86, 0x2C, 0xF9};
+
+static void CRSF_DECODE_CHANNELS(const uint8_t *payload, uint16_t *channels) {
+    channels[0]  = (payload[0] | ((uint16_t)payload[1] << 8)) & 0x07FF;
+    channels[1]  = ((payload[1] >> 3) | ((uint16_t)payload[2] << 5)) & 0x07FF;
+    channels[2]  = ((payload[2] >> 6) | ((uint16_t)payload[3] << 2) | ((uint16_t)payload[4] << 10)) & 0x07FF;
+    channels[3]  = ((payload[4] >> 1) | ((uint16_t)payload[5] << 7)) & 0x07FF;
+    channels[4]  = ((payload[5] >> 4) | ((uint16_t)payload[6] << 4)) & 0x07FF;
+    channels[5]  = ((payload[6] >> 7) | ((uint16_t)payload[7] << 1) | ((uint16_t)payload[8] << 9)) & 0x07FF;
+    channels[6]  = ((payload[8] >> 2) | ((uint16_t)payload[9] << 6)) & 0x07FF;
+    channels[7]  = ((payload[9] >> 5) | ((uint16_t)payload[10] << 3)) & 0x07FF;
+    channels[8]  = (payload[11] | ((uint16_t)payload[12] << 8)) & 0x07FF;
+    channels[9]  = ((payload[12] >> 3) | ((uint16_t)payload[13] << 5)) & 0x07FF;
+    channels[10] = ((payload[13] >> 6) | ((uint16_t)payload[14] << 2) | ((uint16_t)payload[15] << 10)) & 0x07FF;
+    channels[11] = ((payload[15] >> 1) | ((uint16_t)payload[16] << 7)) & 0x07FF;
+    channels[12] = ((payload[16] >> 4) | ((uint16_t)payload[17] << 4)) & 0x07FF;
+    channels[13] = ((payload[17] >> 7) | ((uint16_t)payload[18] << 1) | ((uint16_t)payload[19] << 9)) & 0x07FF;
+    channels[14] = ((payload[19] >> 2) | ((uint16_t)payload[20] << 6)) & 0x07FF;
+    channels[15] = ((payload[20] >> 5) | ((uint16_t)payload[21] << 3)) & 0x07FF;
+}
 
 static uint8_t crc8(const uint8_t * ptr, uint8_t len){
     uint8_t crc = 0;
@@ -71,7 +92,8 @@ static void MEMCPY_FROM_RINGBUFFER(uint8_t *dest, const uint8_t *src_ring, uint1
 
 static void CRSF_DECODE(){
 	if(parser.payload_type == 0x16 && VALIDATE_CRSF_CRC()){
-		USB_PRINT_HEX(parser.crsf_package, parser.package_len);
+		CRSF_DECODE_CHANNELS(&parser.crsf_package[3], crsf_data.channel);
+		crsf_data.last_channel_update = MICROS();
 	}
 }
 
@@ -122,4 +144,9 @@ void CRSF_PARSE_BUFFER(){
 
 void CRSF_OVERFLOW_INCREMENT(){
 	buffer_wrap_around_count++;
+}
+
+
+CRSF_DATA* CRSF_GET_DATA_STRUCT(){
+	return &crsf_data;
 }
