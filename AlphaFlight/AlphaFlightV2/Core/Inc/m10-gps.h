@@ -59,7 +59,7 @@ typedef struct{
 	uint16_t package_len;
 	uint8_t payload_len;
 	uint8_t ubx_package[GPS_BUFFER_SIZE];
-}PARSE_STRUCT;
+}GPS_PARSE_STRUCT;
 
 void GPS_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx);
 void GPS_PARSE_BUFFER(void);

@@ -14,7 +14,7 @@ static DMA_HandleTypeDef *gps_dma;
 static uint32_t buffer_wrap_around_count = 0;
 static uint8_t dma_buffer[GPS_BUFFER_SIZE] = {0};
 
-static PARSE_STRUCT parse_struct = {0};
+static GPS_PARSE_STRUCT parse_struct = {0};
 static GPS_NAV_PVT gps_nav_pvt = {0};
 
 static bool UBX_ChecksumValid(uint8_t *ubx, uint16_t payload_len) {
