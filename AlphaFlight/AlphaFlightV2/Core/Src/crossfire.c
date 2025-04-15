@@ -35,7 +35,7 @@ static uint8_t crc8tab[256] = {
 	    0xD6, 0x03, 0xA9, 0x7C, 0x28, 0xFD, 0x57, 0x82, 0xFF, 0x2A, 0x80, 0x55, 0x01, 0xD4, 0x7E, 0xAB,
 	    0x84, 0x51, 0xFB, 0x2E, 0x7A, 0xAF, 0x05, 0xD0, 0xAD, 0x78, 0xD2, 0x07, 0x53, 0x86, 0x2C, 0xF9};
 
-static void CRSF_DECODE_CHANNELS(const uint8_t *payload, uint16_t *channels) {
+static void CRSF_DECODE_CHANNELS(const uint8_t *payload, uint16_t *channels) {		// converts 22 bytes to 16 11bit channels
     channels[0]  = (payload[0] | ((uint16_t)payload[1] << 8)) & 0x07FF;
     channels[1]  = ((payload[1] >> 3) | ((uint16_t)payload[2] << 5)) & 0x07FF;
     channels[2]  = ((payload[2] >> 6) | ((uint16_t)payload[3] << 2) | ((uint16_t)payload[4] << 10)) & 0x07FF;
@@ -54,7 +54,7 @@ static void CRSF_DECODE_CHANNELS(const uint8_t *payload, uint16_t *channels) {
     channels[15] = ((payload[20] >> 5) | ((uint16_t)payload[21] << 3)) & 0x07FF;
 }
 
-static uint8_t crc8(const uint8_t * ptr, uint8_t len){
+static uint8_t crc8(const uint8_t * ptr, uint8_t len){		// outputs a CRC value from a given byte array
     uint8_t crc = 0;
     for(uint8_t i=0; i<len; i++){
         crc = crc8tab[crc ^ *ptr++];
@@ -62,11 +62,11 @@ static uint8_t crc8(const uint8_t * ptr, uint8_t len){
     return crc;
 }
 
-static uint16_t CRSF_GET_DMA_POSITION() {
+static uint16_t CRSF_GET_DMA_POSITION(){
     return CRSF_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(crsf_dma);
 }
 
-static bool VALIDATE_CRSF_CRC() {
+static bool VALIDATE_CRSF_CRC() {		// compares parser CRC to calculated CRC, outputs true or false upon match/mismatch
     // Payload length is already known
     uint8_t crc_input_len = parser.payload_len - 1;  // +1 for the Type byte
     uint8_t *crc_input_start = &parser.crsf_package[2];  // Type starts at byte 2
@@ -75,7 +75,7 @@ static bool VALIDATE_CRSF_CRC() {
     return calculated_crc == parser.package_crc;
 }
 
-static uint16_t ATB(uint64_t abs_index_val){		// absolute to buffer index values
+static uint16_t ATB(uint64_t abs_index_val){		// absolute index to buffer index
 	return abs_index_val % CRSF_BUFFER_SIZE;
 }
 
