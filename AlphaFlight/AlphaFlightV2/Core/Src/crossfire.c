@@ -38,7 +38,6 @@ static uint8_t crc8(const uint8_t * ptr, uint8_t len){
     for(uint8_t i=0; i<len; i++){
         crc = crc8tab[crc ^ *ptr++];
     }
-    USB_PRINTLN("%X, %d", crc, len);
     return crc;
 }
 
@@ -46,14 +45,13 @@ static uint16_t CRSF_GET_DMA_POSITION() {
     return CRSF_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(crsf_dma);
 }
 
-static uint8_t VALIDATE_CRSF_CRC() {
+static bool VALIDATE_CRSF_CRC() {
     // Payload length is already known
-    uint8_t crc_input_len = parser.payload_len + 1;  // +1 for the Type byte
+    uint8_t crc_input_len = parser.payload_len - 1;  // +1 for the Type byte
     uint8_t *crc_input_start = &parser.crsf_package[2];  // Type starts at byte 2
     uint8_t calculated_crc = crc8(crc_input_start, crc_input_len);
-    //USB_PRINTLN("%d, %X, %X, %X", crc_input_len, *crc_input_start, calculated_crc, parser.package_crc);
 
-    return calculated_crc;
+    return calculated_crc == parser.package_crc;
 }
 
 static uint16_t ATB(uint64_t abs_index_val){		// absolute to buffer index values
@@ -72,12 +70,9 @@ static void MEMCPY_FROM_RINGBUFFER(uint8_t *dest, const uint8_t *src_ring, uint1
 }
 
 static void CRSF_DECODE(){
-	if(parser.payload_type == 0x16){
-		VALIDATE_CRSF_CRC();
-		/*USB_PRINT_HEX(parser.crsf_package, parser.package_len);
-		HAL_Delay(2);
-		USB_PRINTLN("Calculated CRC: %X  Expectec CRC: %X  Payload len: %d", VALIDATE_CRSF_CRC(), parser.package_crc, parser.payload_len);
-	*/}
+	if(parser.payload_type == 0x16 && VALIDATE_CRSF_CRC()){
+		USB_PRINT_HEX(parser.crsf_package, parser.package_len);
+	}
 }
 
 void CRSF_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
