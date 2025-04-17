@@ -16,7 +16,7 @@ int SERVO_ADD(TIM_HandleTypeDef *SERVO_TIMER, uint32_t TIMER_CHANNEL){
 	if(num_active_servos < MAX_SERVOS){
 		servo[num_active_servos].servo_timer = SERVO_TIMER;
 		servo[num_active_servos].timer_channel = TIMER_CHANNEL;
-		servo[num_active_servos].servo_microseconds = 1499;
+		servo[num_active_servos].servo_microseconds = 1500;
 		num_active_servos += 1;
 		return num_active_servos - 1;
 	}
