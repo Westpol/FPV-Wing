@@ -34,6 +34,7 @@
 #include "m10-gps.h"
 #include "time-utils.h"
 #include "flight_control.h"
+#include "attitude_pid.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -190,6 +191,9 @@ int main(void)
 
   GPS_INIT(&huart2, &hdma_usart2_rx);
 
+  FC_INIT(sensor_data, gps_nav_pvt_data, crsf_data);
+  FC_PID_INIT(crsf_data, sensor_data);
+
   SCHEDULER_ADD_TASK(GYRO_READ, 1000);		// 1 kHz
   SCHEDULER_ADD_TASK(GYRO_INTEGRATE, 1000);	// 1 kHz
   SCHEDULER_ADD_TASK(GYRO_FUSION, 2000);	// 500 Hz
@@ -198,8 +202,10 @@ int main(void)
   SCHEDULER_ADD_TASK(CRSF_PARSE_BUFFER, 10000);	// 100 Hz
   SCHEDULER_ADD_TASK(FC_SANITY_CHECK, 10000);		// 100 Hz
   SCHEDULER_ADD_TASK(FC_MODE_CHECK, 10000);		// 100 Hz
+  SCHEDULER_ADD_TASK(FC_PROCESS, 10000);		// 100 Hz
   SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, 40000);	// 25 Hz
-  SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
+  SCHEDULER_ADD_TASK(FC_PID_PRINT_CURRENT_SERVO_POINTS, 100000);
+  //SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
   SCHEDULER_INIT(&htim5);	// MICROS ONLY WORKS WHEN THIS IS ENABLED
   /* USER CODE END 2 */
 
@@ -1214,7 +1220,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 static void PRINT_DATA(){
-	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  Height: %f m  |  GPS Sats: %d  |  CRSF Ch 1: %d", MICROS(), sensor_data->angle_y_fused, sensor_data->height, gps_nav_pvt_data->numSV, crsf_data->channel[0]);
+	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  Height: %f m  |  GPS Sats: %d  |  CRSF Ch 6: %d", MICROS(), sensor_data->angle_y_fused, sensor_data->height, gps_nav_pvt_data->numSV, crsf_data->channel[5]);
 }
 /* USER CODE END 4 */
 
