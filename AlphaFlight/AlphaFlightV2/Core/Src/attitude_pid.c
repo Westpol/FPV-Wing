@@ -23,6 +23,9 @@ static void FC_PID_MIXER(float pitchDeflection, float rollDeflection, float thro
 	current_servo_points.servo_left = servoLeft * 500 + 1500;
 	current_servo_points.servo_right = servoRight * 500 + 1500;
 	current_servo_points.motor = throttle * 1000 + 1000;
+	SERVO_SET(0, current_servo_points.servo_left);
+	SERVO_SET(1, current_servo_points.motor);
+	SERVO_SET(2, current_servo_points.servo_right);
 
 }
 

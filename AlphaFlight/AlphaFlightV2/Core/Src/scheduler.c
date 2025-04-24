@@ -14,8 +14,7 @@ static uint32_t current_time = 0;
 
 
 
-void SCHEDULER_INIT(TIM_HandleTypeDef *HTIMx){
-	TIME_UTILS_MICROS_TIM_START(HTIMx);
+void SCHEDULER_INIT(){
 	current_time = MICROS();
 	for(int i = 0; i < task_count; i++){
 		tasks[i].time_last_execute = current_time;

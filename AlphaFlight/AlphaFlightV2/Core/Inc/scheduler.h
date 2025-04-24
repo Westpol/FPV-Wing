@@ -22,7 +22,7 @@ typedef struct{
 	uint32_t time_to_execute;
 }task_t;
 
-void SCHEDULER_INIT(TIM_HandleTypeDef *HTIMx);
+void SCHEDULER_INIT();
 void SCHEDULER_ADD_TASK(task_func_t task_func, uint32_t period);
 void SCHEDULER_UPDATE(void);
 
