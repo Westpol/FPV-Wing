@@ -103,6 +103,18 @@ void CRSF_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 	HAL_UART_Receive_DMA(crsf_uart, dma_buffer, CRSF_BUFFER_SIZE);
 }
 
+void CRSF_HANDLE_TELEMETRY(){
+	CRSF_SEND_TELEMETRY(0x0A);		// airspeed
+}
+
+void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
+	uint8_t payload_data[3] = {TELEMETRY_TYPE, 0x05, 0x7C};
+	uint8_t crc = crc8(payload_data, 3);
+	uint8_t telemetry_data[6] = {0xEE, 0x04, TELEMETRY_TYPE, 0x05, 0x7C, crc};
+
+	HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, 6);
+}
+
 void CRSF_PARSE_BUFFER(){
     uint64_t dma_pos_abs = CRSF_GET_DMA_POSITION() + (buffer_wrap_around_count * CRSF_BUFFER_SIZE);
     uint8_t stuck_counter = 0;

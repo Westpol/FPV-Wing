@@ -73,6 +73,7 @@ UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 UART_HandleTypeDef huart6;
 DMA_HandleTypeDef hdma_uart4_rx;
+DMA_HandleTypeDef hdma_uart4_tx;
 DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart1_tx;
 DMA_HandleTypeDef hdma_usart2_rx;
@@ -204,6 +205,7 @@ int main(void)
   SCHEDULER_ADD_TASK(FC_MODE_CHECK, 10000);		// 100 Hz
   SCHEDULER_ADD_TASK(FC_PROCESS, 10000);		// 100 Hz
   SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, 40000);	// 25 Hz
+  SCHEDULER_ADD_TASK(CRSF_HANDLE_TELEMETRY, 100000);
   SCHEDULER_ADD_TASK(FC_PID_PRINT_CURRENT_SERVO_POINTS, 100000);
   //SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
   SCHEDULER_INIT(&htim5);	// MICROS ONLY WORKS WHEN THIS IS ENABLED
@@ -989,6 +991,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
+  /* DMA1_Stream4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
   /* DMA1_Stream5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
