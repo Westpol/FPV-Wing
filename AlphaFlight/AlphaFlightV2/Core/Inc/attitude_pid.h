@@ -48,6 +48,7 @@ typedef struct{
 
 void FC_PID_INIT(CRSF_DATA *crsf_d, Sensor_Data *sensor_d);
 void FC_PID_DIRECT_CONTROL(bool armed);
+void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(bool armed, uint32_t dt);
 
 // debug
 void FC_PID_PRINT_CURRENT_SERVO_POINTS();

@@ -19,7 +19,6 @@ static Sensor_Data *sensor_data;
 
 static FLY_BY_WIRE_PID_VALUES fbw_pid = {0};
 static FLY_BY_WIRE_PID fbw_pid_settings = {0};
-static uint32_t last_pid_execution_time = 0;
 
 static void FC_PID_MIXER(float pitchDeflection, float rollDeflection, float throttle){
 	float servoLeft = pitchDeflection + rollDeflection;
@@ -38,7 +37,15 @@ static void FC_PID_MIXER(float pitchDeflection, float rollDeflection, float thro
 void FC_PID_INIT(CRSF_DATA *crsf_d, Sensor_Data *sensor_d){
 	crsf_data = crsf_d;
 	sensor_data = sensor_d;
-	last_pid_execution_time = MICROS();
+	fly_by_wire_setpoints = FC_GET_SETPOINTS();
+	fbw_pid_settings.pitch_d = 0.01;
+	fbw_pid_settings.pitch_p = 0.01;
+	fbw_pid_settings.pitch_i = 0.001;
+	fbw_pid_settings.pitch_gain = 0.01;
+	fbw_pid_settings.roll_d = 0.01;
+	fbw_pid_settings.roll_p = 0.01;
+	fbw_pid_settings.roll_i = 0.001;
+	fbw_pid_settings.roll_gain = 0.01;
 }
 
 void FC_PID_DIRECT_CONTROL(bool armed){
@@ -50,22 +57,25 @@ void FC_PID_DIRECT_CONTROL(bool armed){
 	}
 }
 
-void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(){
-	uint32_t dt = MICROS() - last_pid_execution_time;
-	last_pid_execution_time = MICROS();
-	if(dt > 100000){
-		return;
-	}
+void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(bool armed, uint32_t dt){
 	fbw_pid.pitch_error = fly_by_wire_setpoints->pitch_angle - sensor_data->angle_x_fused;
 	fbw_pid.roll_error = fly_by_wire_setpoints->roll_angle - sensor_data->angle_y_fused;
-	fbw_pid.pitch_error_accumulated = MAX(MIN(fbw_pid.pitch_error_accumulated + (fbw_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -150.0), 150.0);
-	fbw_pid.roll_error_accumulated = MAX(MIN(fbw_pid.roll_error_accumulated + (fbw_pid.roll_error * fbw_pid_settings.roll_i * dt), -150.0), 150.0);
+	fbw_pid.pitch_error_accumulated = MAX(MIN(fbw_pid.pitch_error_accumulated + (fbw_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -0.15), 0.15);
+	fbw_pid.roll_error_accumulated = MAX(MIN(fbw_pid.roll_error_accumulated + (fbw_pid.roll_error * fbw_pid_settings.roll_i * dt), -0.15), 0.15);
 	fbw_pid.pitch_pid_correction = -((fbw_pid.pitch_error * fbw_pid_settings.pitch_p) + fbw_pid.pitch_error_accumulated + (((fbw_pid.pitch_error - fbw_pid.pitch_error_last) / dt) * fbw_pid_settings.pitch_d)) + fbw_pid_settings.pitch_gain;
 	fbw_pid.roll_pid_correction = -((fbw_pid.roll_error * fbw_pid_settings.roll_p) + fbw_pid.roll_error_accumulated + (((fbw_pid.roll_error - fbw_pid.roll_error_last) / dt) * fbw_pid_settings.roll_d)) + fbw_pid_settings.roll_gain;
 	fbw_pid.pitch_error_last = fbw_pid.pitch_error;
 	fbw_pid.roll_error_last = fbw_pid.roll_error;
+
+	if(armed){
+		FC_PID_MIXER(fbw_pid.pitch_pid_correction, fbw_pid.roll_pid_correction, (((float)crsf_data->channel[0] - 172.0) / 1637.0));
+	}
+	else{
+		FC_PID_MIXER(fbw_pid.pitch_pid_correction, fbw_pid.roll_pid_correction, 0.0);
+	}
 }
 
 void FC_PID_PRINT_CURRENT_SERVO_POINTS(){
 	USB_PRINTLN("%d, %d, %d, %d", current_servo_points.servo_left, current_servo_points.motor, current_servo_points.servo_right, crsf_data->channel[5]);
+	//USB_PRINTLN("FBW Pitch: %f, FBW Roll: %f", fly_by_wire_setpoints->pitch_angle, fly_by_wire_setpoints->roll_angle);
 }
