@@ -17,6 +17,8 @@ static CRSF_DATA *crsf_data;
 static FLIGHT_MODE current_flight_mode = DIRECT_CONTROL;
 static FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints = {0};
 static bool rx_lost = false;
+static bool armed = false;
+static bool arm_failed = false;
 
 
 void FC_INIT(Sensor_Data *sensor_d, GPS_NAV_PVT *gps_nav, CRSF_DATA *crsf_d){
@@ -47,22 +49,46 @@ void FC_MODE_CHECK(){
 	if(!rx_lost){
 		STATUS_LED_GREEN_ON();
 		if(crsf_data->channel[5] < 500){
+
+			if(current_flight_mode == DIRECT_CONTROL){		// correct disarm handling
+				armed = false;
+				arm_failed = false;
+				FC_PID_DIRECT_CONTROL(armed);
+			}
+
 			current_flight_mode = AUTOPILOT;
 		}
 		else if(crsf_data->channel[5] < 1500){
+
+			if(current_flight_mode == DIRECT_CONTROL){		// correct disarm handling
+				armed = false;
+				arm_failed = false;
+				FC_PID_DIRECT_CONTROL(armed);
+			}
+
 			current_flight_mode = FLY_BY_WIRE;
 		}
 		else{
+			if(arm_failed == false && armed == false){
+				if(crsf_data->channel[0] < 200){
+					armed = true;
+				}
+				else{
+					armed = false;
+					arm_failed = true;
+				}
+			}
 			current_flight_mode = DIRECT_CONTROL;
 		}
 		STATUS_LED_GREEN_OFF();
 	}
+	FC_PID_DIRECT_CONTROL(false);
 }
 
 void FC_PROCESS(){
 	switch (current_flight_mode) {
 		case DIRECT_CONTROL:
-			FC_PID_DIRECT_CONTROL();
+			FC_PID_DIRECT_CONTROL(armed);
 			break;
 		case DIRECT_CONTROL_WITH_LIMITS:
 			break;

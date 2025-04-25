@@ -34,8 +34,13 @@ void FC_PID_INIT(CRSF_DATA *crsf_d, Sensor_Data *sensor_d){
 	sensor_data = sensor_d;
 }
 
-void FC_PID_DIRECT_CONTROL(){
-	FC_PID_MIXER(((((float)crsf_data->channel[2] - 172.0) / 1637.0) * 2.0 - 1.0), ((((float)crsf_data->channel[1] - 172.0) / 1637.0) * 2.0 - 1.0), (((float)crsf_data->channel[0] - 172.0) / 1637.0));
+void FC_PID_DIRECT_CONTROL(bool armed){
+	if(armed){
+		FC_PID_MIXER(((((float)crsf_data->channel[2] - 172.0) / 1637.0) * 2.0 - 1.0), ((((float)crsf_data->channel[1] - 172.0) / 1637.0) * 2.0 - 1.0), (((float)crsf_data->channel[0] - 172.0) / 1637.0));
+	}
+	else{
+		FC_PID_MIXER(((((float)crsf_data->channel[2] - 172.0) / 1637.0) * 2.0 - 1.0), ((((float)crsf_data->channel[1] - 172.0) / 1637.0) * 2.0 - 1.0), 0.0);
+	}
 }
 
 void FC_PID_PRINT_CURRENT_SERVO_POINTS(){

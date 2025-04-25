@@ -12,6 +12,7 @@
 #include "onboard-sensors.h"
 #include "crossfire.h"
 #include "stdint.h"
+#include "stdbool.h"
 
 typedef struct{
 	uint16_t servo_left;
@@ -20,7 +21,7 @@ typedef struct{
 }CURRENT_SERVO_POINTS;
 
 void FC_PID_INIT(CRSF_DATA *crsf_d, Sensor_Data *sensor_d);
-void FC_PID_DIRECT_CONTROL();
+void FC_PID_DIRECT_CONTROL(bool armed);
 
 // debug
 void FC_PID_PRINT_CURRENT_SERVO_POINTS();

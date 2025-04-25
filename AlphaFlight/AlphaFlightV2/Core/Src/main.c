@@ -35,7 +35,6 @@
 #include "time-utils.h"
 #include "flight_control.h"
 #include "attitude_pid.h"
-#include "sdcard.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
