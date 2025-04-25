@@ -26,6 +26,7 @@ typedef struct{
 	float pitch_angle;
 	float roll_angle;
 	float speed_knots;
+	uint32_t last_update_us;
 }FLY_BY_WIRE_SETPOINTS;
 
 void FC_INIT(Sensor_Data *sensor_data, GPS_NAV_PVT *gps_nav_pvt, CRSF_DATA *crsf_data);

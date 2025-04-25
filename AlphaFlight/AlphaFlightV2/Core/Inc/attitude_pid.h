@@ -20,6 +20,32 @@ typedef struct{
 	uint16_t motor;
 }CURRENT_SERVO_POINTS;
 
+typedef struct{
+	float pitch_p;
+	float pitch_i;
+	float pitch_d;
+	float pitch_gain;
+	float roll_p;
+	float roll_i;
+	float roll_d;
+	float roll_gain;
+	float throttle_p;
+	float throttle_i;
+	float throttle_d;
+	float throttle_gain;
+}FLY_BY_WIRE_PID;
+
+typedef struct{
+	float pitch_error;		// basically P
+	float roll_error;
+	float pitch_error_last;	// together with error basically D
+	float roll_error_last;
+	float pitch_error_accumulated;		// holds I
+	float roll_error_accumulated;
+	float pitch_pid_correction;
+	float roll_pid_correction;
+}FLY_BY_WIRE_PID_VALUES;
+
 void FC_PID_INIT(CRSF_DATA *crsf_d, Sensor_Data *sensor_d);
 void FC_PID_DIRECT_CONTROL(bool armed);
 
