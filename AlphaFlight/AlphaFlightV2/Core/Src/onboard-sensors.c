@@ -23,6 +23,7 @@ static bool accel_right_for_calibration = false;
 static Baro_Calibration baro_calibration = {0};
 static Sensor_Data sensor_data = {0};
 static Raw_Data raw_data = {0};
+static ALPHA_VALUES alpha_values = {0};
 static uint32_t last_integration_us = 0;
 
 static uint8_t gyro_rx[6] = {0};
@@ -171,6 +172,11 @@ int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_P
 	baro_cs_port = BARO_PORT;
 	baro_cs_pin = BARO_PIN;
 
+	alpha_values.gyro_cutoff_hertz = 50;
+	alpha_values.accel_cutoff_hertz = 25;
+	alpha_values.gyro_alpha = 1.0f - expf(-2.0f * (float)M_PI * alpha_values.gyro_cutoff_hertz * 0.001);
+	alpha_values.accel_alpha = 1.0f - expf(-2.0f * (float)M_PI * alpha_values.accel_cutoff_hertz * 0.004);
+
 	int16_t return_code_sum = 0;
 	return_code_sum += BMI_ACCEL_INIT();
 	return_code_sum += BMP_BARO_INIT();
@@ -229,6 +235,10 @@ static void GYRO_CONVERT_DATA(){
 	sensor_data.gyro_x = (raw_data.gyro_x_raw / 32767.0) * 2000.0;
 	sensor_data.gyro_y = -(raw_data.gyro_y_raw / 32767.0) * 2000.0;
 	sensor_data.gyro_z = (raw_data.gyro_z_raw / 32767.0) * 2000.0;
+
+	sensor_data.gyro_x_filtered = (1.0f - alpha_values.gyro_alpha) * sensor_data.gyro_x_filtered + alpha_values.gyro_alpha * sensor_data.gyro_x;
+	sensor_data.gyro_y_filtered = (1.0f - alpha_values.gyro_alpha) * sensor_data.gyro_y_filtered + alpha_values.gyro_alpha * sensor_data.gyro_y;
+	sensor_data.gyro_z_filtered = (1.0f - alpha_values.gyro_alpha) * sensor_data.gyro_z_filtered + alpha_values.gyro_alpha * sensor_data.gyro_z;
 }
 
 static void ACCEL_CONVERT_DATA(){
@@ -239,7 +249,11 @@ static void ACCEL_CONVERT_DATA(){
 	sensor_data.accel_y = (float)raw_data.accel_y_raw / 32768 * 1000 * 4 * 1.5;
 	sensor_data.accel_z = (float)raw_data.accel_z_raw / 32768 * 1000 * 4 * 1.5;
 
-	float overall_force = sqrtf(sensor_data.accel_x * sensor_data.accel_x + sensor_data.accel_y * sensor_data.accel_y + sensor_data.accel_z * sensor_data.accel_z);
+	sensor_data.accel_x_filtered = (1.0f - alpha_values.accel_alpha) * sensor_data.accel_x_filtered + alpha_values.accel_alpha * sensor_data.accel_x;
+	sensor_data.accel_y_filtered = (1.0f - alpha_values.accel_alpha) * sensor_data.accel_y_filtered + alpha_values.accel_alpha * sensor_data.accel_y;
+	sensor_data.accel_z_filtered = (1.0f - alpha_values.accel_alpha) * sensor_data.accel_z_filtered + alpha_values.accel_alpha * sensor_data.accel_z;
+
+	float overall_force = sqrtf(sensor_data.accel_x_filtered * sensor_data.accel_x_filtered + sensor_data.accel_y_filtered * sensor_data.accel_y_filtered + sensor_data.accel_z_filtered * sensor_data.accel_z_filtered);
 
 	if(overall_force >= 950 && overall_force <= 1050){
 		//STATUS_LED_GREEN_ON();
@@ -282,15 +296,15 @@ void GYRO_INTEGRATE(){
 	uint32_t now = MICROS();
 	uint32_t delta_t = now - last_integration_us;
 	last_integration_us = now;
-	sensor_data.angle_x_fused += sensor_data.gyro_x * (delta_t / 1000000.0);
-	sensor_data.angle_y_fused += sensor_data.gyro_y * (delta_t / 1000000.0);
-	sensor_data.angle_z_fused += sensor_data.gyro_z * (delta_t / 1000000.0);
+	sensor_data.angle_x_fused += sensor_data.gyro_x_filtered * (delta_t / 1000000.0);
+	sensor_data.angle_y_fused += sensor_data.gyro_y_filtered * (delta_t / 1000000.0);
+	sensor_data.angle_z_fused += sensor_data.gyro_z_filtered * (delta_t / 1000000.0);
 }
 
 void GYRO_FUSION(){
 	if(accel_right_for_calibration){
-		sensor_data.angle_x_accel = atan2f(sensor_data.accel_y, sensor_data.accel_z) * 180.0f / M_PI;
-		sensor_data.angle_y_accel = -atan2f(-sensor_data.accel_x, sqrtf(sensor_data.accel_y * sensor_data.accel_y + sensor_data.accel_z * sensor_data.accel_z)) * 180.0f / M_PI;
+		sensor_data.angle_x_accel = atan2f(sensor_data.accel_y_filtered, sensor_data.accel_z_filtered) * 180.0f / M_PI;
+		sensor_data.angle_y_accel = -atan2f(-sensor_data.accel_x_filtered, sqrtf(sensor_data.accel_y_filtered * sensor_data.accel_y_filtered + sensor_data.accel_z_filtered * sensor_data.accel_z_filtered)) * 180.0f / M_PI;
 		sensor_data.angle_x_fused -= (sensor_data.angle_x_fused - sensor_data.angle_x_accel) * 0.005;
 		sensor_data.angle_y_fused -= (sensor_data.angle_y_fused - sensor_data.angle_y_accel) * 0.005;
 	}

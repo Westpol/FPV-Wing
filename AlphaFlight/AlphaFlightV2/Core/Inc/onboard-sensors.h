@@ -54,9 +54,19 @@ typedef struct {
 } Baro_Calibration;
 
 typedef struct{
+	float gyro_alpha;
+	float accel_alpha;
+	float gyro_cutoff_hertz;
+	float accel_cutoff_hertz;
+}ALPHA_VALUES;
+
+typedef struct{
 	float gyro_x;		// rotational velocity in °/s
 	float gyro_y;
 	float gyro_z;
+	float gyro_x_filtered;		// rotational velocity in °/s with lowpass filter
+	float gyro_y_filtered;
+	float gyro_z_filtered;
 	float angle_x_fused;		// angle in °
 	float angle_y_fused;
 	float angle_z_fused;
@@ -65,6 +75,9 @@ typedef struct{
 	float accel_x;		// acceleration in mg (9.81mm/s²)
 	float accel_y;
 	float accel_z;
+	float accel_x_filtered;		// acceleration in mg (9.81mm/s²) with lowpass filter
+	float accel_y_filtered;
+	float accel_z_filtered;
 	float temp;
 	float pressure;
 	float pressure_base;
