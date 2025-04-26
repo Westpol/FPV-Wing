@@ -6,7 +6,7 @@ uint16_t channels[16];
 
 void setup() {
   Serial.begin(115200);
-  mySerial.begin(400000, SERIAL_8N1, 16, 17, true);  // UART2 (RX=16, TX=17)
+  mySerial.begin(416666, SERIAL_8N1, 16, 17, true);  // UART2 (RX=16, TX=17)
 }
 
 void loop() {
