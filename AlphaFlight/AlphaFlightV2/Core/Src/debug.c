@@ -6,6 +6,9 @@
  */
 #include "debug.h"
 #include "usbd_cdc_if.h"
+#include "stdbool.h"
+
+static bool green_toggle = false;
 
 void USB_PRINTLN(const char *format, ...) {
     char message[USB_PRINT_BUFFER_SIZE];
@@ -54,8 +57,22 @@ void USB_PRINT_HEX(uint8_t *data, uint32_t len) {
 
 void STATUS_LED_GREEN_ON(){
 	GPIOB->BSRR |= GPIO_PIN_9 << 16;
+	green_toggle = true;
 }
 
 void STATUS_LED_GREEN_OFF(){
 	GPIOB->BSRR |= GPIO_PIN_9;
+	green_toggle = false;
+}
+
+void STATUS_LED_GREEN_TOGGLE(){
+	if(green_toggle){
+		GPIOB->BSRR |= GPIO_PIN_9;
+		green_toggle = false;
+	}
+	else{
+		GPIOB->BSRR |= GPIO_PIN_9 << 16;
+		green_toggle = true;
+	}
+
 }

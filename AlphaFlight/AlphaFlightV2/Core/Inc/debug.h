@@ -19,6 +19,7 @@ void USB_PRINT_HEX(uint8_t *data, uint32_t len);
 
 void STATUS_LED_GREEN_ON();
 void STATUS_LED_GREEN_OFF();
+void STATUS_LED_GREEN_TOGGLE();
 
 #define USB_PRINT_BUFFER_SIZE 128
 

@@ -11,7 +11,7 @@
 #include "stdint.h"
 #include "stm32f7xx_hal.h"
 
-#define GPS_BUFFER_SIZE 1024
+#define GPS_BUFFER_SIZE 512
 #define MAX_PARSE_ITERATIONS 32  // Don't loop forever on garbage
 
 
