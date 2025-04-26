@@ -104,7 +104,6 @@ void GPS_PARSE_BUFFER(void) {
 
 void GPS_OVERFLOW_INCREMENT(void){
 	buffer_wrap_around_count++;
-	STATUS_LED_GREEN_TOGGLE();
 }
 
 
