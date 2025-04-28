@@ -176,6 +176,7 @@ int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_P
 	alpha_values.accel_cutoff_hertz = 25;
 	alpha_values.gyro_alpha = 1.0f - expf(-2.0f * (float)M_PI * alpha_values.gyro_cutoff_hertz * 0.001);
 	alpha_values.accel_alpha = 1.0f - expf(-2.0f * (float)M_PI * alpha_values.accel_cutoff_hertz * 0.004);
+	alpha_values.baro_alpha = 0.03;
 
 	int16_t return_code_sum = 0;
 	return_code_sum += BMI_ACCEL_INIT();
@@ -253,9 +254,9 @@ static void ACCEL_CONVERT_DATA(){
 	sensor_data.accel_y_filtered = (1.0f - alpha_values.accel_alpha) * sensor_data.accel_y_filtered + alpha_values.accel_alpha * sensor_data.accel_y;
 	sensor_data.accel_z_filtered = (1.0f - alpha_values.accel_alpha) * sensor_data.accel_z_filtered + alpha_values.accel_alpha * sensor_data.accel_z;
 
-	float overall_force = sqrtf(sensor_data.accel_x_filtered * sensor_data.accel_x_filtered + sensor_data.accel_y_filtered * sensor_data.accel_y_filtered + sensor_data.accel_z_filtered * sensor_data.accel_z_filtered);
+	float overall_force = sensor_data.accel_x_filtered * sensor_data.accel_x_filtered + sensor_data.accel_y_filtered * sensor_data.accel_y_filtered + sensor_data.accel_z_filtered * sensor_data.accel_z_filtered;
 
-	if(overall_force >= 950 && overall_force <= 1050){
+	if(overall_force >= 902500 && overall_force <= 1102500){
 		//STATUS_LED_GREEN_ON();
 		accel_right_for_calibration = true;
 	}
@@ -270,10 +271,12 @@ static void BARO_CONVERT_DATA(){
 	raw_data.baro_pressure_raw = ((uint32_t)baro_rx[3] << 16) | ((uint32_t)baro_rx[2] << 8) | baro_rx[1];
 	sensor_data.temp = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
 	sensor_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
+
+	sensor_data.pressure_filtered = (1.0f - alpha_values.baro_alpha) * sensor_data.pressure_filtered + alpha_values.baro_alpha * sensor_data.pressure;
 }
 
 static void BARO_CALCULATE_HEIGHT(){
-	sensor_data.height = (sensor_data.pressure_base - sensor_data.pressure) / 12.015397;
+	sensor_data.height = (sensor_data.pressure_base - sensor_data.pressure_filtered) / 12.015397;
 }
 
 void GYRO_READ(){
@@ -315,6 +318,7 @@ void BARO_SET_BASE_PRESSURE(){
 		BARO_READ();
 		if(sensor_data.pressure > 0){
 			sensor_data.pressure_base = sensor_data.pressure;
+			sensor_data.pressure_filtered = sensor_data.pressure;
 			return;
 		}
 	}

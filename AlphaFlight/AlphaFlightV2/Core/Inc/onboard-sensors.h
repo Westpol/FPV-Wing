@@ -56,6 +56,7 @@ typedef struct {
 typedef struct{
 	float gyro_alpha;
 	float accel_alpha;
+	float baro_alpha;
 	float gyro_cutoff_hertz;
 	float accel_cutoff_hertz;
 }ALPHA_VALUES;
@@ -80,6 +81,7 @@ typedef struct{
 	float accel_z_filtered;
 	float temp;
 	float pressure;
+	float pressure_filtered;
 	float pressure_base;
 	float height;
 }Sensor_Data;
