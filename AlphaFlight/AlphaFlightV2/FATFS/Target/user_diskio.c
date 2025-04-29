@@ -117,7 +117,7 @@ DRESULT USER_read (
 {
   /* USER CODE BEGIN READ */
     if (pdrv != 0 || !count) return RES_ERROR;
-    return SD_SPI_ReadBlocks(buff, sector, count);
+    return SD_SPI_ReadBlocks(pdrv ,buff, sector, count);
   /* USER CODE END READ */
 }
 
@@ -140,7 +140,7 @@ DRESULT USER_write (
   /* USER CODE BEGIN WRITE */
   /* USER CODE HERE */
     if (pdrv != 0 || !count) return RES_ERROR;
-    return SD_SPI_WriteBlocks(buff, sector, count);
+    return SD_SPI_WriteBlocks(pdrv, buff, sector, count);
   /* USER CODE END WRITE */
 }
 #endif /* _USE_WRITE == 1 */
@@ -161,7 +161,7 @@ DRESULT USER_ioctl (
 {
   /* USER CODE BEGIN IOCTL */
     if (pdrv != 0) return RES_ERROR;
-    return SD_SPI_Ioctl(cmd, buff);
+    return SD_SPI_Ioctl(pdrv, cmd, buff);
   /* USER CODE END IOCTL */
 }
 #endif /* _USE_IOCTL == 1 */

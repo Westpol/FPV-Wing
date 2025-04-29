@@ -16,9 +16,9 @@
 
 DSTATUS SD_SPI_Initialize(BYTE pdrv);
 DSTATUS SD_SPI_Status(BYTE pdrv);
-DRESULT SD_SPI_ReadBlocks(uint8_t *buffer, uint32_t sector, uint32_t count);
-DRESULT SD_SPI_WriteBlocks(const uint8_t *buffer, uint32_t sector, uint32_t count);
-DRESULT SD_SPI_Ioctl(BYTE cmd, void *buff);
+DRESULT SD_SPI_ReadBlocks(BYTE pdrv ,BYTE *buffer, DWORD sector, UINT count);
+DRESULT SD_SPI_WriteBlocks(BYTE pdrv, const BYTE *buffer, DWORD sector, UINT count);
+DRESULT SD_SPI_Ioctl(BYTE pdrv, BYTE cmd, void *buff);
 void SD_SPI_Process(void);  // For non-blocking FSM
 
 
