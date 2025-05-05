@@ -64,6 +64,8 @@ void FC_MODE_CHECK(){
 
 		if(crsf_data->channel[5] < 500){
 			current_flight_mode = DIRECT_CONTROL;
+			fly_by_wire_setpoints.roll_angle = sensor_data->angle_x_fused;
+			fly_by_wire_setpoints.pitch_angle = sensor_data->angle_y_fused;
 		}
 		else if(crsf_data->channel[5] < 1500){
 			current_flight_mode = FLY_BY_WIRE;
