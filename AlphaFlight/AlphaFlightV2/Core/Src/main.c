@@ -1223,7 +1223,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 static void PRINT_DATA(){
-	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  Height: %f m  |  GPS Sats: %d  |  CRSF Ch 6: %d", MICROS(), sensor_data->angle_y_fused, sensor_data->height, gps_nav_pvt_data->numSV, crsf_data->channel[5]);
+	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  GPS Sats: %d  |  CRSF Ch 6: %d  |  CRSF RX Aktualitate: %ld", MICROS(), sensor_data->angle_y_fused, gps_nav_pvt_data->numSV, crsf_data->channel[5], MICROS() - crsf_data->last_channel_update);
 }
 /* USER CODE END 4 */
 
