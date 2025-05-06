@@ -35,8 +35,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include <string.h>
 #include "ff_gen_drv.h"
+#include "stm32f7xx_hal.h"  // Change to your exact STM32 family if different
 
 /* Private typedef -----------------------------------------------------------*/
+extern SD_HandleTypeDef hsd1;
 /* Private define ------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
@@ -81,8 +83,16 @@ DSTATUS USER_initialize (
 )
 {
   /* USER CODE BEGIN INIT */
-    Stat = STA_NOINIT;
-    return Stat;
+	if(pdrv != 0){
+		return STA_NOINIT;
+	}
+	if(HAL_SD_GetCardState(&hsd1) == HAL_SD_CARD_TRANSFER){
+		Stat = RES_OK;
+	}
+	else{
+		Stat = STA_NOINIT;
+	}
+	return Stat;
   /* USER CODE END INIT */
 }
 
@@ -96,8 +106,10 @@ DSTATUS USER_status (
 )
 {
   /* USER CODE BEGIN STATUS */
-    Stat = STA_NOINIT;
-    return Stat;
+	if (pdrv != 0){
+		return STA_NOINIT;
+	}
+	return Stat;
   /* USER CODE END STATUS */
 }
 
@@ -117,7 +129,16 @@ DRESULT USER_read (
 )
 {
   /* USER CODE BEGIN READ */
-    return RES_OK;
+	if(pdrv != 0 || !count){
+		return RES_PARERR;
+	}
+
+	if(HAL_SD_ReadBlocks(&hsd1, buff, sector, count, HAL_MAX_DELAY) != HAL_OK){
+		return RES_ERROR;
+	}
+
+	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER);
+	return RES_OK;
   /* USER CODE END READ */
 }
 
@@ -139,7 +160,16 @@ DRESULT USER_write (
 {
   /* USER CODE BEGIN WRITE */
   /* USER CODE HERE */
-    return RES_OK;
+	if(pdrv != 0 || !count){
+		return RES_PARERR;
+	}
+
+	if(HAL_SD_WriteBlocks(&hsd1, (uint8_t *)buff, sector, count, HAL_MAX_DELAY) != HAL_OK){
+		return RES_ERROR;
+	}
+
+	while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER);
+	return RES_OK;
   /* USER CODE END WRITE */
 }
 #endif /* _USE_WRITE == 1 */
@@ -159,8 +189,28 @@ DRESULT USER_ioctl (
 )
 {
   /* USER CODE BEGIN IOCTL */
-    DRESULT res = RES_ERROR;
-    return res;
+	if(pdrv != 0){
+		return RES_PARERR;
+	}
+
+	switch(cmd){
+	case CTRL_SYNC:
+	return RES_OK;
+
+	case GET_SECTOR_COUNT:
+	*(DWORD *)buff = hsd1.SdCard.LogBlockNbr;
+	return RES_OK;
+
+	case GET_SECTOR_SIZE:
+	*(WORD *)buff = hsd1.SdCard.LogBlockSize;
+	return RES_OK;
+
+	case GET_BLOCK_SIZE:
+	*(DWORD *)buff = hsd1.SdCard.LogBlockSize / 512;  // Or 1 if already 512B
+	return RES_OK;
+	}
+
+	return RES_PARERR;
   /* USER CODE END IOCTL */
 }
 #endif /* _USE_IOCTL == 1 */
