@@ -11,6 +11,7 @@
 #include "stdbool.h"
 #include "attitude_pid.h"
 #include "debug.h"
+#include "sd_logger.h"
 
 static Sensor_Data *sensor_data;
 static GPS_NAV_PVT *gps_nav_pvt;
@@ -74,6 +75,7 @@ void FC_MODE_CHECK(){
 			current_flight_mode = AUTOPILOT;
 		}
 	}
+	SD_LOGGER_FORWARD_ARM(armed);
 }
 
 void FC_PROCESS(){
