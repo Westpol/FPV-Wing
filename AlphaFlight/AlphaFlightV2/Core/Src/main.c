@@ -20,6 +20,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "fatfs.h"
 #include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -161,6 +162,7 @@ int main(void)
   MX_TIM12_Init();
   MX_TIM5_Init();
   MX_SDMMC1_SD_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
   sensor_data = SENSOR_DATA_STRUCT();
   gps_nav_pvt_data = GPS_NAV_PVT_STRUCT_POINTER();
