@@ -7,7 +7,6 @@
 
 #include "sd_logger.h"
 #include "fatfs.h"
-#include "stdbool.h"
 #include "debug.h"
 
 static FATFS fs;
@@ -46,6 +45,7 @@ void SD_LOGGER_LOOP_CALL(){
 				Error_Handler();
 			}
 		}
+		STATUS_LED_GREEN_ON();
 		return;
 	}
 	// log file while armed
@@ -55,7 +55,7 @@ void SD_LOGGER_LOOP_CALL(){
 		uint8_t test_buf[] = {1, 2, 3, 4, 5};
 		res = f_write(&file, test_buf, sizeof(test_buf), &bytes_written);
 		if(res != FR_OK){
-			STATUS_LED_GREEN_ON();
+			Error_Handler();
 		}
 		return;
 	}
