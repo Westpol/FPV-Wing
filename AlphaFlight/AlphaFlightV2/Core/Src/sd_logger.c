@@ -20,7 +20,7 @@ static bool last_arm_status = false;
 extern SD_HandleTypeDef hsd1;
 
 #define BLOCK_SIZE     512
-#define BLOCK_NUMBER   10000
+#define BLOCK_NUMBER   10001
 #define TIMEOUT_MS     1000
 
 // Needs to be 32-byte aligned due to D-Cache
@@ -35,7 +35,7 @@ void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT*
 	    }
 
 	    // 2. Clean D-Cache before DMA access
-	    SCB_CleanDCache_by_Addr((uint32_t *)tx_buffer, ((BLOCK_SIZE + 31) / 32) * 32);
+	    //SCB_CleanDCache_by_Addr((uint32_t *)tx_buffer, ((BLOCK_SIZE + 31) / 32) * 32);
 
 	    // 3. Optional: Check card state
 	    if (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER) {
