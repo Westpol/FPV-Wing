@@ -7,6 +7,7 @@
 
 #include "sd_logger.h"
 #include "debug.h"
+#include "stm32f7xx_hal.h"
 
 static Sensor_Data* sensor_data;
 static CRSF_DATA* crsf_data;
@@ -16,7 +17,48 @@ static bool armed = false;
 static bool last_arm_status = false;
 
 
+extern SD_HandleTypeDef hsd1;
+
+#define BLOCK_SIZE     512
+#define BLOCK_NUMBER   10000
+#define TIMEOUT_MS     1000
+
+// Needs to be 32-byte aligned due to D-Cache
+__attribute__((aligned(32))) uint8_t tx_buffer[BLOCK_SIZE];
+
+
 void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT){
+
+	// 1. Fill data buffer
+	    for (int i = 0; i < BLOCK_SIZE; i++) {
+	        tx_buffer[i] = i & 0xFF;
+	    }
+
+	    // 2. Clean D-Cache before DMA access
+	    SCB_CleanDCache_by_Addr((uint32_t *)tx_buffer, ((BLOCK_SIZE + 31) / 32) * 32);
+
+	    // 3. Optional: Check card state
+	    if (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER) {
+	        ERROR_HANDLER_BLINKS(1); // Not ready
+	    }
+
+	    // check init
+	    if (HAL_SD_Init(&hsd1) != HAL_OK) {
+	        ERROR_HANDLER_BLINKS(4);  // Init failed
+	    }
+
+	    // 4. Write block
+	    if (HAL_SD_WriteBlocks(&hsd1, tx_buffer, BLOCK_NUMBER, 1, TIMEOUT_MS) != HAL_OK) {
+	        ERROR_HANDLER_BLINKS(2); // Write failed
+	    }
+
+	    // 5. Wait until the card is ready again
+	    uint32_t start = HAL_GetTick();
+	    while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER) {
+	        if (HAL_GetTick() - start > TIMEOUT_MS) {
+	            ERROR_HANDLER_BLINKS(3); // Timeout
+	        }
+	    }
 
 	sensor_data = SENSOR_DATA;
 	crsf_data = CRSF_DATA;
