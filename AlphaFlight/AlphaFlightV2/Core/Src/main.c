@@ -40,6 +40,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+static volatile unsigned char progress_counter = 0;
 
 /* USER CODE END PTD */
 
@@ -123,7 +124,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+	progress_counter = 1;
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -142,7 +143,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  progress_counter = 2;
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -165,6 +166,8 @@ int main(void)
   MX_SDMMC1_SD_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
+  progress_counter = 3;
+
   sensor_data = SENSOR_DATA_STRUCT();
   gps_nav_pvt_data = GPS_NAV_PVT_STRUCT_POINTER();
   crsf_data = CRSF_GET_DATA_STRUCT();
@@ -175,9 +178,13 @@ int main(void)
 	  HAL_Delay(100);
   }
 
+  progress_counter = 4;
+
   HAL_Delay(500);
 
   BARO_SET_BASE_PRESSURE();
+
+  progress_counter = 5;
 
   SERVO_ADD(&htim12, TIM_CHANNEL_1);
   SERVO_ADD(&htim1, TIM_CHANNEL_1);
@@ -187,14 +194,25 @@ int main(void)
   SERVO_SET(2, 1500);
   SERVOS_START_TRANSMISSION();
 
+  progress_counter = 6;
+
   CRSF_INIT(&huart2, &hdma_usart2_rx);
 
+  progress_counter = 7;
+
   GPS_INIT(&huart4, &hdma_uart4_rx);
+
+  progress_counter = 8;
 
   FC_INIT(sensor_data, gps_nav_pvt_data, crsf_data);
   FC_PID_INIT(crsf_data, sensor_data);
 
+  progress_counter = 9;
+
   SD_LOGGER_INIT(sensor_data, crsf_data, gps_nav_pvt_data);
+  ERROR_HANDLER_BLINKS(3);
+
+  progress_counter = 10;
 
   SCHEDULER_ADD_TASK(GYRO_READ, 1000);		// 1 kHz
   SCHEDULER_ADD_TASK(GYRO_INTEGRATE, 1000);	// 1 kHz
@@ -208,10 +226,13 @@ int main(void)
   SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, 40000);	// 25 Hz
   SCHEDULER_ADD_TASK(CRSF_HANDLE_TELEMETRY, 100000);	// 10 Hz
   //SCHEDULER_ADD_TASK(FC_PID_PRINT_CURRENT_SERVO_POINTS, 100000);
-  //SCHEDULER_ADD_TASK(SD_LOGGER_LOOP_CALL, 10000);	// 100 Hz
+  SCHEDULER_ADD_TASK(SD_LOGGER_LOOP_CALL, 10000);	// 100 Hz
   SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
   TIME_UTILS_MICROS_TIM_START(&htim5);
   SCHEDULER_INIT();	// MICROS ONLY WORKS WHEN THIS IS ENABLED
+
+
+	progress_counter = 11;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -1226,6 +1247,21 @@ static void PRINT_DATA(){
 	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  GPS Sats: %d  |  CRSF Ch 6: %d  |  CRSF RX Aktualitate: %ld", MICROS(), sensor_data->angle_y_fused, gps_nav_pvt_data->numSV, crsf_data->channel[5], MICROS() - crsf_data->last_channel_update);
 }
 
+__attribute__((noinline)) void BAREBONES_DELAY_CYCLES(uint32_t cycles) {
+    __asm volatile (
+        "1: \n"
+        "   subs %0, #1 \n"  // 1 cycle
+        "   bne 1b \n"       // 1-2 cycles depending on pipeline
+        : "+r" (cycles)
+    );
+}
+
+void BAREBONES_DELAY_MS(uint32_t ms){
+    while (ms--) {
+        BAREBONES_DELAY_CYCLES(7000);	// about how many cycles per milliseconds
+    }
+}
+
 void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
@@ -1233,13 +1269,24 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
   __disable_irq();
   while (1)
   {
+	  STATUS_LED_GREEN_OFF();
+	  STATUS_LED_BLUE_OFF();
+	  for(uint8_t counter = 0; counter < progress_counter; counter++){
+		  STATUS_LED_BLUE_ON();
+		  BAREBONES_DELAY_MS(100);
+		  STATUS_LED_BLUE_OFF();
+		  BAREBONES_DELAY_MS(200);
+	  }
+
+	  BAREBONES_DELAY_MS(800);
+
 	  for(uint8_t counter = 0; counter < BLINKS; counter++){
 		  STATUS_LED_GREEN_ON();
-		  for (volatile int i = 0; i < 3000000; i++);
+		  BAREBONES_DELAY_MS(100);
 		  STATUS_LED_GREEN_OFF();
-		  for (volatile int i = 0; i < 4500000; i++);
+		  BAREBONES_DELAY_MS(200);
 	  }
-	  for (volatile int i = 0; i < 15000000; i++);
+	  BAREBONES_DELAY_MS(1500);
   }
   /* USER CODE END Error_Handler_Debug */
 }
@@ -1286,8 +1333,15 @@ void Error_Handler()
   __disable_irq();
   while (1)
   {
-		  STATUS_LED_GREEN_TOGGLE();
-		  for (volatile int i = 0; i < 5000000; i++);
+	STATUS_LED_GREEN_OFF();
+	STATUS_LED_BLUE_OFF();
+	for(uint8_t counter = 0; counter < progress_counter; counter++){
+		STATUS_LED_BLUE_ON();
+		BAREBONES_DELAY_MS(100);
+		STATUS_LED_BLUE_OFF();
+		BAREBONES_DELAY_MS(200);
+	}
+	BAREBONES_DELAY_MS(1500);
   }
   /* USER CODE END Error_Handler_Debug */
 }

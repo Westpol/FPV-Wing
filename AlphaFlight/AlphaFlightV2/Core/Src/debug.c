@@ -9,6 +9,7 @@
 #include "stdbool.h"
 
 static bool green_toggle = false;
+static bool blue_toggle = false;
 
 void USB_PRINTLN(const char *format, ...) {
     char message[USB_PRINT_BUFFER_SIZE];
@@ -74,5 +75,25 @@ void STATUS_LED_GREEN_TOGGLE(){
 		GPIOB->BSRR |= GPIO_PIN_9 << 16;
 		green_toggle = true;
 	}
+}
 
+void STATUS_LED_BLUE_ON(){
+	GPIOB->BSRR |= GPIO_PIN_8 << 16;
+	blue_toggle = true;
+}
+
+void STATUS_LED_BLUE_OFF(){
+	GPIOB->BSRR |= GPIO_PIN_8;
+	blue_toggle = false;
+}
+
+void STATUS_LED_BLUE_TOGGLE(){
+	if(blue_toggle){
+		GPIOB->BSRR |= GPIO_PIN_8;
+		blue_toggle = false;
+	}
+	else{
+		GPIOB->BSRR |= GPIO_PIN_8 << 16;
+		blue_toggle = true;
+	}
 }
