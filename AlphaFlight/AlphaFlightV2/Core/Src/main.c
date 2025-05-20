@@ -208,7 +208,6 @@ int main(void)
   progress_counter = 9;
 
   SD_LOGGER_INIT(sensor_data, crsf_data, gps_nav_pvt_data);
-  ERROR_HANDLER_BLINKS(3);
 
   progress_counter = 10;
 
@@ -427,9 +426,9 @@ static void MX_SDMMC1_SD_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN SDMMC1_Init 2 */
-  /*if (HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B) != HAL_OK) {
-      Error_Handler();  // Handle errors
-  }*/
+  if (HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B) != HAL_OK) {
+	  ERROR_HANDLER_BLINKS(1);  // Handle errors
+  }
   /* USER CODE END SDMMC1_Init 2 */
 
 }
@@ -1260,7 +1259,7 @@ __attribute__((noinline)) void BAREBONES_DELAY_CYCLES(uint32_t cycles) {
 
 void BAREBONES_DELAY_MS(uint32_t ms){
     while (ms--) {
-        BAREBONES_DELAY_CYCLES(72000);	// about how many cycles per milliseconds
+        BAREBONES_DELAY_CYCLES(108000);	// about how many cycles per milliseconds
     }
 }
 
@@ -1275,18 +1274,18 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
 	  STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
 		  STATUS_LED_BLUE_ON();
-		  BAREBONES_DELAY_MS(100);
+		  BAREBONES_DELAY_MS(200);
 		  STATUS_LED_BLUE_OFF();
-		  BAREBONES_DELAY_MS(400);
+		  BAREBONES_DELAY_MS(500);
 	  }
 
 	  BAREBONES_DELAY_MS(800);
 
 	  for(uint8_t counter = 0; counter < BLINKS; counter++){
 		  STATUS_LED_GREEN_ON();
-		  BAREBONES_DELAY_MS(100);
+		  BAREBONES_DELAY_MS(200);
 		  STATUS_LED_GREEN_OFF();
-		  BAREBONES_DELAY_MS(400);
+		  BAREBONES_DELAY_MS(500);
 	  }
 	  BAREBONES_DELAY_MS(1500);
   }
@@ -1339,9 +1338,9 @@ void Error_Handler(void)
 	  STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
 		  STATUS_LED_BLUE_ON();
-		  BAREBONES_DELAY_MS(100);
+		  BAREBONES_DELAY_MS(200);
 		  STATUS_LED_BLUE_OFF();
-		  BAREBONES_DELAY_MS(400);
+		  BAREBONES_DELAY_MS(500);
 	  }
 	  BAREBONES_DELAY_MS(1500);
   }
