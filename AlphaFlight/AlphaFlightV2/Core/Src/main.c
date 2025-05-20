@@ -20,7 +20,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "fatfs.h"
 #include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -164,7 +163,6 @@ int main(void)
   MX_TIM12_Init();
   MX_TIM5_Init();
   MX_SDMMC1_SD_Init();
-  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
   progress_counter = 3;
 
@@ -424,6 +422,10 @@ static void MX_SDMMC1_SD_Init(void)
   hsd1.Init.BusWide = SDMMC_BUS_WIDE_1B;
   hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
   hsd1.Init.ClockDiv = 4;
+  if (HAL_SD_Init(&hsd1) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /* USER CODE BEGIN SDMMC1_Init 2 */
   /*if (HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B) != HAL_OK) {
       Error_Handler();  // Handle errors
@@ -1258,7 +1260,7 @@ __attribute__((noinline)) void BAREBONES_DELAY_CYCLES(uint32_t cycles) {
 
 void BAREBONES_DELAY_MS(uint32_t ms){
     while (ms--) {
-        BAREBONES_DELAY_CYCLES(7000);	// about how many cycles per milliseconds
+        BAREBONES_DELAY_CYCLES(72000);	// about how many cycles per milliseconds
     }
 }
 
@@ -1275,7 +1277,7 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
 		  STATUS_LED_BLUE_ON();
 		  BAREBONES_DELAY_MS(100);
 		  STATUS_LED_BLUE_OFF();
-		  BAREBONES_DELAY_MS(200);
+		  BAREBONES_DELAY_MS(400);
 	  }
 
 	  BAREBONES_DELAY_MS(800);
@@ -1284,7 +1286,7 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
 		  STATUS_LED_GREEN_ON();
 		  BAREBONES_DELAY_MS(100);
 		  STATUS_LED_GREEN_OFF();
-		  BAREBONES_DELAY_MS(200);
+		  BAREBONES_DELAY_MS(400);
 	  }
 	  BAREBONES_DELAY_MS(1500);
   }
@@ -1326,22 +1328,22 @@ void MPU_Config(void)
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */
-void Error_Handler()
+void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
   {
-	STATUS_LED_GREEN_OFF();
-	STATUS_LED_BLUE_OFF();
-	for(uint8_t counter = 0; counter < progress_counter; counter++){
-		STATUS_LED_BLUE_ON();
-		BAREBONES_DELAY_MS(100);
-		STATUS_LED_BLUE_OFF();
-		BAREBONES_DELAY_MS(200);
-	}
-	BAREBONES_DELAY_MS(1500);
+	  STATUS_LED_GREEN_OFF();
+	  STATUS_LED_BLUE_OFF();
+	  for(uint8_t counter = 0; counter < progress_counter; counter++){
+		  STATUS_LED_BLUE_ON();
+		  BAREBONES_DELAY_MS(100);
+		  STATUS_LED_BLUE_OFF();
+		  BAREBONES_DELAY_MS(400);
+	  }
+	  BAREBONES_DELAY_MS(1500);
   }
   /* USER CODE END Error_Handler_Debug */
 }

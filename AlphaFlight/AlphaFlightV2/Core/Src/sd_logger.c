@@ -6,7 +6,6 @@
  */
 
 #include "sd_logger.h"
-#include "fatfs.h"
 #include "debug.h"
 
 static Sensor_Data* sensor_data;
