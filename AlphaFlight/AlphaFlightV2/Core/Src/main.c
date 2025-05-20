@@ -208,7 +208,7 @@ int main(void)
   SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, 40000);	// 25 Hz
   SCHEDULER_ADD_TASK(CRSF_HANDLE_TELEMETRY, 100000);	// 10 Hz
   //SCHEDULER_ADD_TASK(FC_PID_PRINT_CURRENT_SERVO_POINTS, 100000);
-  SCHEDULER_ADD_TASK(SD_LOGGER_LOOP_CALL, 10000);	// 100 Hz
+  //SCHEDULER_ADD_TASK(SD_LOGGER_LOOP_CALL, 10000);	// 100 Hz
   SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
   TIME_UTILS_MICROS_TIM_START(&htim5);
   SCHEDULER_INIT();	// MICROS ONLY WORKS WHEN THIS IS ENABLED
@@ -1225,6 +1225,25 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 static void PRINT_DATA(){
 	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  GPS Sats: %d  |  CRSF Ch 6: %d  |  CRSF RX Aktualitate: %ld", MICROS(), sensor_data->angle_y_fused, gps_nav_pvt_data->numSV, crsf_data->channel[5], MICROS() - crsf_data->last_channel_update);
 }
+
+void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+	  for(uint8_t counter = 0; counter < BLINKS; counter++){
+		  STATUS_LED_GREEN_ON();
+		  for (volatile int i = 0; i < 3000000; i++);
+		  STATUS_LED_GREEN_OFF();
+		  for (volatile int i = 0; i < 4500000; i++);
+	  }
+	  for (volatile int i = 0; i < 15000000; i++);
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+
 /* USER CODE END 4 */
 
  /* MPU Configuration */
@@ -1260,15 +1279,15 @@ void MPU_Config(void)
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */
-void Error_Handler(void)
+void Error_Handler()
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
   {
-	  STATUS_LED_GREEN_TOGGLE();
-	  for (volatile int i = 0; i < 5000000; i++);
+		  STATUS_LED_GREEN_TOGGLE();
+		  for (volatile int i = 0; i < 5000000; i++);
   }
   /* USER CODE END Error_Handler_Debug */
 }
