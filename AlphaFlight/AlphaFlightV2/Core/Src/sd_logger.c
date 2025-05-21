@@ -24,19 +24,37 @@ extern SD_HandleTypeDef hsd1;
 #define BLOCK_NUMBER   10001
 #define TIMEOUT_MS     1000
 
-// Needs to be 32-byte aligned due to D-Cache
-__attribute__((aligned(32))) uint8_t tx_buffer[BLOCK_SIZE];
+extern CRC_HandleTypeDef hcrc;
 
+static uint32_t calculate_crc32_hw(const void *data, size_t length) {
+    // STM32 CRC peripheral processes 32-bit words, so we need to handle padding
+    size_t aligned_length = length & ~0x3;  // Number of full 32-bit words
+    size_t remaining_bytes = length & 0x3;
+
+    // Reset CRC calculator
+    HAL_CRC_Init(&hcrc);
+    __HAL_CRC_DR_RESET(&hcrc);
+
+    uint32_t crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)data, aligned_length / 4);
+
+    // Handle remaining bytes manually if not aligned
+    if (remaining_bytes > 0) {
+        uint8_t tail[4] = {0};
+        memcpy(tail, (uint8_t*)data + aligned_length, remaining_bytes);
+        crc = HAL_CRC_Accumulate(&hcrc, (uint32_t*)tail, 1);
+    }
+
+    return crc;
+}
 
 void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT){
 
-	// 1. Fill data buffer
-	    for (int i = 0; i < BLOCK_SIZE; i++) {
-	        tx_buffer[i] = i & 0xFF;
-	    }
 
-	    // 2. Clean D-Cache before DMA access
-	    SCB_CleanDCache_by_Addr((uint32_t *)tx_buffer, ((BLOCK_SIZE + 31) / 32) * 32);
+	// Needs to be 32-byte aligned due to D-Cache
+	uint8_t superblock_raw[BLOCK_SIZE];
+
+	    /*// 2. Clean D-Cache before DMA access
+	    SCB_CleanDCache_by_Addr((uint32_t *)tx_buffer, ((BLOCK_SIZE + 31) / 32) * 32);*/
 
 	    // 3. Optional: Check card state
 	    if (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER) {
@@ -49,8 +67,20 @@ void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT*
 	    }
 
 	    // 4. Write block
-	    if (HAL_SD_WriteBlocks(&hsd1, tx_buffer, BLOCK_NUMBER, 1, TIMEOUT_MS) != HAL_OK) {
+	    if (HAL_SD_ReadBlocks(&hsd1, superblock_raw, SUPERBLOCK_BLOCK, 1, TIMEOUT_MS) != HAL_OK) {
 	        ERROR_HANDLER_BLINKS(2); // Write failed
+	    }
+
+	    SD_SUPERBLOCK sd_superblock = {0};
+
+	    memcpy(&sd_superblock, &superblock_raw, sizeof(sd_superblock));
+
+	    if(sd_superblock.magic != SUPERBLOCK_MAGIC){
+	    	ERROR_HANDLER_BLINKS(10);
+	    }
+
+	    if(sd_superblock.crc32 != calculate_crc32_hw(&sd_superblock, sizeof(sd_superblock) - sizeof(uint32_t))){
+	    	ERROR_HANDLER_BLINKS(10);
 	    }
 
 	    // 5. Wait until the card is ready again
@@ -69,6 +99,7 @@ void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT*
 
 void SD_LOGGER_LOOP_CALL(){
 	last_arm_status = false;
+	USB_PRINTLN("%d", sizeof(SD_SUPERBLOCK));
 
 	/*
 	// open file at arm
@@ -116,4 +147,27 @@ void SD_LOGGER_LOOP_CALL(){
 
 void SD_LOGGER_FORWARD_ARM(bool ARM_STATUS){
 	armed = ARM_STATUS;
+}
+
+void SD_LOGGER_SETUP_CARD(){
+	SD_SUPERBLOCK sd_superblock = {0};
+	sd_superblock.magic = SUPERBLOCK_MAGIC;
+	sd_superblock.version = SUPERBLOCK_VERSION;
+	sd_superblock.file_start_block = 1000;
+	sd_superblock.file_end_block = 60000000;
+	sd_superblock.card_size_MB = 32000;
+	sd_superblock.total_flights = 0;
+	sd_superblock.last_flight_number = 0;
+	sd_superblock.corruption_flag = 0;
+	sd_superblock.latest_metadata_block = 101;
+	sd_superblock.crc32 = calculate_crc32_hw(&sd_superblock, sizeof(sd_superblock) - sizeof(uint32_t));
+
+	if (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER) {
+		ERROR_HANDLER_BLINKS(10); // Not ready
+	}
+
+	if (HAL_SD_WriteBlocks(&hsd1, (uint8_t *)&sd_superblock, SUPERBLOCK_BLOCK, 1, TIMEOUT_MS) != HAL_OK) {
+		ERROR_HANDLER_BLINKS(10); // Write failed
+	}
+
 }

@@ -234,7 +234,6 @@ int main(void)
   TIME_UTILS_MICROS_TIM_START(&htim5);
   SCHEDULER_INIT();	// MICROS ONLY WORKS WHEN THIS IS ENABLED
 
-
 	progress_counter = 11;
   /* USER CODE END 2 */
 
@@ -1388,15 +1387,6 @@ void Error_Handler(void)
 		  STATUS_LED_BLUE_ON();
 		  BAREBONES_DELAY_MS(200);
 		  STATUS_LED_BLUE_OFF();
-		  BAREBONES_DELAY_MS(500);
-	  }
-
-	  BAREBONES_DELAY_MS(800);
-
-	  for(uint8_t counter = 0; counter < BLINKS; counter++){
-		  STATUS_LED_GREEN_ON();
-		  BAREBONES_DELAY_MS(200);
-		  STATUS_LED_GREEN_OFF();
 		  BAREBONES_DELAY_MS(500);
 	  }
 	  BAREBONES_DELAY_MS(1500);
