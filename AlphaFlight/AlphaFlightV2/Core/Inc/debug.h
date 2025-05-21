@@ -25,8 +25,6 @@ void STATUS_LED_BLUE_ON();
 void STATUS_LED_BLUE_OFF();
 void STATUS_LED_BLUE_TOGGLE();
 
-void ERROR_HANDLER_BLINKS(unsigned char BLINKS);
-
 #define USB_PRINT_BUFFER_SIZE 2096
 
 #endif /* INC_DEBUG_H_ */

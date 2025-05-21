@@ -11,7 +11,11 @@
 #include "stm32f7xx_hal.h"
 #include "stdint.h"
 
-#define CRSF_BUFFER_SIZE 128
+#define ROUND_UP_32(x) (((x) + 31) & ~31)
+#define CACHE_LINE_SIZE 32
+
+#define CRSF_BUFFER_RAW_SIZE 128
+#define CRSF_BUFFER_SIZE ROUND_UP_32(CRSF_BUFFER_RAW_SIZE)
 #define MAX_PARSE_ITERATIONS 32  // Don't loop forever on garbage
 
 typedef struct{

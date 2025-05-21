@@ -8,6 +8,7 @@
 #include "sd_logger.h"
 #include "debug.h"
 #include "stm32f7xx_hal.h"
+#include "main.h"
 
 static Sensor_Data* sensor_data;
 static CRSF_DATA* crsf_data;
