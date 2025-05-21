@@ -35,7 +35,7 @@ void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT*
 	    }
 
 	    // 2. Clean D-Cache before DMA access
-	    //SCB_CleanDCache_by_Addr((uint32_t *)tx_buffer, ((BLOCK_SIZE + 31) / 32) * 32);
+	    SCB_CleanDCache_by_Addr((uint32_t *)tx_buffer, ((BLOCK_SIZE + 31) / 32) * 32);
 
 	    // 3. Optional: Check card state
 	    if (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER) {
