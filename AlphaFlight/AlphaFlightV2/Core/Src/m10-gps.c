@@ -12,7 +12,7 @@
 static UART_HandleTypeDef *gps_uart;
 static DMA_HandleTypeDef *gps_dma;
 static uint32_t buffer_wrap_around_count = 0;
-static uint8_t dma_buffer[GPS_BUFFER_SIZE] = {0};
+__attribute__((aligned(32))) static uint8_t dma_buffer[GPS_BUFFER_SIZE] = {0};
 
 static GPS_PARSE_STRUCT parse_struct = {0};
 static GPS_NAV_PVT gps_nav_pvt = {0};
@@ -65,6 +65,15 @@ static void MEMCPY_FROM_RINGBUFFER(uint8_t *dest, const uint8_t *src_ring, uint1
 }
 
 void GPS_PARSE_BUFFER(void) {
+	uintptr_t addr = (uintptr_t)dma_buffer;
+	size_t size = GPS_BUFFER_SIZE;
+
+	if ((addr % CACHE_LINE_SIZE != 0) || (size % CACHE_LINE_SIZE != 0)) {
+		ERROR_HANDLER_BLINKS(5);
+	}
+
+	SCB_InvalidateDCache_by_Addr((uint32_t*)addr, size);
+
     uint64_t dma_pos_abs = GPS_GET_DMA_POSITION() + (buffer_wrap_around_count * GPS_BUFFER_SIZE);
     uint8_t stuck_counter = 0;
 

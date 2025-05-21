@@ -11,6 +11,8 @@
 static bool green_toggle = false;
 static bool blue_toggle = false;
 
+extern volatile unsigned char progress_counter;
+
 void USB_PRINTLN(const char *format, ...) {
     char message[USB_PRINT_BUFFER_SIZE];
     va_list args;
@@ -96,4 +98,48 @@ void STATUS_LED_BLUE_TOGGLE(){
 		GPIOB->BSRR |= GPIO_PIN_8 << 16;
 		blue_toggle = true;
 	}
+}
+
+static __attribute__((noinline)) void BAREBONES_DELAY_CYCLES(uint32_t cycles) {
+    __asm volatile (
+        "1: \n"
+        "   subs %0, #1 \n"  // 1 cycle
+        "   bne 1b \n"       // 1-2 cycles depending on pipeline
+        : "+r" (cycles)
+    );
+}
+
+static void BAREBONES_DELAY_MS(uint32_t ms){
+    while (ms--) {
+        BAREBONES_DELAY_CYCLES(108000);	// about how many cycles per milliseconds
+    }
+}
+
+void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+	  STATUS_LED_GREEN_OFF();
+	  STATUS_LED_BLUE_OFF();
+	  for(uint8_t counter = 0; counter < progress_counter; counter++){
+		  STATUS_LED_BLUE_ON();
+		  BAREBONES_DELAY_MS(200);
+		  STATUS_LED_BLUE_OFF();
+		  BAREBONES_DELAY_MS(500);
+	  }
+
+	  BAREBONES_DELAY_MS(800);
+
+	  for(uint8_t counter = 0; counter < BLINKS; counter++){
+		  STATUS_LED_GREEN_ON();
+		  BAREBONES_DELAY_MS(200);
+		  STATUS_LED_GREEN_OFF();
+		  BAREBONES_DELAY_MS(500);
+	  }
+	  BAREBONES_DELAY_MS(1500);
+  }
+  /* USER CODE END Error_Handler_Debug */
 }
