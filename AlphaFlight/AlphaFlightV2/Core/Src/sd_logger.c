@@ -3,6 +3,8 @@
  *
  *  Created on: May 6, 2025
  *      Author: benno
+ *
+ *      TODO: Superblock rotation (reserve 30 blocks for superblock, first block is index of the current active super block, each active superblock has counter, move forward if counter hits value)
  */
 
 #include "sd_logger.h"
@@ -17,14 +19,11 @@ static GPS_NAV_PVT* gps_nav_pvt;
 static bool armed = false;
 static bool last_arm_status = false;
 
-
+static SD_SUPERBLOCK sd_superblock = {0};
 extern SD_HandleTypeDef hsd1;
-
-#define BLOCK_SIZE     512
-#define BLOCK_NUMBER   10001
-#define TIMEOUT_MS     1000
-
 extern CRC_HandleTypeDef hcrc;
+
+
 
 static uint32_t calculate_crc32_hw(const void *data, size_t length) {
     // STM32 CRC peripheral processes 32-bit words, so we need to handle padding
@@ -71,7 +70,7 @@ void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT*
 	        ERROR_HANDLER_BLINKS(2); // Write failed
 	    }
 
-	    SD_SUPERBLOCK sd_superblock = {0};
+
 
 	    memcpy(&sd_superblock, &superblock_raw, sizeof(sd_superblock));
 
@@ -99,7 +98,6 @@ void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT*
 
 void SD_LOGGER_LOOP_CALL(){
 	last_arm_status = false;
-	USB_PRINTLN("%d", sizeof(SD_SUPERBLOCK));
 
 	/*
 	// open file at arm
@@ -150,23 +148,23 @@ void SD_LOGGER_FORWARD_ARM(bool ARM_STATUS){
 }
 
 void SD_LOGGER_SETUP_CARD(){
-	SD_SUPERBLOCK sd_superblock = {0};
-	sd_superblock.magic = SUPERBLOCK_MAGIC;
-	sd_superblock.version = SUPERBLOCK_VERSION;
-	sd_superblock.file_start_block = 1000;
-	sd_superblock.file_end_block = 60000000;
-	sd_superblock.card_size_MB = 32000;
-	sd_superblock.total_flights = 0;
-	sd_superblock.last_flight_number = 0;
-	sd_superblock.corruption_flag = 0;
-	sd_superblock.latest_metadata_block = 101;
-	sd_superblock.crc32 = calculate_crc32_hw(&sd_superblock, sizeof(sd_superblock) - sizeof(uint32_t));
+	SD_SUPERBLOCK sd_superblock_config = {0};
+	sd_superblock_config.magic = SUPERBLOCK_MAGIC;
+	sd_superblock_config.version = SUPERBLOCK_VERSION;
+	sd_superblock_config.file_start_block = 1000;
+	sd_superblock_config.file_end_block = 60000000;
+	sd_superblock_config.card_size_MB = 32000;
+	sd_superblock_config.total_flights = 0;
+	sd_superblock_config.last_flight_number = 0;
+	sd_superblock_config.corruption_flag = 0;
+	sd_superblock_config.latest_metadata_block = 101;
+	sd_superblock_config.crc32 = calculate_crc32_hw(&sd_superblock, sizeof(sd_superblock) - sizeof(uint32_t));
 
 	if (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER) {
 		ERROR_HANDLER_BLINKS(10); // Not ready
 	}
 
-	if (HAL_SD_WriteBlocks(&hsd1, (uint8_t *)&sd_superblock, SUPERBLOCK_BLOCK, 1, TIMEOUT_MS) != HAL_OK) {
+	if (HAL_SD_WriteBlocks(&hsd1, (uint8_t *)&sd_superblock_config, SUPERBLOCK_BLOCK, 1, TIMEOUT_MS) != HAL_OK) {
 		ERROR_HANDLER_BLINKS(10); // Write failed
 	}
 

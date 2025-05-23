@@ -25,6 +25,9 @@
 
 #define DATA_BLOCK_START 1000
 
+#define BLOCK_SIZE     512
+#define TIMEOUT_MS     1000
+
 typedef struct __attribute__((__packed__, aligned(4))) {
     uint32_t magic;           // Magic number to identify a valid struct
     uint16_t version;         // Metadata version
