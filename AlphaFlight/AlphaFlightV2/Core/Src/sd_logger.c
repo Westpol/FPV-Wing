@@ -83,12 +83,17 @@ static void READ_LATEST_FLIGHT(){
 	READ_BLOCK(raw_block_data, SUPERBLOCK_BLOCK, 1);
 	memcpy(&sd_superblock, &raw_block_data, sizeof(sd_superblock));
 	if(sd_superblock.magic != SUPERBLOCK_MAGIC) ERROR_HANDLER_BLINKS(10);
+	USB_PRINTLN_BLOCKING("Superblock magic number: 0x%08X correct!", sd_superblock.magic);
 	VERIFY_CRC32(&sd_superblock, sizeof(sd_superblock) - sizeof(uint32_t), sd_superblock.crc32);
+	USB_PRINTLN_BLOCKING("Superblock CRC32: 0x%08X correct!", sd_superblock.crc32);
+	USB_PRINTLN_BLOCKING("Superblock version: %d\nCard Size: %d\nLast Flight Num: %d\nLatest Metadata Block: %d", sd_superblock.version, sd_superblock.card_size_MB, sd_superblock.last_flight_number, sd_superblock.latest_metadata_block);
 
 	READ_BLOCK(raw_block_data, sd_superblock.latest_metadata_block, 1);
 	memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
 	if(sd_file_metadata_block.magic != METADATA_BLOCK_MAGIC) ERROR_HANDLER_BLINKS(10);
+	USB_PRINTLN_BLOCKING("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
 	VERIFY_CRC32(&sd_file_metadata_block, sizeof(sd_file_metadata_block) - sizeof(uint32_t), sd_file_metadata_block.crc32);
+	USB_PRINTLN_BLOCKING("Metadata CRC32: 0x%08X correct!", sd_file_metadata_block.crc32);
 
 	for(int i = 0; i < FILES_PER_METADATA_BLOCK; i++){
 		if(sd_file_metadata_block.sd_file_metadata_chunk[i].active_flag == 0){
@@ -115,6 +120,8 @@ void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT*
 
 	/*// 2. Clean D-Cache before DMA access
 	SCB_CleanDCache_by_Addr((uint32_t *)tx_buffer, ((BLOCK_SIZE + 31) / 32) * 32);*/
+	// check init
+
 
 	SD_LOGGER_SETUP_CARD();
 
@@ -125,7 +132,6 @@ void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT*
 }
 
 void SD_LOGGER_LOOP_CALL(){
-
 	// open file at arm
 	if(last_arm_status == false && armed == true){
 		last_arm_status = true;
@@ -176,29 +182,7 @@ void SD_LOGGER_SETUP_CARD(){
 
 	sd_file_metadata_block_config.crc32 = calculate_crc32_hw(&sd_file_metadata_block_config, sizeof(sd_file_metadata_block_config) - sizeof(uint32_t));
 
-	if (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER) {
-		ERROR_HANDLER_BLINKS(10); // Not ready
-	}
+	WRITE_BLOCK((uint8_t *)&sd_superblock_config, SUPERBLOCK_BLOCK, 1);
 
-	if (HAL_SD_WriteBlocks(&hsd1, (uint8_t *)&sd_superblock_config, SUPERBLOCK_BLOCK, 1, TIMEOUT_MS) != HAL_OK) {
-		ERROR_HANDLER_BLINKS(10); // Write failed
-	}
-
-	uint32_t start = HAL_GetTick();
-	while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER) {
-		if (HAL_GetTick() - start > TIMEOUT_MS) {
-			ERROR_HANDLER_BLINKS(3); // Timeout
-		}
-	}
-
-	if (HAL_SD_WriteBlocks(&hsd1, (uint8_t *)&sd_file_metadata_block_config, METADATA_BLOCK_START, 1, TIMEOUT_MS) != HAL_OK) {
-		ERROR_HANDLER_BLINKS(10); // Write failed
-	}
-
-	start = HAL_GetTick();
-	while (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER) {
-		if (HAL_GetTick() - start > TIMEOUT_MS) {
-			ERROR_HANDLER_BLINKS(3); // Timeout
-		}
-	}
+	WRITE_BLOCK((uint8_t *)&sd_file_metadata_block_config, METADATA_BLOCK_START, 1);
 }
