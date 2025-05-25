@@ -95,9 +95,9 @@ void FC_PROCESS(){
 		case DIRECT_CONTROL_WITH_LIMITS:
 			break;
 		case FLY_BY_WIRE:
-			STATUS_LED_GREEN_ON();
+			//STATUS_LED_GREEN_ON();
 			FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(armed, dt);
-			STATUS_LED_GREEN_OFF();
+			//STATUS_LED_GREEN_OFF();
 			break;
 		default:
 			break;

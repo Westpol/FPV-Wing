@@ -14,10 +14,13 @@
 #include "crossfire.h"
 #include "m10-gps.h"
 
+#define METADATA_BLOCK_MAGIC 0xC5D4250A
+
 #define METADATA_MAGIC 0xA1F17E5C  // Unique marker for validity
 #define METADATA_VERSION 1         // Version for forward compatibility
 #define METADATA_BLOCK_START 101
 #define METADATA_BLOCK_END 999
+#define FILES_PER_METADATA_BLOCK 14
 
 #define SUPERBLOCK_MAGIC 0xFA55C0DE
 #define SUPERBLOCK_VERSION 1
@@ -31,6 +34,7 @@
 typedef struct __attribute__((__packed__, aligned(4))) {
     uint32_t magic;           // Magic number to identify a valid struct
     uint16_t version;         // Metadata version
+    uint8_t active_flag;	  // Flag to know the last active flight
     uint16_t flight_number;   // Monotonic flight counter
 
     uint32_t timestamp_unix;  // 0 if GPS time unavailable
@@ -42,10 +46,15 @@ typedef struct __attribute__((__packed__, aligned(4))) {
     uint32_t end_block;       // Last SD block, 0 = corrupted/incomplete
 
     uint8_t log_finished;     // 1 = log completed successfully
-    uint8_t reserved[7];      // Padding / reserved for future use
-
-    uint32_t crc32;           // CRC32 of the struct excluding this field
+    uint8_t reserved[4];      // Padding / reserved for future use
 } SD_FILE_METADATA_CHUNK;
+
+typedef struct __attribute__((__packed__, aligned(4))){
+	uint32_t magic;
+	SD_FILE_METADATA_CHUNK sd_file_metadata_chunk[FILES_PER_METADATA_BLOCK];
+
+	uint32_t crc32;
+}SD_FILE_METADATA_BLOCK;
 
 typedef struct __attribute__((__packed__, aligned(4))) {
     uint32_t magic;               // Magic number to detect valid superblock
