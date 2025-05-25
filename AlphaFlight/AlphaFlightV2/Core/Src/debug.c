@@ -13,7 +13,7 @@ static bool blue_toggle = false;
 
 extern volatile unsigned char progress_counter;
 
-void USB_PRINTLN(const char *format, ...) {
+void USB_PRINTLN(const char *format, ...){
     char message[USB_PRINT_BUFFER_SIZE];
     va_list args;
     va_start(args, format);
@@ -29,6 +29,27 @@ void USB_PRINTLN(const char *format, ...) {
     }
 
     CDC_Transmit_FS((uint8_t *)message, len);
+}
+
+void USB_PRINTLN_BLOCKING(const char *format, ...){
+	char message[USB_PRINT_BUFFER_SIZE];
+	    va_list args;
+	    va_start(args, format);
+	    int len = vsnprintf(message, sizeof(message) - 2, format, args);  // Reserve space for \r\n
+	    va_end(args);
+
+	    // Ensure there's space to append "\r\n"
+	    if (len > 0 && len < (USB_PRINT_BUFFER_SIZE - 2)) {
+	        message[len] = '\r';
+	        message[len + 1] = '\n';
+	        message[len + 2] = '\0'; // Null-terminate the string
+	        len += 2;
+	    }
+
+	    uint32_t start = HAL_GetTick();
+	    while (CDC_Transmit_FS((uint8_t *)message, len) == USBD_BUSY) {
+	        if (HAL_GetTick() - start > 100) break; // Timeout after 100ms
+	    }
 }
 
 void USB_PRINT(const char *format, ...) {

@@ -14,6 +14,7 @@
 #include "stdint.h"
 
 void USB_PRINTLN(const char *format, ...);
+void USB_PRINTLN_BLOCKING(const char *format, ...);
 void USB_PRINT(const char *format, ...);
 void USB_PRINT_HEX(uint8_t *data, uint32_t len);
 
