@@ -169,7 +169,7 @@ void SD_LOGGER_SETUP_CARD(){
 	sd_superblock_config.last_flight_number = 0;
 	sd_superblock_config.corruption_flag = 0;
 	sd_superblock_config.latest_metadata_block = 101;
-	sd_superblock_config.crc32 = calculate_crc32_hw(&sd_superblock, sizeof(sd_superblock) - sizeof(uint32_t));
+	sd_superblock_config.crc32 = calculate_crc32_hw(&sd_superblock_config, sizeof(sd_superblock_config) - sizeof(uint32_t));
 
 	SD_FILE_METADATA_CHUNK temporary_dummy = {0};
 	temporary_dummy.magic = METADATA_MAGIC;
