@@ -88,7 +88,7 @@ static void READ_LATEST_FLIGHT(){
 	USB_PRINTLN_BLOCKING("Superblock magic number: 0x%08X correct!", sd_superblock.magic);
 	VERIFY_CRC32(&sd_superblock, sizeof(sd_superblock) - sizeof(uint32_t), sd_superblock.crc32);
 	USB_PRINTLN_BLOCKING("Superblock CRC32: 0x%08X correct!", sd_superblock.crc32);
-	USB_PRINTLN_BLOCKING("Superblock version: %d\nCard Size: %d\nLast Flight Num: %d\nLatest Metadata Block: %d", sd_superblock.version, sd_superblock.card_size_MB, sd_superblock.last_flight_number, sd_superblock.latest_metadata_block);
+	USB_PRINTLN_BLOCKING("Superblock version: %d\r\nCard Size: %d\r\nLast Flight Num: %d\r\nLatest Metadata Block: %d", sd_superblock.version, sd_superblock.card_size_MB, sd_superblock.last_flight_number, sd_superblock.latest_metadata_block);
 
 	READ_BLOCK(raw_block_data, sd_superblock.latest_metadata_block, 1);
 	memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
@@ -99,7 +99,7 @@ static void READ_LATEST_FLIGHT(){
 
 	for(int i = 0; i < FILES_PER_METADATA_BLOCK; i++){
 		if(sd_file_metadata_block.sd_file_metadata_chunk[i].active_flag == 0){
-			if(sd_file_metadata_block.sd_file_metadata_chunk[i].magic != METADATA_BLOCK_MAGIC){
+			if(sd_file_metadata_block.sd_file_metadata_chunk[i].magic != METADATA_MAGIC){
 				ERROR_HANDLER_BLINKS(20);
 			}
 			new_file_metadata = sd_file_metadata_block.sd_file_metadata_chunk[i];
@@ -108,7 +108,7 @@ static void READ_LATEST_FLIGHT(){
 			new_file_metadata.start_block = 0;
 
 		}
-		if(sd_file_metadata_block.sd_file_metadata_chunk[i].magic != METADATA_BLOCK_MAGIC){
+		if(sd_file_metadata_block.sd_file_metadata_chunk[i].magic != METADATA_MAGIC){
 			ERROR_HANDLER_BLINKS(20);
 		}
 	}
