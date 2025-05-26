@@ -72,7 +72,7 @@ typedef struct __attribute__((__packed__, aligned(4))) {
 
     uint32_t latest_metadata_block;  // Which block holds the latest flight metadata
 
-    uint8_t reserved2[472];       // Padding to make struct 508 bytes total
+    uint8_t reserved2[474];       // Padding to make struct 508 bytes total
 
     uint32_t crc32;               // CRC32 of everything except this field
 } SD_SUPERBLOCK;

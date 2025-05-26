@@ -50,7 +50,9 @@ static uint32_t calculate_crc32_hw(const void *data, size_t length) {
 }
 
 static inline void VERIFY_CRC32(const void* data, size_t size, uint32_t expected_crc){
-	if(calculate_crc32_hw(data, size) != expected_crc){
+	uint32_t calculated_crc = calculate_crc32_hw(data, size);
+	if(calculated_crc != expected_crc){
+		USB_PRINTLN_BLOCKING("Calculated CRC: %08X\nExpected CRC: %08X", calculated_crc, expected_crc);
 		ERROR_HANDLER_BLINKS(10);
 	}
 }
