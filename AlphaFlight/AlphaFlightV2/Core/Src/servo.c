@@ -6,6 +6,7 @@
  */
 
 #include "servo.h"
+#include "main.h"
 
 #define MAX_SERVOS 8
 
@@ -21,6 +22,7 @@ int SERVO_ADD(TIM_HandleTypeDef *SERVO_TIMER, uint32_t TIMER_CHANNEL){
 		return num_active_servos - 1;
 	}
 	else{
+		ERROR_HANDLER_BLINKS(1);
 		return -1;
 	}
 }

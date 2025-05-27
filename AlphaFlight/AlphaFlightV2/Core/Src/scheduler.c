@@ -30,6 +30,9 @@ void SCHEDULER_ADD_TASK(task_func_t task_func, uint32_t period){	// add tasks in
 		tasks[task_count].time_to_execute = period;
 		task_count++;
 	}
+	else{
+		ERROR_HANDLER_BLINKS(1);
+	}
 }
 
 void SCHEDULER_UPDATE(){

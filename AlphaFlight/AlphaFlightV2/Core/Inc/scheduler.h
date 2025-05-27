@@ -11,7 +11,7 @@
 #include "stm32f7xx_hal.h"
 #include "stdint.h"
 
-#define MAX_TASKS 20
+#define MAX_TASKS 50
 
 typedef void (*task_func_t)(void);
 

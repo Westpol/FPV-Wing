@@ -9,6 +9,7 @@
 #include "math.h"
 #include "stdbool.h"
 #include "time-utils.h"
+#include "main.h"
 
 static SPI_TypeDef *sensor_spi;
 static GPIO_TypeDef *gyro_cs_port;
@@ -314,12 +315,16 @@ void GYRO_FUSION(){
 }
 
 void BARO_SET_BASE_PRESSURE(){
+	uint8_t counter = 0;
 	while(1){
 		BARO_READ();
 		if(sensor_data.pressure > 0){
 			sensor_data.pressure_base = sensor_data.pressure;
 			sensor_data.pressure_filtered = sensor_data.pressure;
 			return;
+		}
+		if(counter++ > 100){
+			ERROR_HANDLER_BLINKS(1);
 		}
 	}
 }

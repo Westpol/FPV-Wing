@@ -4,6 +4,19 @@
  *  Created on: May 6, 2025
  *      Author: benno
  *
+ * ## ✅ Done
+ * - Basic log config struct
+ * - Read mission block from SD
+ *
+ * ## 🔨 In Progress
+ * - Implement log behavior change based on config
+ *
+ * ## 🧠 Future
+ * - Per-sensor field mask
+ * - Waypoint block indexing
+ * - PC-side mission editor
+ *
+ *
  *      TODO: Superblock rotation (reserve 30 blocks for superblock, first block is index of the current active super block, each active superblock has counter, move forward if counter hits value)
  */
 

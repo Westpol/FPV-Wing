@@ -46,7 +46,9 @@ static void GPS_DECODE(){
 void GPS_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 	gps_uart = UARTx;
 	gps_dma = UART_DMAx;
-	HAL_UART_Receive_DMA(gps_uart, dma_buffer, GPS_BUFFER_SIZE);
+	if(HAL_UART_Receive_DMA(gps_uart, dma_buffer, GPS_BUFFER_SIZE) != HAL_OK){
+		ERROR_HANDLER_BLINKS(1);
+	}
 }
 
 static uint16_t ATB(uint64_t abs_index_val){		// absolute to buffer index values

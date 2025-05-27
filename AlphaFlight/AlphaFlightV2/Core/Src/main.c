@@ -177,14 +177,17 @@ int main(void)
   crsf_data = CRSF_GET_DATA_STRUCT();
 
   LL_SPI_Enable(SPI1);
-
+  uint8_t counter = 0;
   while(SENSORS_INIT(SPI1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
 	  HAL_Delay(100);
+	  if(counter++ > 10){
+		  ERROR_HANDLER_BLINKS(1);
+	  }
   }
 
   progress_counter = 4;
 
-  HAL_Delay(500);
+  HAL_Delay(100);
 
   BARO_SET_BASE_PRESSURE();
 

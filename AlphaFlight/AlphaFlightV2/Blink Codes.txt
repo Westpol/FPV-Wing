@@ -1,0 +1,42 @@
+Blink Codes:
+
+Just blue, no green blink: Normal Error_Handler()
+Blue and green: ERROR_HANDLER_BLINKS()
+
+Blue 1:
+- MPU, HAL or SysClock config fail
+
+Blue 2:
+- One of the CubeMX Init functions failing
+
+Blue 3:
+- Onboard sensor fault
+1: 10th consecutive sensor init problem
+
+Blue 4:
+- Baro Pressure base set fault
+1: 100th consecutive 0 read
+
+Blue 5:
+- Servo problem
+1: More than max numbers of Servos added
+
+Blue 6:
+- CRSF Init problem
+1: HAL_UART_Recieve_DMA failed
+
+Blue 7:
+- GPS Init problem
+
+Blue 8:
+- FC Init problem
+
+Blue 9:
+- SD Logger Init problem
+
+Blue 10:
+- Scheduler problem
+
+Blue 11:
+- Problem in scheduler loop
+

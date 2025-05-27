@@ -101,7 +101,9 @@ static void CRSF_DECODE(){
 void CRSF_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 	crsf_uart = UARTx;
 	crsf_dma = UART_DMAx;
-	HAL_UART_Receive_DMA(crsf_uart, dma_buffer, CRSF_BUFFER_SIZE);
+	if(HAL_UART_Receive_DMA(crsf_uart, dma_buffer, CRSF_BUFFER_SIZE) != HAL_OK){
+		ERROR_HANDLER_BLINKS(1);
+	}
 }
 
 void CRSF_HANDLE_TELEMETRY(){
