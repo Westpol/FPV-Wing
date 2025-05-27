@@ -27,6 +27,7 @@ Blue 6:
 
 Blue 7:
 - GPS Init problem
+1: HAL_UART_Recieve_DMA failed
 
 Blue 8:
 - FC Init problem
@@ -36,6 +37,7 @@ Blue 9:
 
 Blue 10:
 - Scheduler problem
+1: Max Tasks exceeded
 
 Blue 11:
 - Problem in scheduler loop
