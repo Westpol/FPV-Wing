@@ -16,6 +16,8 @@
  * - Waypoint block indexing
  * - PC-side mission editor
  *
+ * sudo dd if=/dev/sde bs=512 skip=99 count=1 status=none | hexdump -C
+ *
  *
  *      TODO: Superblock rotation (reserve 30 blocks for superblock, first block is index of the current active super block, each active superblock has counter, move forward if counter hits value)
  */

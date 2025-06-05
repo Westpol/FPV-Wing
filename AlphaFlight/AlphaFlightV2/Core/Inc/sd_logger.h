@@ -40,7 +40,7 @@
 #define BLOCK_SIZE     512
 #define TIMEOUT_MS     1000
 
-typedef struct __attribute__((__packed__, aligned(4))) {
+typedef struct __attribute__((__packed__)) {
     uint32_t magic;           // Magic number to identify a valid struct
     uint16_t version;         // Metadata version
     uint8_t active_flag;	  // Flag to know the last active flight
@@ -58,14 +58,14 @@ typedef struct __attribute__((__packed__, aligned(4))) {
     uint8_t reserved[4];      // Padding / reserved for future use
 } SD_FILE_METADATA_CHUNK;
 
-typedef struct __attribute__((__packed__, aligned(4))){
+typedef struct __attribute__((__packed__)){
 	uint32_t magic;
 	SD_FILE_METADATA_CHUNK sd_file_metadata_chunk[LOG_FILES_PER_METADATA_BLOCK];
 
 	uint32_t crc32;
 }SD_FILE_METADATA_BLOCK;
 
-typedef struct __attribute__((__packed__, aligned(4))) {
+typedef struct __attribute__((__packed__)) {
     uint32_t magic;               // Magic number to detect valid superblock
     uint16_t version;             // Version for compatibility
 
@@ -100,7 +100,7 @@ typedef struct __attribute__((__packed__, aligned(4))) {
     uint8_t  default_log_profile_id;  // Which logging config to use if none specified
     uint8_t  log_mode_flags;          // Flags for aggressive/debug/normal logging
 
-    uint8_t reserved2[434];           // Padding to make struct 508 bytes total
+    uint8_t reserved2[438];           // Padding to make struct 508 bytes total
 
     uint32_t crc32;                   // CRC32 of everything except this field
 } SD_SUPERBLOCK;

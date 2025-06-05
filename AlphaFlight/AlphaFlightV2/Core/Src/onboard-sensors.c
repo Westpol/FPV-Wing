@@ -258,12 +258,14 @@ static void ACCEL_CONVERT_DATA(){
 	float overall_force = sensor_data.accel_x_filtered * sensor_data.accel_x_filtered + sensor_data.accel_y_filtered * sensor_data.accel_y_filtered + sensor_data.accel_z_filtered * sensor_data.accel_z_filtered;
 
 	if(overall_force >= 902500 && overall_force <= 1102500){
-		//STATUS_LED_GREEN_ON();
+		STATUS_LED_BLUE_ON();
 		accel_right_for_calibration = true;
 	}
 	else{
-		//STATUS_LED_GREEN_OFF();
+		STATUS_LED_BLUE_OFF();
 		accel_right_for_calibration = false;
+		volatile uint8_t dummy_read = accel_rx[4];
+		if(dummy_read);
 	}
 }
 
