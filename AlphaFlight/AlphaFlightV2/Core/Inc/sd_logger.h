@@ -14,19 +14,28 @@
 #include "crossfire.h"
 #include "m10-gps.h"
 
-#define METADATA_BLOCK_MAGIC 0xC5D4250A
-
-#define METADATA_MAGIC 0xA1F17E5C  // Unique marker for validity
-#define METADATA_VERSION 1         // Version for forward compatibility
-#define METADATA_BLOCK_START 101
-#define METADATA_BLOCK_END 999
-#define FILES_PER_METADATA_BLOCK 14
-
 #define SUPERBLOCK_MAGIC 0xFA55C0DE
 #define SUPERBLOCK_VERSION 1
-#define SUPERBLOCK_BLOCK 100
+#define SUPERBLOCK_BLOCK 99
 
-#define DATA_BLOCK_START 1000
+
+#define LOG_METADATA_BLOCK_MAGIC 0xC5D4250A
+
+#define LOG_METADATA_MAGIC 0xA1F17E5C  // Unique marker for validity
+#define LOG_METADATA_VERSION 1         // Version for forward compatibility
+#define LOG_METADATA_BLOCK_START 100
+#define LOG_METADATA_BLOCK_END 999
+#define LOG_FILES_PER_METADATA_BLOCK 14
+
+#define LOG_DATA_BLOCK_START 1000
+#define LOG_DATA_BLOCK_END 59999999
+
+
+#define MISSION_METADATA_BLOCK_START 60000000
+#define MISSION_METADATA_BLOCK_END 60000099
+
+#define MISSION_DATA_BLOCK_START 60000100
+#define MISSION_DATA_BLOCK_END 61000000
 
 #define BLOCK_SIZE     512
 #define TIMEOUT_MS     1000
@@ -51,7 +60,7 @@ typedef struct __attribute__((__packed__, aligned(4))) {
 
 typedef struct __attribute__((__packed__, aligned(4))){
 	uint32_t magic;
-	SD_FILE_METADATA_CHUNK sd_file_metadata_chunk[FILES_PER_METADATA_BLOCK];
+	SD_FILE_METADATA_CHUNK sd_file_metadata_chunk[LOG_FILES_PER_METADATA_BLOCK];
 
 	uint32_t crc32;
 }SD_FILE_METADATA_BLOCK;
@@ -60,21 +69,40 @@ typedef struct __attribute__((__packed__, aligned(4))) {
     uint32_t magic;               // Magic number to detect valid superblock
     uint16_t version;             // Version for compatibility
 
-    uint32_t file_start_block;        // Total number of 512-byte blocks on the card
-    uint32_t file_end_block;        // Total number of 512-byte blocks on the card
+    // Log metadata and file block ranges
+    uint32_t log_metadata_start_block;
+    uint32_t log_metadata_end_block;
+    uint32_t logfile_start_block;
+    uint32_t logfile_end_block;
+
+    // Mission metadata and file block ranges
+    uint32_t mission_metadata_start_block;
+    uint32_t mission_metadata_end_block;
+    uint32_t missionfile_start_block;
+    uint32_t missionfile_end_block;
+
     uint32_t card_size_MB;        // Size of the SD card in megabytes
 
-    uint32_t total_flights;       // Total number of flights ever logged
-    uint32_t last_flight_number;  // Last flight number used
+    // Flight log statistics
+    uint32_t total_flights;
+    uint32_t last_flight_number;
 
     uint8_t corruption_flag;      // 0 = OK, 1 = corrupted flight log detected
     uint8_t reserved1[3];         // Align + room for future flags
 
-    uint32_t latest_metadata_block;  // Which block holds the latest flight metadata
+    uint32_t latest_log_metadata_block;      // Last log metadata block used
+    uint32_t latest_mission_metadata_block;  // Last mission metadata block used
 
-    uint8_t reserved2[474];       // Padding to make struct 508 bytes total
+    // === NEW: Mission system and log config state ===
+    uint32_t active_mission_id;       // ID of mission to run at startup (0 = none)
+    uint8_t  mission_status_flags;    // Bitfield for current mission state
+    uint8_t  mission_config_version;  // To version mission file format
+    uint8_t  default_log_profile_id;  // Which logging config to use if none specified
+    uint8_t  log_mode_flags;          // Flags for aggressive/debug/normal logging
 
-    uint32_t crc32;               // CRC32 of everything except this field
+    uint8_t reserved2[434];           // Padding to make struct 508 bytes total
+
+    uint32_t crc32;                   // CRC32 of everything except this field
 } SD_SUPERBLOCK;
 
 void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT);

@@ -101,18 +101,18 @@ static void READ_LATEST_FLIGHT(){
 	USB_PRINTLN_BLOCKING("Superblock magic number: 0x%08X correct!", sd_superblock.magic);
 	VERIFY_CRC32(&sd_superblock, sizeof(sd_superblock) - sizeof(uint32_t), sd_superblock.crc32);
 	USB_PRINTLN_BLOCKING("Superblock CRC32: 0x%08X correct!", sd_superblock.crc32);
-	USB_PRINTLN_BLOCKING("Superblock version: %d\r\nCard Size: %d\r\nLast Flight Num: %d\r\nLatest Metadata Block: %d", sd_superblock.version, sd_superblock.card_size_MB, sd_superblock.last_flight_number, sd_superblock.latest_metadata_block);
+	USB_PRINTLN_BLOCKING("Superblock version: %d\r\nCard Size: %d\r\nLast Flight Num: %d\r\nLatest Metadata Block: %d", sd_superblock.version, sd_superblock.card_size_MB, sd_superblock.last_flight_number, sd_superblock.latest_log_metadata_block);
 
-	READ_BLOCK(raw_block_data, sd_superblock.latest_metadata_block, 1);
+	READ_BLOCK(raw_block_data, sd_superblock.latest_log_metadata_block, 1);
 	memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
-	if(sd_file_metadata_block.magic != METADATA_BLOCK_MAGIC) ERROR_HANDLER_BLINKS(10);
+	if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC) ERROR_HANDLER_BLINKS(10);
 	USB_PRINTLN_BLOCKING("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
 	VERIFY_CRC32(&sd_file_metadata_block, sizeof(sd_file_metadata_block) - sizeof(uint32_t), sd_file_metadata_block.crc32);
 	USB_PRINTLN_BLOCKING("Metadata CRC32: 0x%08X correct!", sd_file_metadata_block.crc32);
 
-	for(int i = 0; i < FILES_PER_METADATA_BLOCK; i++){
+	for(int i = 0; i < LOG_FILES_PER_METADATA_BLOCK; i++){
 		if(sd_file_metadata_block.sd_file_metadata_chunk[i].active_flag == 0){
-			if(sd_file_metadata_block.sd_file_metadata_chunk[i].magic != METADATA_MAGIC){
+			if(sd_file_metadata_block.sd_file_metadata_chunk[i].magic != LOG_METADATA_MAGIC){
 				ERROR_HANDLER_BLINKS(20);
 			}
 			new_file_metadata = sd_file_metadata_block.sd_file_metadata_chunk[i];
@@ -121,7 +121,7 @@ static void READ_LATEST_FLIGHT(){
 			new_file_metadata.start_block = 0;
 
 		}
-		if(sd_file_metadata_block.sd_file_metadata_chunk[i].magic != METADATA_MAGIC){
+		if(sd_file_metadata_block.sd_file_metadata_chunk[i].magic != LOG_METADATA_MAGIC){
 			ERROR_HANDLER_BLINKS(20);
 		}
 	}
@@ -175,29 +175,41 @@ void SD_LOGGER_SETUP_CARD(){
 	SD_FILE_METADATA_BLOCK sd_file_metadata_block_config = {0};
 	sd_superblock_config.magic = SUPERBLOCK_MAGIC;
 	sd_superblock_config.version = SUPERBLOCK_VERSION;
-	sd_superblock_config.file_start_block = 1000;
-	sd_superblock_config.file_end_block = 60000000;
+
+	sd_superblock_config.log_metadata_start_block = LOG_METADATA_BLOCK_START;
+	sd_superblock_config.log_metadata_end_block = LOG_METADATA_BLOCK_END;
+	sd_superblock_config.logfile_start_block = LOG_DATA_BLOCK_START;
+	sd_superblock_config.logfile_end_block = LOG_DATA_BLOCK_END;
+
+	sd_superblock_config.mission_metadata_start_block = MISSION_METADATA_BLOCK_START;
+	sd_superblock_config.mission_metadata_start_block = MISSION_METADATA_BLOCK_END;
+	sd_superblock_config.missionfile_start_block = MISSION_DATA_BLOCK_START;
+	sd_superblock_config.missionfile_end_block = MISSION_DATA_BLOCK_END;
+
 	sd_superblock_config.card_size_MB = 32000;
 	sd_superblock_config.total_flights = 0;
 	sd_superblock_config.last_flight_number = 0;
 	sd_superblock_config.corruption_flag = 0;
-	sd_superblock_config.latest_metadata_block = 101;
+	sd_superblock_config.latest_log_metadata_block = LOG_METADATA_BLOCK_START;
+	sd_superblock_config.latest_mission_metadata_block = MISSION_METADATA_BLOCK_START;
+
+	sd_superblock_config.active_mission_id = 0;		// standard mission with no waypoints, etc.
 	sd_superblock_config.crc32 = calculate_crc32_hw(&sd_superblock_config, sizeof(sd_superblock_config) - sizeof(uint32_t));
 
 	SD_FILE_METADATA_CHUNK temporary_dummy = {0};
-	temporary_dummy.magic = METADATA_MAGIC;
+	temporary_dummy.magic = LOG_METADATA_MAGIC;
 	temporary_dummy.version = 1;
 	temporary_dummy.active_flag = 0;
 	temporary_dummy.log_finished = 0;
 
-	for(int i = 0; i < FILES_PER_METADATA_BLOCK; i++){
+	for(int i = 0; i < LOG_FILES_PER_METADATA_BLOCK; i++){
 		sd_file_metadata_block_config.sd_file_metadata_chunk[i] = temporary_dummy;
 	}
-	sd_file_metadata_block_config.magic = METADATA_BLOCK_MAGIC;
+	sd_file_metadata_block_config.magic = LOG_METADATA_BLOCK_MAGIC;
 
 	sd_file_metadata_block_config.crc32 = calculate_crc32_hw(&sd_file_metadata_block_config, sizeof(sd_file_metadata_block_config) - sizeof(uint32_t));
 
 	WRITE_BLOCK((uint8_t *)&sd_superblock_config, SUPERBLOCK_BLOCK, 1);
 
-	WRITE_BLOCK((uint8_t *)&sd_file_metadata_block_config, METADATA_BLOCK_START, 1);
+	WRITE_BLOCK((uint8_t *)&sd_file_metadata_block_config, LOG_METADATA_BLOCK_START, 1);
 }
