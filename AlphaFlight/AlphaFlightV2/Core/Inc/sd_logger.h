@@ -105,7 +105,7 @@ typedef struct __attribute__((__packed__)) {
     uint32_t crc32;                   // CRC32 of everything except this field
 } SD_SUPERBLOCK;
 
-void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT);
+uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT);
 void SD_LOGGER_LOOP_CALL();
 void SD_LOGGER_FORWARD_ARM(bool ARM_STATUS);
 

@@ -26,6 +26,7 @@
 #include "debug.h"
 #include "stm32f7xx_hal.h"
 #include "main.h"
+#include "logging_packager.h"
 
 static Sensor_Data* sensor_data;
 static CRSF_DATA* crsf_data;
@@ -33,6 +34,12 @@ static GPS_NAV_PVT* gps_nav_pvt;
 
 static bool armed = false;
 static bool last_arm_status = false;
+
+static uint16_t last_flight_num = 0;
+static uint32_t last_log_block = 0;
+
+static uint8_t log_bufffer_1[2048] = {0};
+static uint8_t log_buffer_2[2048] = {0};
 
 static SD_SUPERBLOCK sd_superblock = {0};
 static SD_FILE_METADATA_CHUNK new_file_metadata = {0};
@@ -105,6 +112,9 @@ static void READ_LATEST_FLIGHT(){
 	USB_PRINTLN_BLOCKING("Superblock CRC32: 0x%08X correct!", sd_superblock.crc32);
 	USB_PRINTLN_BLOCKING("Superblock version: %d\r\nCard Size: %d\r\nLast Flight Num: %d\r\nLatest Metadata Block: %d", sd_superblock.version, sd_superblock.card_size_MB, sd_superblock.last_flight_number, sd_superblock.latest_log_metadata_block);
 
+	last_flight_num = sd_superblock.last_flight_number;
+	last_log_block = sd_superblock.latest_log_metadata_block;
+
 	READ_BLOCK(raw_block_data, sd_superblock.latest_log_metadata_block, 1);
 	memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
 	if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC) ERROR_HANDLER_BLINKS(10);
@@ -129,7 +139,7 @@ static void READ_LATEST_FLIGHT(){
 	}
 }
 
-void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT){
+uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT){
 
 
 	// Needs to be 32-byte aligned due to D-Cache
@@ -145,6 +155,9 @@ void SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT*
 	sensor_data = SENSOR_DATA;
 	crsf_data = CRSF_DATA;
 	gps_nav_pvt = GPS_NAV_PVT;
+	LOGGING_PACKAGER_INIT(SENSOR_DATA, CRSF_DATA, GPS_NAV_PVT);
+
+	return LOGGING_INTERVAL_MICROSECONDS(0);
 
 }
 
