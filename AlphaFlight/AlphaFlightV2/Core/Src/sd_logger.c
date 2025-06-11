@@ -38,8 +38,12 @@ static bool last_arm_status = false;
 static uint16_t last_flight_num = 0;
 static uint32_t last_log_block = 0;
 
-static uint8_t log_bufffer_1[2048] = {0};
+static uint8_t log_buffer_1[2048] = {0};
 static uint8_t log_buffer_2[2048] = {0};
+static uint8_t current_buffer = 0;
+static uint16_t buffer_index = 0;
+static uint8_t buffer_block = 0;
+static uint8_t* active_log_buffer = NULL;
 
 static SD_SUPERBLOCK sd_superblock = {0};
 static SD_FILE_METADATA_CHUNK new_file_metadata = {0};
@@ -157,7 +161,10 @@ uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_
 	gps_nav_pvt = GPS_NAV_PVT;
 	LOGGING_PACKAGER_INIT(SENSOR_DATA, CRSF_DATA, GPS_NAV_PVT);
 
+	active_log_buffer = (current_buffer == 0) ? log_buffer_1 : log_buffer_2;
+
 	return LOGGING_INTERVAL_MICROSECONDS(0);
+
 
 }
 
@@ -167,11 +174,17 @@ void SD_LOGGER_LOOP_CALL(){
 		last_arm_status = true;
 		READ_LATEST_FLIGHT();
 		STATUS_LED_GREEN_ON();
+		memset(log_buffer_1, 0, sizeof(log_buffer_1));
+		memset(log_buffer_2, 0, sizeof(log_buffer_2));
+		buffer_index = 0;
+		current_buffer = 0;
+		buffer_block = 0;
+		active_log_buffer = log_buffer_1;
 		return;
 	}
 	// log file while armed
 	if(armed && last_arm_status){
-		return;
+
 	}
 	// close file after disarm
 	if(last_arm_status == true && armed == false){
