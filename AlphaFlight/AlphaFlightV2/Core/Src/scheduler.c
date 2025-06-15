@@ -7,6 +7,7 @@
 
 #include "scheduler.h"
 #include "time-utils.h"
+#include "main.h"
 
 static task_t tasks[MAX_TASKS];
 static uint8_t task_count = 0;
@@ -24,11 +25,16 @@ void SCHEDULER_INIT(){
 
 void SCHEDULER_ADD_TASK(task_func_t task_func, uint32_t period){	// add tasks in order of importance, tasks get checked/executed in the order that they were added
 	if(task_count < MAX_TASKS){
-		tasks[task_count].task_func = task_func;
-		tasks[task_count].period = period;
-		tasks[task_count].time_last_execute = current_time;
-		tasks[task_count].time_to_execute = period;
-		task_count++;
+		if(period > 0){
+			tasks[task_count].task_func = task_func;
+			tasks[task_count].period = period;
+			tasks[task_count].time_last_execute = current_time;
+			tasks[task_count].time_to_execute = period;
+			task_count++;
+		}
+		else{
+			ERROR_HANDLER_BLINKS(1);
+		}
 	}
 	else{
 		ERROR_HANDLER_BLINKS(1);

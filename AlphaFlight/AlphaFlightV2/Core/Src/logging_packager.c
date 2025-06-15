@@ -8,6 +8,7 @@
 #include "logging_packager.h"
 #include "stm32f7xx_hal.h"
 #include "string.h"
+#include "main.h"
 
 static Sensor_Data* sensor_data;
 static CRSF_DATA* crsf_data;
@@ -32,6 +33,7 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 		default:
 			break;
 	}
+	return &logging_buffer[0];
 }
 
 
@@ -43,4 +45,5 @@ uint32_t LOGGING_INTERVAL_MICROSECONDS(uint16_t MODE){
 		default:
 			break;
 	}
+	return 0;
 }

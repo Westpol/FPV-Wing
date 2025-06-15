@@ -8,6 +8,7 @@
 #include "m10-gps.h"
 #include "debug.h"
 #include "stdbool.h"
+#include "main.h"
 
 static UART_HandleTypeDef *gps_uart;
 static DMA_HandleTypeDef *gps_dma;
