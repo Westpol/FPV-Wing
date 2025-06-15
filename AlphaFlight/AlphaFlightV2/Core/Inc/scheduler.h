@@ -12,6 +12,7 @@
 #include "stdint.h"
 
 #define MAX_TASKS 50
+#define MIN_TASK_DELAY 1000		// in microseconds (default 1000: equals 1ms or 1kHz)
 
 typedef void (*task_func_t)(void);
 
