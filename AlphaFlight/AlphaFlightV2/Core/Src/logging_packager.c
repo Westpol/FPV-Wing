@@ -24,11 +24,15 @@ void LOGGING_PACKAGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_N
 }
 
 uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
+	uint8_t array_size = 0;
 	switch (MODE) {
 		case 0:		// default
 			uint32_t time_mode_0 = HAL_GetTick();
-			memcpy(logging_buffer_pointer + 1, &time_mode_0, sizeof(time_mode_0));
-			logging_buffer[0] = sizeof(time_mode_0);
+			memcpy(logging_buffer_pointer + 1 + array_size, &time_mode_0, sizeof(time_mode_0));
+			array_size += sizeof(time_mode_0);
+			memcpy(logging_buffer_pointer + 1 + array_size, &crsf_data->channel[0], sizeof(crsf_data->channel[0]));
+			array_size += sizeof(crsf_data->channel[0]);
+			logging_buffer[0] = array_size;
 			break;
 		default:
 			break;
@@ -41,7 +45,6 @@ uint32_t LOGGING_INTERVAL_MICROSECONDS(uint16_t MODE){
 	switch (MODE) {
 		case 0:		// default
 			return 50000;
-			break;
 		default:
 			break;
 	}
