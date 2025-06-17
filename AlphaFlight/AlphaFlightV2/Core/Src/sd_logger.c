@@ -185,6 +185,8 @@ void SD_LOGGER_LOOP_CALL(){
 	// log file while armed
 	if(armed && last_arm_status){
 		uint8_t* array_pointer = LOGGING_PACKER_BY_MODE(0);
+
+
 	}
 	// close file after disarm
 	if(last_arm_status == true && armed == false){
