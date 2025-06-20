@@ -28,10 +28,10 @@ static ALPHA_VALUES alpha_values = {0};
 static uint32_t last_integration_us = 0;
 
 static uint8_t gyro_rx[6] = {0};
-static uint8_t accel_rx[7] = {0};
+
 static uint8_t baro_rx[7] = {0};
 
-static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t *rxbuffer, uint8_t readLength){
+__attribute__((optimize("O0"))) static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t *rxbuffer, uint8_t readLength){
 	reg |= READ_BYTE;
 	DEVICE_GPIOx->BSRR = (DEVICE_PIN << 16);
 	while(!LL_SPI_IsActiveFlag_TXE(sensor_spi));
@@ -243,7 +243,7 @@ static void GYRO_CONVERT_DATA(){
 	sensor_data.gyro_z_filtered = (1.0f - alpha_values.gyro_alpha) * sensor_data.gyro_z_filtered + alpha_values.gyro_alpha * sensor_data.gyro_z;
 }
 
-static void ACCEL_CONVERT_DATA(){
+static void ACCEL_CONVERT_DATA(uint8_t* accel_rx){
 	raw_data.accel_x_raw = ((int16_t)accel_rx[2] << 8) | accel_rx[1];
 	raw_data.accel_y_raw = ((int16_t)accel_rx[4] << 8) | accel_rx[3];
 	raw_data.accel_z_raw = ((int16_t)accel_rx[6] << 8) | accel_rx[5];
@@ -266,6 +266,11 @@ static void ACCEL_CONVERT_DATA(){
 		accel_right_for_calibration = false;
 		volatile uint8_t dummy_read = accel_rx[4];
 		if(dummy_read);
+
+		uint8_t rx_buffer[2] = {0};
+		read_address(accel_cs_port, accel_cs_pin, 0x00, rx_buffer, 2);
+
+		USB_PRINTLN_BLOCKING("%d", rx_buffer[1]);
 	}
 }
 
@@ -288,8 +293,9 @@ void GYRO_READ(){
 }
 
 void ACCEL_READ(){
+	uint8_t accel_rx[7] = {0};
 	read_address(accel_cs_port, accel_cs_pin, 0x12, accel_rx, 7);
-	ACCEL_CONVERT_DATA();
+	ACCEL_CONVERT_DATA(&accel_rx[0]);
 }
 
 void BARO_READ(){

@@ -1293,12 +1293,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 }
 
 static void PRINT_DATA(){
-	if (GPIOA->IDR & GPIO_PIN_4) {
-		USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  GPS Sats: %d  |  CRSF Ch 6: %d  |  CRSF RX Aktualitate: %ld  | Pin 4 HIGH", MICROS(), sensor_data->angle_y_fused, gps_nav_pvt_data->numSV, crsf_data->channel[5], MICROS() - crsf_data->last_channel_update);
-	}
-	else{
-		USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  GPS Sats: %d  |  CRSF Ch 6: %d  |  CRSF RX Aktualitate: %ld  | Pin 4 LOW", MICROS(), sensor_data->angle_y_fused, gps_nav_pvt_data->numSV, crsf_data->channel[5], MICROS() - crsf_data->last_channel_update);
-	}
+	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  GPS Sats: %d  |  CRSF Ch 6: %d  |  CRSF RX Aktualitate: %ld  | Accel X: %f", MICROS(), sensor_data->angle_y_fused, gps_nav_pvt_data->numSV, crsf_data->channel[5], MICROS() - crsf_data->last_channel_update, sensor_data->accel_x);
 }
 
 __attribute__((noinline)) void BAREBONES_DELAY_CYCLES(uint32_t cycles) {
