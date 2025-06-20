@@ -264,13 +264,6 @@ static void ACCEL_CONVERT_DATA(uint8_t* accel_rx){
 	else{
 		STATUS_LED_BLUE_OFF();
 		accel_right_for_calibration = false;
-		volatile uint8_t dummy_read = accel_rx[4];
-		if(dummy_read);
-
-		uint8_t rx_buffer[2] = {0};
-		read_address(accel_cs_port, accel_cs_pin, 0x00, rx_buffer, 2);
-
-		USB_PRINTLN_BLOCKING("%d", rx_buffer[1]);
 	}
 }
 
