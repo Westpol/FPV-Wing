@@ -36,6 +36,23 @@ void SCHEDULER_ADD_TASK(task_func_t task_func, uint32_t period){	// add tasks in
 	}
 }
 
+void SCHEDULER_CHECK_EXECUTION_DELAY(){
+	uint8_t longest_delay_index = 0;
+	int32_t longest_delay_value = 1;
+	current_time = MICROS();
+	for(int i = 0; i < task_count; i++){
+		if((int32_t)(current_time - tasks[i].time_to_execute) <= longest_delay_value){
+			longest_delay_index = i;
+			longest_delay_value = (int32_t)(current_time - tasks[i].time_to_execute);
+		}
+	}
+	if(longest_delay_value < 0){
+		tasks[longest_delay_index].time_last_execute = current_time;
+		tasks[longest_delay_index].time_to_execute = current_time + tasks[longest_delay_index].period;
+		tasks[longest_delay_index].task_func();
+	}
+}
+
 void SCHEDULER_UPDATE(){
 	current_time = MICROS();
 	for(int i = 0; i < task_count; i++){

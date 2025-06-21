@@ -219,7 +219,7 @@ int main(void)
   SD_LOGGER_INIT(sensor_data, crsf_data, gps_nav_pvt_data);
 
   progress_counter = 10;
-
+  SCHEDULER_ADD_TASK(SCHEDULER_CHECK_EXECUTION_DELAY, 40000);
   SCHEDULER_ADD_TASK(GYRO_READ, 1000);		// 1 kHz
   SCHEDULER_ADD_TASK(GYRO_INTEGRATE, 1000);	// 1 kHz
   SCHEDULER_ADD_TASK(GYRO_FUSION, 2000);	// 500 Hz
