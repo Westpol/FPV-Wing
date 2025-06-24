@@ -43,7 +43,7 @@ static uint8_t log_buffer_2[2048] = {0};
 static uint8_t current_buffer = 0;
 static uint16_t buffer_index = 0;
 static uint8_t buffer_block = 0;
-static uint8_t* active_log_buffer = NULL;
+static uint8_t* active_log_buffer = &log_buffer_1[0];
 
 static SD_SUPERBLOCK sd_superblock = {0};
 static SD_FILE_METADATA_CHUNK new_file_metadata = {0};
@@ -107,6 +107,10 @@ static void WRITE_BLOCK(uint8_t* data_array, uint32_t start_block, uint32_t num_
 	}
 }
 
+static uint8_t WRITE_BUFFER_DMA(uint32_t start_block){
+	return 0;
+}
+
 static void READ_LATEST_FLIGHT(){
 	READ_BLOCK(raw_block_data, SUPERBLOCK_BLOCK, 1);
 	memcpy(&sd_superblock, &raw_block_data, sizeof(sd_superblock));
@@ -161,8 +165,6 @@ uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_
 	gps_nav_pvt = GPS_NAV_PVT;
 	LOGGING_PACKAGER_INIT(SENSOR_DATA, CRSF_DATA, GPS_NAV_PVT);
 
-	active_log_buffer = (current_buffer == 0) ? log_buffer_1 : log_buffer_2;
-
 	return LOGGING_INTERVAL_MICROSECONDS(0);
 
 
@@ -173,6 +175,7 @@ void SD_LOGGER_LOOP_CALL(){
 	if(last_arm_status == false && armed == true){
 		last_arm_status = true;
 		READ_LATEST_FLIGHT();
+		last_log_block += 1;
 		STATUS_LED_GREEN_ON();
 		memset(log_buffer_1, 0, sizeof(log_buffer_1));
 		memset(log_buffer_2, 0, sizeof(log_buffer_2));
@@ -186,6 +189,36 @@ void SD_LOGGER_LOOP_CALL(){
 	if(armed && last_arm_status){
 		uint8_t* array_pointer = LOGGING_PACKER_BY_MODE(0);
 
+		uint8_t array_length = *array_pointer;
+
+		if(buffer_index + array_length <= 512 - sizeof(uint32_t)){
+			memcpy(active_log_buffer + buffer_index + (512 * buffer_block), array_pointer + 1, array_length);
+			buffer_index += array_length;
+		}
+		else{
+			uint32_t crc = calculate_crc32_hw(active_log_buffer + (512 * buffer_block), 508);
+			memcpy(active_log_buffer + 508 + (512 * buffer_block), &crc, sizeof(crc));
+			buffer_index = 0;
+			buffer_block += 1;
+			if(buffer_block > 3){
+				// change buffers, write buffer to SD card, write value other buffer
+				WRITE_BUFFER_DMA(last_log_block);
+				last_log_block += 4;
+				if(current_buffer == 0){
+					active_log_buffer = &log_buffer_2[0];
+					current_buffer = 1;
+				}
+				else{
+					active_log_buffer = &log_buffer_1[0];
+					current_buffer = 0;
+				}
+
+			}
+			else{		// continue filling the next buffer
+				memcpy(active_log_buffer + buffer_index + (512 * buffer_block), array_pointer + 1, array_length);
+				buffer_index += array_length;
+			}
+		}
 
 	}
 	// close file after disarm
@@ -212,7 +245,7 @@ void SD_LOGGER_SETUP_CARD(){
 	sd_superblock_config.logfile_end_block = LOG_DATA_BLOCK_END;
 
 	sd_superblock_config.mission_metadata_start_block = MISSION_METADATA_BLOCK_START;
-	sd_superblock_config.mission_metadata_start_block = MISSION_METADATA_BLOCK_END;
+	sd_superblock_config.mission_metadata_end_block = MISSION_METADATA_BLOCK_END;
 	sd_superblock_config.missionfile_start_block = MISSION_DATA_BLOCK_START;
 	sd_superblock_config.missionfile_end_block = MISSION_DATA_BLOCK_END;
 
