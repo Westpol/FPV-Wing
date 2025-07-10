@@ -52,7 +52,16 @@ static uint8_t raw_block_data[BLOCK_SIZE];
 extern SD_HandleTypeDef hsd1;
 extern CRC_HandleTypeDef hcrc;
 
+static volatile bool dma_busy = false;
+static volatile bool pending_dma_write = false;
+static uint32_t pending_block_address = 0;
+static uint8_t* pending_buffer_ptr = NULL;
 
+
+// DMA complete callback
+void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd) {
+    dma_busy = false;
+}
 
 static uint32_t calculate_crc32_hw(const void *data, size_t length) {
     // STM32 CRC peripheral processes 32-bit words, so we need to handle padding
@@ -108,7 +117,37 @@ static void WRITE_BLOCK(uint8_t* data_array, uint32_t start_block, uint32_t num_
 }
 
 static uint8_t WRITE_BUFFER_DMA(uint32_t start_block){
-	return 0;
+    if (dma_busy) {
+        // DMA still writing, defer
+        pending_dma_write = true;
+        pending_block_address = start_block;
+        pending_buffer_ptr = (current_buffer == 0) ? log_buffer_1 : log_buffer_2;
+        return 1; // Deferred
+    }
+
+    if (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER) {
+        // Card not ready, defer
+        pending_dma_write = true;
+        pending_block_address = start_block;
+        pending_buffer_ptr = (current_buffer == 0) ? log_buffer_1 : log_buffer_2;
+        return 2; // Deferred
+    }
+
+    // Clear D-Cache for DMA consistency
+    SCB_CleanDCache_by_Addr((uint32_t*)((current_buffer == 0) ? log_buffer_1 : log_buffer_2), 2048);
+
+    HAL_StatusTypeDef status = HAL_SD_WriteBlocks_DMA(&hsd1,
+        (current_buffer == 0) ? log_buffer_1 : log_buffer_2,
+        start_block,
+        4);
+
+    if (status != HAL_OK) {
+        return 3; // Failed
+    }
+
+    dma_busy = true;
+    pending_dma_write = false;
+    return 0; // Success
 }
 
 static void READ_LATEST_FLIGHT(){
@@ -158,7 +197,7 @@ uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_
 	// check init
 
 
-	SD_LOGGER_SETUP_CARD();
+	//SD_LOGGER_SETUP_CARD();
 
 	sensor_data = SENSOR_DATA;
 	crsf_data = CRSF_DATA;
