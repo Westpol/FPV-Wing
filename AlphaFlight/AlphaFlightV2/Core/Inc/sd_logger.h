@@ -38,6 +38,7 @@
 #define MISSION_DATA_BLOCK_END 61000000
 
 #define BLOCK_SIZE     512
+#define CRC32_BYTE_SIZE 4
 #define TIMEOUT_MS     1000
 
 typedef struct __attribute__((__packed__)) {
@@ -62,7 +63,6 @@ typedef struct __attribute__((__packed__)){
 	uint32_t magic;
 	SD_FILE_METADATA_CHUNK sd_file_metadata_chunk[LOG_FILES_PER_METADATA_BLOCK];
 
-	uint32_t crc32;
 }SD_FILE_METADATA_BLOCK;
 
 typedef struct __attribute__((__packed__)) {
@@ -88,7 +88,6 @@ typedef struct __attribute__((__packed__)) {
     uint32_t last_flight_number;
 
     uint8_t corruption_flag;      // 0 = OK, 1 = corrupted flight log detected
-    uint8_t reserved1[3];         // Align + room for future flags
 
     uint32_t latest_log_metadata_block;      // Last log metadata block used
     uint32_t latest_mission_metadata_block;  // Last mission metadata block used
@@ -99,10 +98,6 @@ typedef struct __attribute__((__packed__)) {
     uint8_t  mission_config_version;  // To version mission file format
     uint8_t  default_log_profile_id;  // Which logging config to use if none specified
     uint8_t  log_mode_flags;          // Flags for aggressive/debug/normal logging
-
-    uint8_t reserved2[438];           // Padding to make struct 508 bytes total
-
-    uint32_t crc32;                   // CRC32 of everything except this field
 } SD_SUPERBLOCK;
 
 uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT);

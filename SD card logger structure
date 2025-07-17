@@ -1,0 +1,34 @@
+read super block;
+save super block to struct;
+calculate last used metadata block from last flight;
+read metadata block;
+save metadata block to struct;
+get last written log block from metadata;
+wait for flight arming;
+
+while armed{
+start filling logging buffer;
+if buffer is full{
+if DMA is free{
+write_DMA(buffer);
+}
+else{
+stop logging and only continue if DMA is free and started;
+}
+switch from buffer 1 to buffer 2;
+}
+}
+
+on disarm{
+write_DMA partially used buffer;
+save new last log block to metadata struct;
+set metadata active bool on flight index to true;
+write_struct metadata block;
+add one to superblock relative and absolute flight num;
+write_struct superblock
+}
+
+functions:
+read = input: block number; read SD block; save locally on byte array; check CRC32; return byte array pointer if CRC32 correct | else return NULL;
+write_struct = input: block number, struct pointer, sizeof; save struct to local byte array; calculate CRC32 and save to the last 4 bytes; write to SD card;		// for single block blocking writes
+write_DMA = input: block number, byte array pointer, number of written blocks; write to local buffer (or use buffer that is being inputted); flush D cache; calculate CRC32 (or if using buffer from outside skip this step); start DMA write;		// for actual log writes (non blocking and freeing CPU of stress)

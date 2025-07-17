@@ -63,7 +63,7 @@ void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd) {
     dma_busy = false;
 }
 
-static uint32_t calculate_crc32_hw(const void *data, size_t length) {
+static uint32_t CALCULATE_CRC32_HW(const void *data, size_t length) {
     // STM32 CRC peripheral processes 32-bit words, so we need to handle padding
     size_t aligned_length = length & ~0x3;  // Number of full 32-bit words
     size_t remaining_bytes = length & 0x3;
@@ -85,33 +85,54 @@ static uint32_t calculate_crc32_hw(const void *data, size_t length) {
 }
 
 static inline void VERIFY_CRC32(const void* data, size_t size, uint32_t expected_crc){
-	uint32_t calculated_crc = calculate_crc32_hw(data, size);
+	uint32_t calculated_crc = CALCULATE_CRC32_HW(data, size);
 	if(calculated_crc != expected_crc){
 		USB_PRINTLN_BLOCKING("Calculated CRC: %08X\nExpected CRC: %08X", calculated_crc, expected_crc);
 		ERROR_HANDLER_BLINKS(10);
 	}
 }
 
-static void READ_BLOCK(uint8_t* data_storage, uint32_t start_block, uint32_t num_blocks){
+static void READ_BLOCK(uint8_t* data_storage, uint32_t block){
+
+	uint8_t read_buffer[BLOCK_SIZE] = {0};
+
 	uint32_t start = HAL_GetTick();
 	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){
 		if (HAL_GetTick() - start > TIMEOUT_MS) {
 			ERROR_HANDLER_BLINKS(3); // Timeout
 		}
 	}
-	if(HAL_SD_ReadBlocks(&hsd1, data_storage, start_block, num_blocks, TIMEOUT_MS) != HAL_OK){
+	if(HAL_SD_ReadBlocks(&hsd1, read_buffer, block, 1, TIMEOUT_MS) != HAL_OK){
 		ERROR_HANDLER_BLINKS(2); // Write failed
 	}
+
+	uint32_t block_crc32 = ((uint32_t)read_buffer[511] << 24) | ((uint32_t)read_buffer[510] << 16) | ((uint32_t)read_buffer[509] << 8)  | ((uint32_t)read_buffer[508]);
+	VERIFY_CRC32(read_buffer, BLOCK_SIZE - CRC32_BYTE_SIZE, block_crc32);
+	memcpy(data_storage, read_buffer, BLOCK_SIZE);
+
 }
 
-static void WRITE_BLOCK(uint8_t* data_array, uint32_t start_block, uint32_t num_blocks){
+static void WRITE_BLOCK(uint8_t* data_array, uint32_t data_length_bytes, uint32_t block){
+
+	if (data_length_bytes > BLOCK_SIZE - CRC32_BYTE_SIZE) {
+		ERROR_HANDLER_BLINKS(4); // Too much data
+	}
+
+	uint8_t single_write_buffer[BLOCK_SIZE] = {0};
+	memcpy(single_write_buffer, data_array, data_length_bytes);
+	uint32_t crc32 = CALCULATE_CRC32_HW(single_write_buffer, BLOCK_SIZE - CRC32_BYTE_SIZE);
+	single_write_buffer[508] = (crc32 >> 0);
+	single_write_buffer[509] = (crc32 >> 8);
+	single_write_buffer[510] = (crc32 >> 16);
+	single_write_buffer[511] = (crc32 >> 24);
+
 	uint32_t start = HAL_GetTick();
 	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){
 		if (HAL_GetTick() - start > TIMEOUT_MS) {
 			ERROR_HANDLER_BLINKS(3); // Timeout
 		}
 	}
-	if(HAL_SD_WriteBlocks(&hsd1, data_array, start_block, num_blocks, TIMEOUT_MS) != HAL_OK){
+	if(HAL_SD_WriteBlocks(&hsd1, single_write_buffer, block, 1, TIMEOUT_MS) != HAL_OK){
 		ERROR_HANDLER_BLINKS(2); // Write failed
 	}
 }
@@ -151,7 +172,7 @@ static uint8_t WRITE_BUFFER_DMA(uint32_t start_block){
 }
 
 static void READ_LATEST_FLIGHT(){
-	READ_BLOCK(raw_block_data, SUPERBLOCK_BLOCK, 1);
+	READ_BLOCK(raw_block_data, SUPERBLOCK_BLOCK);
 	memcpy(&sd_superblock, &raw_block_data, sizeof(sd_superblock));
 	if(sd_superblock.magic != SUPERBLOCK_MAGIC) ERROR_HANDLER_BLINKS(10);
 	USB_PRINTLN_BLOCKING("Superblock magic number: 0x%08X correct!", sd_superblock.magic);
@@ -262,6 +283,11 @@ void SD_LOGGER_LOOP_CALL(){
 	}
 	// close file after disarm
 	if(last_arm_status == true && armed == false){
+		WRITE_BLOCK(data_array, start_block, num_blocks);
+
+		sd_superblock.total_flights += 1;
+		sd_superblock.last_flight_number += 1;
+		WRITE_BLOCK((uint8_t*)&sd_superblock, SUPERBLOCK_BLOCK, 1);
 		last_arm_status = false;
 		STATUS_LED_GREEN_OFF();
 		return;
