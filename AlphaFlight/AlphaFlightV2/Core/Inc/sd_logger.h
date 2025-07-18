@@ -84,8 +84,8 @@ typedef struct __attribute__((__packed__)) {
     uint32_t card_size_MB;        // Size of the SD card in megabytes
 
     // Flight log statistics
-    uint32_t total_flights;
-    uint32_t last_flight_number;
+    uint32_t relative_flight_num;
+    uint32_t absolute_flight_num;
 
     uint8_t corruption_flag;      // 0 = OK, 1 = corrupted flight log detected
 
@@ -99,6 +99,9 @@ typedef struct __attribute__((__packed__)) {
     uint8_t  default_log_profile_id;  // Which logging config to use if none specified
     uint8_t  log_mode_flags;          // Flags for aggressive/debug/normal logging
 } SD_SUPERBLOCK;
+
+_Static_assert(sizeof(SD_SUPERBLOCK) <= 508, "Superblock struct too large for SD block!");
+_Static_assert(sizeof(SD_FILE_METADATA_BLOCK) <= 508, "Metadata struct too large for SD block! Make Metadata chunk block smaller or reduce LOG_FILES_PER_METADATA_BLOCK");
 
 uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT);
 void SD_LOGGER_LOOP_CALL();

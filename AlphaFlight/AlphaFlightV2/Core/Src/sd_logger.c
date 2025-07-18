@@ -35,9 +35,6 @@ static GPS_NAV_PVT* gps_nav_pvt;
 static bool armed = false;
 static bool last_arm_status = false;
 
-static uint16_t last_flight_num = 0;
-static uint32_t last_log_block = 0;
-
 static uint8_t log_buffer_1[2048] = {0};
 static uint8_t log_buffer_2[2048] = {0};
 static uint8_t current_buffer = 0;
@@ -45,8 +42,8 @@ static uint16_t buffer_index = 0;
 static uint8_t buffer_block = 0;
 static uint8_t* active_log_buffer = &log_buffer_1[0];
 
+static uint32_t last_log_block;
 static SD_SUPERBLOCK sd_superblock = {0};
-static SD_FILE_METADATA_CHUNK new_file_metadata = {0};
 static SD_FILE_METADATA_BLOCK sd_file_metadata_block = {0};
 static uint8_t raw_block_data[BLOCK_SIZE];
 extern SD_HandleTypeDef hsd1;
@@ -176,35 +173,19 @@ static void READ_LATEST_FLIGHT(){
 	memcpy(&sd_superblock, &raw_block_data, sizeof(sd_superblock));
 	if(sd_superblock.magic != SUPERBLOCK_MAGIC) ERROR_HANDLER_BLINKS(10);
 	USB_PRINTLN_BLOCKING("Superblock magic number: 0x%08X correct!", sd_superblock.magic);
-	VERIFY_CRC32(&sd_superblock, sizeof(sd_superblock) - sizeof(uint32_t), sd_superblock.crc32);
-	USB_PRINTLN_BLOCKING("Superblock CRC32: 0x%08X correct!", sd_superblock.crc32);
-	USB_PRINTLN_BLOCKING("Superblock version: %d\r\nCard Size: %d\r\nLast Flight Num: %d\r\nLatest Metadata Block: %d", sd_superblock.version, sd_superblock.card_size_MB, sd_superblock.last_flight_number, sd_superblock.latest_log_metadata_block);
+	USB_PRINTLN_BLOCKING("Superblock version: %d\r\nCard Size: %d\r\nLast Flight Num: %d\r\nLatest Metadata Block: %d", sd_superblock.version, sd_superblock.card_size_MB, sd_superblock.absolute_flight_num, sd_superblock.latest_log_metadata_block);
 
-	last_flight_num = sd_superblock.last_flight_number;
-	last_log_block = sd_superblock.latest_log_metadata_block;
+	// TODO: add absolute flight num to metadata block logic
+	uint32_t latest_metadata_block = 100;	// constant just for now until metadata block logic is set
+	uint8_t latest_metadata_index = 2;
 
-	READ_BLOCK(raw_block_data, sd_superblock.latest_log_metadata_block, 1);
+	READ_BLOCK(raw_block_data, latest_metadata_block);
 	memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
 	if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC) ERROR_HANDLER_BLINKS(10);
 	USB_PRINTLN_BLOCKING("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
-	VERIFY_CRC32(&sd_file_metadata_block, sizeof(sd_file_metadata_block) - sizeof(uint32_t), sd_file_metadata_block.crc32);
-	USB_PRINTLN_BLOCKING("Metadata CRC32: 0x%08X correct!", sd_file_metadata_block.crc32);
 
-	for(int i = 0; i < LOG_FILES_PER_METADATA_BLOCK; i++){
-		if(sd_file_metadata_block.sd_file_metadata_chunk[i].active_flag == 0){
-			if(sd_file_metadata_block.sd_file_metadata_chunk[i].magic != LOG_METADATA_MAGIC){
-				ERROR_HANDLER_BLINKS(20);
-			}
-			new_file_metadata = sd_file_metadata_block.sd_file_metadata_chunk[i];
-			new_file_metadata.active_flag = 1;
-			new_file_metadata.flight_number = sd_superblock.last_flight_number + 1;
-			new_file_metadata.start_block = 0;
+	sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index + 1].start_block = sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index].end_block + 1;
 
-		}
-		if(sd_file_metadata_block.sd_file_metadata_chunk[i].magic != LOG_METADATA_MAGIC){
-			ERROR_HANDLER_BLINKS(20);
-		}
-	}
 }
 
 uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT){
@@ -235,7 +216,8 @@ void SD_LOGGER_LOOP_CALL(){
 	if(last_arm_status == false && armed == true){
 		last_arm_status = true;
 		READ_LATEST_FLIGHT();
-		last_log_block += 1;
+		sd_superblock.relative_flight_num += 1;
+		sd_superblock.absolute_flight_num += 1;
 		STATUS_LED_GREEN_ON();
 		memset(log_buffer_1, 0, sizeof(log_buffer_1));
 		memset(log_buffer_2, 0, sizeof(log_buffer_2));
@@ -249,14 +231,14 @@ void SD_LOGGER_LOOP_CALL(){
 	if(armed && last_arm_status){
 		uint8_t* array_pointer = LOGGING_PACKER_BY_MODE(0);
 
-		uint8_t array_length = *array_pointer;
+		uint8_t array_length = array_pointer[0];
 
-		if(buffer_index + array_length <= 512 - sizeof(uint32_t)){
+		if(buffer_index + array_length <= 512 - sizeof(CRC32_BYTE_SIZE)){
 			memcpy(active_log_buffer + buffer_index + (512 * buffer_block), array_pointer + 1, array_length);
 			buffer_index += array_length;
 		}
 		else{
-			uint32_t crc = calculate_crc32_hw(active_log_buffer + (512 * buffer_block), 508);
+			uint32_t crc = CALCULATE_CRC32_HW(active_log_buffer + (512 * buffer_block), 508);
 			memcpy(active_log_buffer + 508 + (512 * buffer_block), &crc, sizeof(crc));
 			buffer_index = 0;
 			buffer_block += 1;
@@ -315,14 +297,13 @@ void SD_LOGGER_SETUP_CARD(){
 	sd_superblock_config.missionfile_end_block = MISSION_DATA_BLOCK_END;
 
 	sd_superblock_config.card_size_MB = 32000;
-	sd_superblock_config.total_flights = 0;
-	sd_superblock_config.last_flight_number = 0;
+	sd_superblock_config.absolute_flight_num = 0;
+	sd_superblock_config.relative_flight_num = 0;
 	sd_superblock_config.corruption_flag = 0;
 	sd_superblock_config.latest_log_metadata_block = LOG_METADATA_BLOCK_START;
 	sd_superblock_config.latest_mission_metadata_block = MISSION_METADATA_BLOCK_START;
 
 	sd_superblock_config.active_mission_id = 0;		// standard mission with no waypoints, etc.
-	sd_superblock_config.crc32 = calculate_crc32_hw(&sd_superblock_config, sizeof(sd_superblock_config) - sizeof(uint32_t));
 
 	SD_FILE_METADATA_CHUNK temporary_dummy = {0};
 	temporary_dummy.magic = LOG_METADATA_MAGIC;
@@ -335,9 +316,7 @@ void SD_LOGGER_SETUP_CARD(){
 	}
 	sd_file_metadata_block_config.magic = LOG_METADATA_BLOCK_MAGIC;
 
-	sd_file_metadata_block_config.crc32 = calculate_crc32_hw(&sd_file_metadata_block_config, sizeof(sd_file_metadata_block_config) - sizeof(uint32_t));
+	WRITE_BLOCK((uint8_t *)&sd_superblock_config, sizeof(sd_superblock_config), SUPERBLOCK_BLOCK);
 
-	WRITE_BLOCK((uint8_t *)&sd_superblock_config, SUPERBLOCK_BLOCK, 1);
-
-	WRITE_BLOCK((uint8_t *)&sd_file_metadata_block_config, LOG_METADATA_BLOCK_START, 1);
+	WRITE_BLOCK((uint8_t *)&sd_file_metadata_block_config, sizeof(sd_file_metadata_block_config), LOG_METADATA_BLOCK_START);
 }
