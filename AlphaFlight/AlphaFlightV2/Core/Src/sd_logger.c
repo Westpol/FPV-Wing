@@ -168,6 +168,22 @@ static uint8_t WRITE_BUFFER_DMA(uint32_t start_block){
     return 0; // Success
 }
 
+static uint32_t FLIGHT_NUM_TO_BLOCK(uint32_t relative_flight_num){
+	uint32_t block = 0;
+
+	block = LOG_METADATA_BLOCK_START + relative_flight_num / LOG_FILES_PER_METADATA_BLOCK;
+
+	return block;
+}
+
+static uint8_t FLIGHT_NUM_TO_INDEX(uint32_t relative_flight_num){
+	uint8_t index = 0;
+
+	index = relative_flight_num % LOG_FILES_PER_METADATA_BLOCK;
+
+	return index;
+}
+
 static void READ_LATEST_FLIGHT(){
 	READ_BLOCK(raw_block_data, SUPERBLOCK_BLOCK);
 	memcpy(&sd_superblock, &raw_block_data, sizeof(sd_superblock));
@@ -175,16 +191,32 @@ static void READ_LATEST_FLIGHT(){
 	USB_PRINTLN_BLOCKING("Superblock magic number: 0x%08X correct!", sd_superblock.magic);
 	USB_PRINTLN_BLOCKING("Superblock version: %d\r\nCard Size: %d\r\nLast Flight Num: %d\r\nLatest Metadata Block: %d", sd_superblock.version, sd_superblock.card_size_MB, sd_superblock.absolute_flight_num, sd_superblock.latest_log_metadata_block);
 
-	// TODO: add absolute flight num to metadata block logic
-	uint32_t latest_metadata_block = 100;	// constant just for now until metadata block logic is set
-	uint8_t latest_metadata_index = 2;
+	uint32_t latest_metadata_block = FLIGHT_NUM_TO_BLOCK(sd_superblock.relative_flight_num);
+	uint8_t latest_metadata_index = FLIGHT_NUM_TO_INDEX(sd_superblock.relative_flight_num);
 
 	READ_BLOCK(raw_block_data, latest_metadata_block);
 	memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
 	if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC) ERROR_HANDLER_BLINKS(10);
 	USB_PRINTLN_BLOCKING("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
+	if(latest_metadata_index < 13){
+		sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index + 1].start_block = sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index].end_block + 1;
+	}
+	else{
+		uint32_t metadata_block_switch_old_end_block = sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index].end_block + 1;
+		SD_FILE_METADATA_CHUNK temporary_dummy = {0};
+		temporary_dummy.magic = LOG_METADATA_MAGIC;
+		temporary_dummy.version = 1;
+		temporary_dummy.active_flag = 0;
+		temporary_dummy.log_finished = 0;
 
-	sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index + 1].start_block = sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index].end_block + 1;
+		for(int i = 0; i < LOG_FILES_PER_METADATA_BLOCK; i++){
+			sd_file_metadata_block.sd_file_metadata_chunk[i] = temporary_dummy;
+		}
+		sd_file_metadata_block.magic = LOG_METADATA_BLOCK_MAGIC;
+
+		sd_file_metadata_block.sd_file_metadata_chunk[0].start_block = metadata_block_switch_old_end_block;
+
+	}
 
 }
 
@@ -265,11 +297,11 @@ void SD_LOGGER_LOOP_CALL(){
 	}
 	// close file after disarm
 	if(last_arm_status == true && armed == false){
-		WRITE_BLOCK(data_array, start_block, num_blocks);
 
-		sd_superblock.total_flights += 1;
-		sd_superblock.last_flight_number += 1;
+		// TODO: need to add flush rest of buffer
+
 		WRITE_BLOCK((uint8_t*)&sd_superblock, SUPERBLOCK_BLOCK, 1);
+		WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), sd_superblock.latest_log_metadata_block);
 		last_arm_status = false;
 		STATUS_LED_GREEN_OFF();
 		return;
