@@ -41,6 +41,16 @@
 #define CRC32_BYTE_SIZE 4
 #define TIMEOUT_MS     1000
 
+typedef enum {
+	ERROR_TIMEOUT = 1,
+	ERROR_WRITE = 2,
+	ERROR_CRC_MISMATCH = 3,
+	ERROR_READ = 4,
+	ERROR_BLOCK_LIMIT_REACHED = 5,
+	ERROR_WRONG_MAGIC = 6,
+	ERROR_DMA_WRITE = 7,
+}ERROR_CODES;
+
 typedef struct __attribute__((__packed__)) {
     uint32_t magic;           // Magic number to identify a valid struct
     uint16_t version;         // Metadata version
