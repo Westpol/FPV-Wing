@@ -44,6 +44,7 @@ static uint8_t* active_log_buffer = &log_buffer_1[0];
 
 static uint32_t latest_metadata_block = 0;
 static uint8_t latest_metadata_index = 0;
+static uint8_t current_metadata_index = 0;
 
 static uint32_t last_log_block;
 static SD_SUPERBLOCK sd_superblock = {0};
@@ -194,9 +195,11 @@ static void READ_LATEST_FLIGHT(){
 
 	if(latest_metadata_index < 13){
 		sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index + 1].start_block = sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index].end_block + 1;
+		current_metadata_index = latest_metadata_index + 1;
 	}
 	else{
 		latest_metadata_index = 0;
+		current_metadata_index = 0;
 		latest_metadata_block += 1;
 		uint32_t metadata_block_switch_old_end_block = sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index].end_block;
 		SD_FILE_METADATA_CHUNK temporary_dummy = {0};
@@ -246,10 +249,15 @@ void SD_LOGGER_LOOP_CALL(){
 	if(last_arm_status == false && armed == true){
 		last_arm_status = true;
 		READ_LATEST_FLIGHT();
-		sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index].active_flag = true;
+		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].active_flag = true;
+		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number = sd_superblock.absolute_flight_num + 1;
 		sd_superblock.relative_flight_num += 1;
 		sd_superblock.absolute_flight_num += 1;
 		sd_superblock.latest_log_metadata_block = latest_metadata_block;
+
+		WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
+		WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
+
 		STATUS_LED_GREEN_ON();
 		memset(log_buffer_1, 0, sizeof(log_buffer_1));
 		memset(log_buffer_2, 0, sizeof(log_buffer_2));
@@ -302,6 +310,9 @@ void SD_LOGGER_LOOP_CALL(){
 
 		// TODO: need to add flush rest of buffer
 
+		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].end_block = last_log_block;
+		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].log_finished = 1;
+
 		WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
 		WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
 		last_arm_status = false;
@@ -348,6 +359,9 @@ void SD_LOGGER_SETUP_CARD(){
 	for(int i = 0; i < LOG_FILES_PER_METADATA_BLOCK; i++){
 		sd_file_metadata_block_config.sd_file_metadata_chunk[i] = temporary_dummy;
 	}
+
+	sd_file_metadata_block_config.sd_file_metadata_chunk[0].start_block = LOG_DATA_BLOCK_START;
+
 	sd_file_metadata_block_config.magic = LOG_METADATA_BLOCK_MAGIC;
 
 	WRITE_BLOCK((uint8_t *)&sd_superblock_config, sizeof(sd_superblock_config), SUPERBLOCK_BLOCK);
