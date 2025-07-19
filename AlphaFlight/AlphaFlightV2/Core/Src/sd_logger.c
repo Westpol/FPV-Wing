@@ -254,6 +254,7 @@ void SD_LOGGER_LOOP_CALL(){
 		sd_superblock.relative_flight_num += 1;
 		sd_superblock.absolute_flight_num += 1;
 		sd_superblock.latest_log_metadata_block = latest_metadata_block;
+		last_log_block = sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].start_block;
 
 		WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
 		WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
