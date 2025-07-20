@@ -99,7 +99,6 @@ typedef struct __attribute__((__packed__)) {
 
     uint8_t corruption_flag;      // 0 = OK, 1 = corrupted flight log detected
 
-    uint32_t latest_log_metadata_block;      // Last log metadata block used
     uint32_t latest_mission_metadata_block;  // Last mission metadata block used
 
     // === NEW: Mission system and log config state ===

@@ -183,15 +183,20 @@ static void READ_LATEST_FLIGHT(){
 	memcpy(&sd_superblock, &raw_block_data, sizeof(sd_superblock));
 	if(sd_superblock.magic != SUPERBLOCK_MAGIC) ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
 	USB_PRINTLN_BLOCKING("Superblock magic number: 0x%08X correct!", sd_superblock.magic);
-	USB_PRINTLN_BLOCKING("Superblock version: %d\r\nCard Size: %d\r\nLast Flight Num: %d\r\nLatest Metadata Block: %d", sd_superblock.version, sd_superblock.card_size_MB, sd_superblock.absolute_flight_num, sd_superblock.latest_log_metadata_block);
+	USB_PRINTLN_BLOCKING("Superblock version: %d\r\nLast Flight Num: %d\r\n", sd_superblock.version, sd_superblock.absolute_flight_num);
 
 	latest_metadata_block = FLIGHT_NUM_TO_BLOCK(sd_superblock.relative_flight_num);
-	latest_metadata_index = FLIGHT_NUM_TO_INDEX(sd_superblock.relative_flight_num);
+	latest_metadata_index = FLIGHT_NUM_TO_INDEX(sd_superblock.relative_flight_num - 1);
 
 	READ_BLOCK(raw_block_data, latest_metadata_block);
 	memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
 	if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC) ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
 	USB_PRINTLN_BLOCKING("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
+
+	if(sd_superblock.relative_flight_num == 0){		// hard fix bug on first flight because system is built on an existing flight before
+		current_metadata_index = 0;
+		return;
+	}
 
 	if(latest_metadata_index < 13){
 		sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index + 1].start_block = sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index].end_block + 1;
@@ -237,7 +242,7 @@ uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_
 	gps_nav_pvt = GPS_NAV_PVT;
 	LOGGING_PACKAGER_INIT(SENSOR_DATA, CRSF_DATA, GPS_NAV_PVT);
 
-	//SD_LOGGER_SETUP_CARD();
+	SD_LOGGER_SETUP_CARD();
 
 	return LOGGING_INTERVAL_MICROSECONDS(0);
 
@@ -250,11 +255,14 @@ void SD_LOGGER_LOOP_CALL(){
 		last_arm_status = true;
 		READ_LATEST_FLIGHT();
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].active_flag = true;
-		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number = sd_superblock.absolute_flight_num + 1;
+		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number = sd_superblock.absolute_flight_num;
 		sd_superblock.relative_flight_num += 1;
 		sd_superblock.absolute_flight_num += 1;
-		sd_superblock.latest_log_metadata_block = latest_metadata_block;
 		last_log_block = sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].start_block;
+
+		USB_PRINTLN_BLOCKING("Current: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].start_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].end_block);
+		USB_PRINTLN_BLOCKING("Index 1: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[1].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[1].start_block, sd_file_metadata_block.sd_file_metadata_chunk[1].end_block);
+		USB_PRINTLN_BLOCKING("Index 2: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[2].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[2].start_block, sd_file_metadata_block.sd_file_metadata_chunk[2].end_block);
 
 		WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
 		WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
@@ -288,6 +296,7 @@ void SD_LOGGER_LOOP_CALL(){
 				if(WRITE_BUFFER_DMA(last_log_block) != 0){
 					ERROR_HANDLER_BLINKS(ERROR_DMA_WRITE);
 				}
+				USB_PRINTLN_BLOCKING("Printed block %d", last_log_block);
 				last_log_block += 4;
 				if(current_buffer == 0){
 					active_log_buffer = &log_buffer_2[0];
@@ -346,7 +355,6 @@ void SD_LOGGER_SETUP_CARD(){
 	sd_superblock_config.absolute_flight_num = 0;
 	sd_superblock_config.relative_flight_num = 0;
 	sd_superblock_config.corruption_flag = 0;
-	sd_superblock_config.latest_log_metadata_block = LOG_METADATA_BLOCK_START;
 	sd_superblock_config.latest_mission_metadata_block = MISSION_METADATA_BLOCK_START;
 
 	sd_superblock_config.active_mission_id = 0;		// standard mission with no waypoints, etc.
