@@ -44,7 +44,7 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 uint32_t LOGGING_INTERVAL_MICROSECONDS(uint16_t MODE){
 	switch (MODE) {
 		case 0:		// default
-			return 50000;
+			return 10000;
 		default:
 			break;
 	}

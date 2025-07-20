@@ -185,18 +185,24 @@ static void READ_LATEST_FLIGHT(){
 	USB_PRINTLN_BLOCKING("Superblock magic number: 0x%08X correct!", sd_superblock.magic);
 	USB_PRINTLN_BLOCKING("Superblock version: %d\r\nLast Flight Num: %d\r\n", sd_superblock.version, sd_superblock.absolute_flight_num);
 
-	latest_metadata_block = FLIGHT_NUM_TO_BLOCK(sd_superblock.relative_flight_num);
+	latest_metadata_block = FLIGHT_NUM_TO_BLOCK(sd_superblock.relative_flight_num - 1);
 	latest_metadata_index = FLIGHT_NUM_TO_INDEX(sd_superblock.relative_flight_num - 1);
+
+	if(sd_superblock.relative_flight_num == 0){		// hard fix bug on first flight because system is built on an existing flight before
+		READ_BLOCK(raw_block_data, LOG_METADATA_BLOCK_START);
+		memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
+		if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC) ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
+		USB_PRINTLN_BLOCKING("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
+		current_metadata_index = 0;
+		latest_metadata_block = LOG_METADATA_BLOCK_START;
+		return;
+	}
 
 	READ_BLOCK(raw_block_data, latest_metadata_block);
 	memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
 	if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC) ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
 	USB_PRINTLN_BLOCKING("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
 
-	if(sd_superblock.relative_flight_num == 0){		// hard fix bug on first flight because system is built on an existing flight before
-		current_metadata_index = 0;
-		return;
-	}
 
 	if(latest_metadata_index < 13){
 		sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index + 1].start_block = sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index].end_block + 1;
@@ -242,7 +248,7 @@ uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_
 	gps_nav_pvt = GPS_NAV_PVT;
 	LOGGING_PACKAGER_INIT(SENSOR_DATA, CRSF_DATA, GPS_NAV_PVT);
 
-	SD_LOGGER_SETUP_CARD();
+	//SD_LOGGER_SETUP_CARD();
 
 	return LOGGING_INTERVAL_MICROSECONDS(0);
 
@@ -296,8 +302,9 @@ void SD_LOGGER_LOOP_CALL(){
 				if(WRITE_BUFFER_DMA(last_log_block) != 0){
 					ERROR_HANDLER_BLINKS(ERROR_DMA_WRITE);
 				}
-				USB_PRINTLN_BLOCKING("Printed block %d", last_log_block);
 				last_log_block += 4;
+				buffer_block = 0;
+				buffer_index = 0;
 				if(current_buffer == 0){
 					active_log_buffer = &log_buffer_2[0];
 					current_buffer = 1;
