@@ -97,45 +97,63 @@ static uint8_t FLIGHT_NUM_TO_INDEX(uint32_t relative_flight_num){
         return 0;
     }
 
-    int INITIALIZE_SD_CARD(const char* PATH){
-        fd = open(PATH, O_RDONLY);
-        if (fd < 0) {
-            perror("Failed to open device");
-            return 1;
-        }
-
-        if (READ_SINGLE_BLOCK(super_block_buffer, SUPERBLOCK_INDEX) != 0) {
-            fprintf(stderr, "Failed to read superblock\n");
-            close(fd);
-            return 1;
-        }
-        if (READ_SINGLE_BLOCK(metadata_block_buffer, 100) != 0) {
-            fprintf(stderr, "Failed to read metadata block\n");
-            close(fd);
-            return 1;
-        }
-        memcpy(&sd_superblock, &super_block_buffer, sizeof(sd_superblock));
-        memcpy(&sd_metadata_block, &metadata_block_buffer, sizeof(sd_metadata_block));
-        if(sd_superblock.magic != SUPERBLOCK_MAGIC){
-            perror("Wrong superblock magic number");
-            return 1;
-        }
-        #if VERBOSE_OUTPUT
-        printf("Superblock version: %d\nRelative flight number: %d\nMagic number: %08X\n", sd_superblock.version, sd_superblock.relative_flight_num, sd_superblock.magic);
-        for(int i = 0; i < sd_superblock.relative_flight_num; i++){
-            //printf("Flight %d, read block %d, index %d\n", i, FLIGHT_NUM_TO_BLOCK(i), FLIGHT_NUM_TO_INDEX(i));
-            printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n", sd_metadata_block.sd_file_metadata_chunk[i].flight_number, sd_metadata_block.sd_file_metadata_chunk[i].active_flag, sd_metadata_block.sd_file_metadata_chunk[i].log_finished, sd_metadata_block.sd_file_metadata_chunk[i].start_block, sd_metadata_block.sd_file_metadata_chunk[i].end_block);
-        }
-        #endif
-        int minimum_flight_num = sd_superblock.absolute_flight_num - sd_superblock.relative_flight_num;
-        int maximum_flight_num = sd_superblock.relative_flight_num - 1;
-        printf("Choose between flight number %d and %d: ", minimum_flight_num, maximum_flight_num);
-        int flight_chosen;
-        while(1){
-            scanf("%d", &flight_chosen);
-            if(flight_chosen >= minimum_flight_num && flight_chosen <= maximum_flight_num) break;
-            printf("Wrong input. Try again.\n");
-        }
-        printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n", sd_metadata_block.sd_file_metadata_chunk[flight_chosen].flight_number, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].active_flag, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].log_finished, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].start_block, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].end_block);
-        return 0;
+static void DUMP_FLIGHT_TO_BIN(int chosen_flight){
+    const int start_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].start_block;
+    const int end_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].end_block;
+    uint8_t block_buffer[512] = {0};
+    FILE* of = fopen("test.bin", "wb");
+    for(int i = start_block; i <= end_block; i++){
+        READ_SINGLE_BLOCK(block_buffer, i);
+        fwrite(block_buffer, 1, BLOCK_SIZE, of);
     }
+    fclose(of);
+}
+
+int INITIALIZE_SD_CARD(const char* PATH){
+    fd = open(PATH, O_RDONLY);
+    if (fd < 0) {
+        perror("Failed to open device");
+        return 1;
+    }
+
+    if (READ_SINGLE_BLOCK(super_block_buffer, SUPERBLOCK_INDEX) != 0) {
+        fprintf(stderr, "Failed to read superblock\n");
+        //close(fd);
+        return 1;
+    }
+    memcpy(&sd_superblock, &super_block_buffer, sizeof(sd_superblock));
+
+    int minimum_flight_num = sd_superblock.absolute_flight_num - sd_superblock.relative_flight_num;
+    int maximum_flight_num = sd_superblock.relative_flight_num - 1;
+    printf("Choose between flight number %d and %d: ", minimum_flight_num, maximum_flight_num);
+    int flight_chosen;
+    while(1){
+        scanf("%d", &flight_chosen);
+        if(flight_chosen >= minimum_flight_num && flight_chosen <= maximum_flight_num) break;
+        printf("Wrong input. Try again.\n");
+    }
+
+    if (READ_SINGLE_BLOCK(metadata_block_buffer, FLIGHT_NUM_TO_BLOCK(flight_chosen)) != 0) {
+        fprintf(stderr, "Failed to read metadata block\n");
+        //close(fd);
+        return 1;
+    }
+    memcpy(&sd_metadata_block, &metadata_block_buffer, sizeof(sd_metadata_block));
+    if(sd_superblock.magic != SUPERBLOCK_MAGIC){
+        perror("Wrong superblock magic number");
+        return 1;
+    }
+    #if VERBOSE_OUTPUT
+    printf("Superblock version: %d\nRelative flight number: %d\nMagic number: %08X\n", sd_superblock.version, sd_superblock.relative_flight_num, sd_superblock.magic);
+    for(int i = 0; i < sd_superblock.relative_flight_num; i++){
+        //printf("Flight %d, read block %d, index %d\n", i, FLIGHT_NUM_TO_BLOCK(i), FLIGHT_NUM_TO_INDEX(i));
+        printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n", sd_metadata_block.sd_file_metadata_chunk[i].flight_number, sd_metadata_block.sd_file_metadata_chunk[i].active_flag, sd_metadata_block.sd_file_metadata_chunk[i].log_finished, sd_metadata_block.sd_file_metadata_chunk[i].start_block, sd_metadata_block.sd_file_metadata_chunk[i].end_block);
+    }
+    #endif
+    printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n", sd_metadata_block.sd_file_metadata_chunk[flight_chosen].flight_number, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].active_flag, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].log_finished, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].start_block, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].end_block);
+    printf("Dumping data to test.bin...\n");
+    DUMP_FLIGHT_TO_BIN(flight_chosen);
+    printf("Done.\n");
+    close(fd);
+    return 0;
+}
