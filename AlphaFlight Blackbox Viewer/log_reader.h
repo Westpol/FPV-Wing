@@ -75,7 +75,7 @@ typedef struct __attribute__((packed)){
     uint8_t  log_mode_flags;          // Flags for aggressive/debug/normal logging
 } SD_SUPERBLOCK;
 
-typedef struct {
+typedef struct __attribute__((packed)){
     uint32_t timestamp;
     uint16_t channel;
 } LOG_ENTRY;

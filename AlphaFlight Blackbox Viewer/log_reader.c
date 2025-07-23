@@ -109,6 +109,46 @@ static void DUMP_FLIGHT_TO_BIN(int chosen_flight){
     fclose(of);
 }
 
+static void PRINT_FLIGHT_DATA(int chosen_flight){
+    const int start_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].start_block;
+    const int end_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].end_block;
+    uint8_t block_buffer[512] = {0};
+    for(int i = start_block; i <= end_block; i++){
+        READ_SINGLE_BLOCK(block_buffer, i);
+        int block_position = 0;
+        int entry_length = sizeof(LOG_ENTRY);
+        LOG_ENTRY log_entry = {0};
+        while(block_position < BLOCK_SIZE - 4 - entry_length){
+            memcpy(&log_entry, block_buffer + block_position, sizeof(LOG_ENTRY));
+            printf("Time: %d, Throttle Value: %d\n", log_entry.timestamp, log_entry.channel);
+            //uint32_t timestamp = *(uint32_t*)(block_buffer + block_position);
+            //uint16_t channel   = *(uint16_t*)(block_buffer + block_position + 4);
+            //printf("Time: %d, Throttle Value: %d\n", timestamp, channel);
+            block_position += entry_length;
+        }
+    }
+}
+
+static void EXPORT_FLIGHT(int chosen_flight){
+    
+    const int start_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].start_block;
+    const int end_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].end_block;
+    uint8_t block_buffer[512] = {0};
+    FILE* of2 = fopen("test.csv", "wb");
+    for(int i = start_block; i <= end_block; i++){
+        READ_SINGLE_BLOCK(block_buffer, i);
+        int block_position = 0;
+        int entry_length = sizeof(LOG_ENTRY);
+        LOG_ENTRY log_entry = {0};
+        while(block_position < BLOCK_SIZE - 4 - entry_length){
+            memcpy(&log_entry, block_buffer + block_position, sizeof(LOG_ENTRY));
+            fprintf(of2, "%d, %d\n", log_entry.timestamp, log_entry.channel);
+            block_position += entry_length;
+        }
+    }
+    fclose(of2);
+}
+
 int INITIALIZE_SD_CARD(const char* PATH){
     fd = open(PATH, O_RDONLY);
     if (fd < 0) {
@@ -154,6 +194,15 @@ int INITIALIZE_SD_CARD(const char* PATH){
     printf("Dumping data to test.bin...\n");
     DUMP_FLIGHT_TO_BIN(flight_chosen);
     printf("Done.\n");
+
+    printf("Printing Data...\n");
+    PRINT_FLIGHT_DATA(flight_chosen);
+    printf("\n\nDone.");
+
+    printf("Exporting to test.csv...\n");
+    EXPORT_FLIGHT(flight_chosen);
+    printf("Done.\n");
+
     close(fd);
     return 0;
 }
