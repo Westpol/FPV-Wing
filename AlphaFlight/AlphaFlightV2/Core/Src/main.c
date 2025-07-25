@@ -110,7 +110,9 @@ static void MX_TIM5_Init(void);
 static void MX_SDMMC1_SD_Init(void);
 static void MX_CRC_Init(void);
 /* USER CODE BEGIN PFP */
+#if PRINT_DEBUG_DATA
 static void PRINT_DATA(void);
+#endif
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -233,7 +235,9 @@ int main(void)
   SCHEDULER_ADD_TASK(SD_LOGGER_LOOP_CALL, sd_logger_loop_time_delta);
   //SCHEDULER_ADD_TASK(CRSF_HANDLE_TELEMETRY, 100000);	// 10 Hz
   //SCHEDULER_ADD_TASK(FC_PID_PRINT_CURRENT_SERVO_POINTS, 100000);
-  //SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
+  #if PRINT_DEBUG_DATA
+  SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
+  #endif
   TIME_UTILS_MICROS_TIM_START(&htim5);
   SCHEDULER_INIT();	// MICROS ONLY WORKS WHEN THIS IS ENABLED
 
@@ -1292,9 +1296,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 	}
 }
 
+#if PRINT_DEBUG_DATA
 static void PRINT_DATA(){
 	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  GPS Sats: %d  |  CRSF Ch 6: %d  |  CRSF RX Aktualitate: %ld  | Accel X: %f", MICROS(), sensor_data->angle_y_fused, gps_nav_pvt_data->numSV, crsf_data->channel[5], MICROS() - crsf_data->last_channel_update, sensor_data->accel_x);
 }
+#endif
 
 __attribute__((noinline)) void BAREBONES_DELAY_CYCLES(uint32_t cycles) {
     __asm volatile (

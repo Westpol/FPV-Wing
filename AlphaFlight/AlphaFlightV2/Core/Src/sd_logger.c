@@ -87,11 +87,7 @@ static inline void VERIFY_CRC32(const void* data, size_t size, uint32_t expected
 	uint32_t calculated_crc = CALCULATE_CRC32_HW(data, size);
 	if(calculated_crc != expected_crc){
 		DEBUG_PRINT_VERBOSE("Calculated CRC: %08X\nExpected CRC: %08X", calculated_crc, expected_crc);
-		log_mode = LOG_TYPE_DISABLE_LOGGING;
-		#if DEBUG_ENABLED
-		ERROR_HANDLER_BLINKS(ERROR_CRC_MISMATCH);
-		#endif
-		return;
+		LOG_FAIL_WITH_ERROR(ERROR_CRC_MISMATCH);
 	}
 }
 
@@ -102,19 +98,11 @@ static void READ_BLOCK(uint8_t* data_storage, uint32_t block){
 	uint32_t start = HAL_GetTick();
 	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){
 		if (HAL_GetTick() - start > TIMEOUT_MS) {
-			log_mode = LOG_TYPE_DISABLE_LOGGING;
-			#if DEBUG_ENABLED
-			ERROR_HANDLER_BLINKS(ERROR_TIMEOUT); // Timeout
-			#endif
-			return;
+			LOG_FAIL_WITH_ERROR(ERROR_TIMEOUT); // Timeout
 		}
 	}
 	if(HAL_SD_ReadBlocks(&hsd1, read_buffer, block, 1, TIMEOUT_MS) != HAL_OK){
-		log_mode = LOG_TYPE_DISABLE_LOGGING;
-		#if DEBUG_ENABLED
-		ERROR_HANDLER_BLINKS(ERROR_WRITE); // Write failed
-		#endif
-		return;
+		LOG_FAIL_WITH_ERROR(ERROR_WRITE); // Write failed
 	}
 
 	uint32_t block_crc32 = ((uint32_t)read_buffer[511] << 24) | ((uint32_t)read_buffer[510] << 16) | ((uint32_t)read_buffer[509] << 8)  | ((uint32_t)read_buffer[508]);
@@ -126,11 +114,7 @@ static void READ_BLOCK(uint8_t* data_storage, uint32_t block){
 static void WRITE_BLOCK(uint8_t* data_array, uint32_t data_length_bytes, uint32_t block){
 
 	if (data_length_bytes > BLOCK_SIZE - CRC32_BYTE_SIZE) {
-		log_mode = LOG_TYPE_DISABLE_LOGGING;
-		#if DEBUG_ENABLED
-		ERROR_HANDLER_BLINKS(ERROR_BLOCK_LIMIT_REACHED); // Too much data
-		#endif
-		return;
+		LOG_FAIL_WITH_ERROR(ERROR_BLOCK_LIMIT_REACHED); // Too much data
 	}
 
 	uint8_t single_write_buffer[BLOCK_SIZE] = {0};
@@ -144,19 +128,11 @@ static void WRITE_BLOCK(uint8_t* data_array, uint32_t data_length_bytes, uint32_
 	uint32_t start = HAL_GetTick();
 	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){
 		if (HAL_GetTick() - start > TIMEOUT_MS) {
-			log_mode = LOG_TYPE_DISABLE_LOGGING;
-			#if DEBUG_ENABLED
-			ERROR_HANDLER_BLINKS(ERROR_TIMEOUT); // Timeout
-			#endif
-			return;
+			LOG_FAIL_WITH_ERROR(ERROR_TIMEOUT); // Timeout
 		}
 	}
 	if(HAL_SD_WriteBlocks(&hsd1, single_write_buffer, block, 1, TIMEOUT_MS) != HAL_OK){
-		log_mode = LOG_TYPE_DISABLE_LOGGING;
-		#if DEBUG_ENABLED
-		ERROR_HANDLER_BLINKS(ERROR_WRITE); // Write failed
-		#endif
-		return;
+		LOG_FAIL_WITH_ERROR(ERROR_WRITE); // Write failed
 	}
 }
 
@@ -207,11 +183,7 @@ static void READ_LATEST_FLIGHT(){
 	READ_BLOCK(raw_block_data, SUPERBLOCK_BLOCK);
 	memcpy(&sd_superblock, &raw_block_data, sizeof(sd_superblock));
 	if(sd_superblock.magic != SUPERBLOCK_MAGIC){
-		log_mode = LOG_TYPE_DISABLE_LOGGING;
-		#if DEBUG_ENABLED
-		ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
-		#endif
-		return;
+		LOG_FAIL_WITH_ERROR(ERROR_WRONG_MAGIC);
 	}
 	DEBUG_PRINT_VERBOSE("Superblock magic number: 0x%08X correct!", sd_superblock.magic);
 	DEBUG_PRINT_VERBOSE("Superblock version: %d\r\nLast Flight Num: %d\r\n", sd_superblock.version, sd_superblock.absolute_flight_num);
@@ -224,11 +196,7 @@ static void READ_LATEST_FLIGHT(){
 		READ_BLOCK(raw_block_data, LOG_METADATA_BLOCK_START);
 		memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
 		if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC){
-			log_mode = LOG_TYPE_DISABLE_LOGGING;
-			#if DEBUG_ENABLED
-			ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
-			#endif
-			return;
+			LOG_FAIL_WITH_ERROR(ERROR_WRONG_MAGIC);
 		}
 
 		DEBUG_PRINT_VERBOSE("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
@@ -240,11 +208,7 @@ static void READ_LATEST_FLIGHT(){
 	READ_BLOCK(raw_block_data, latest_metadata_block);
 	memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
 	if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC){
-		log_mode = LOG_TYPE_DISABLE_LOGGING;
-		#if DEBUG_ENABLED
-		ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
-		#endif
-		return;
+		LOG_FAIL_WITH_ERROR(ERROR_WRONG_MAGIC);
 	}
 	DEBUG_PRINT_VERBOSE("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
 
@@ -351,11 +315,7 @@ void SD_LOGGER_LOOP_CALL(){
 			if(buffer_block > 3){
 				// change buffers, write buffer to SD card, write value other buffer
 				if(WRITE_BUFFER_DMA(last_log_block) != 0){
-					log_mode = LOG_TYPE_DISABLE_LOGGING;		// unconditional executions
-					#if DEBUG_ENABLED
-					ERROR_HANDLER_BLINKS(ERROR_DMA_WRITE);		// conditional executions^
-					#endif
-					return;
+					LOG_FAIL_WITH_ERROR(ERROR_DMA_WRITE);		// conditional executions
 				}
 				last_log_block += 4;
 				buffer_block = 0;
