@@ -18,6 +18,8 @@
 #define SUPERBLOCK_VERSION 1
 #define SUPERBLOCK_BLOCK 99
 
+#define LOG_VERSION 1
+
 
 #define LOG_METADATA_BLOCK_MAGIC 0xC5D4250A
 
@@ -66,7 +68,11 @@ typedef struct __attribute__((__packed__)) {
     uint32_t end_block;       // Last SD block, 0 = corrupted/incomplete
 
     uint8_t log_finished;     // 1 = log completed successfully
-    uint8_t reserved[4];      // Padding / reserved for future use
+
+    uint8_t log_mode;		  // what data is logged e.g. Gyro, fly by wire, etc.
+    uint8_t log_version;	  // which logger version
+
+    uint8_t reserved[2];      // Padding / reserved for future use
 } SD_FILE_METADATA_CHUNK;
 
 typedef struct __attribute__((__packed__)){
@@ -106,7 +112,7 @@ typedef struct __attribute__((__packed__)) {
     uint8_t  mission_status_flags;    // Bitfield for current mission state
     uint8_t  mission_config_version;  // To version mission file format
     uint8_t  default_log_profile_id;  // Which logging config to use if none specified
-    uint8_t  log_mode_flags;          // Flags for aggressive/debug/normal logging
+    uint8_t  log_mode_flag;          // Flags for aggressive/debug/normal logging
 } SD_SUPERBLOCK;
 
 _Static_assert(sizeof(SD_SUPERBLOCK) <= 508, "Superblock struct too large for SD block!");

@@ -52,7 +52,8 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
+#define VERBOSE_SERIAL 1
+#define DEBUG_ENABLED 1
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/

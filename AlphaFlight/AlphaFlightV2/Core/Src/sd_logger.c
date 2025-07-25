@@ -45,6 +45,7 @@ static uint8_t* active_log_buffer = &log_buffer_1[0];
 static uint32_t latest_metadata_block = 0;
 static uint8_t latest_metadata_index = 0;
 static uint8_t current_metadata_index = 0;
+static uint8_t log_mode = 0;
 
 static uint32_t last_log_block;
 static SD_SUPERBLOCK sd_superblock = {0};
@@ -85,8 +86,14 @@ static uint32_t CALCULATE_CRC32_HW(const void *data, size_t length) {
 static inline void VERIFY_CRC32(const void* data, size_t size, uint32_t expected_crc){
 	uint32_t calculated_crc = CALCULATE_CRC32_HW(data, size);
 	if(calculated_crc != expected_crc){
+#if VERBOSE_SERIAL
 		USB_PRINTLN_BLOCKING("Calculated CRC: %08X\nExpected CRC: %08X", calculated_crc, expected_crc);
+#endif
+		log_mode = LOG_TYPE_DISABLE_LOGGING;
+#if DEBUG_ENABLED
 		ERROR_HANDLER_BLINKS(ERROR_CRC_MISMATCH);
+#endif
+		return;
 	}
 }
 
@@ -97,11 +104,19 @@ static void READ_BLOCK(uint8_t* data_storage, uint32_t block){
 	uint32_t start = HAL_GetTick();
 	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){
 		if (HAL_GetTick() - start > TIMEOUT_MS) {
+			log_mode = LOG_TYPE_DISABLE_LOGGING;
+#if DEBUG_ENABLED
 			ERROR_HANDLER_BLINKS(ERROR_TIMEOUT); // Timeout
+#endif
+			return;
 		}
 	}
 	if(HAL_SD_ReadBlocks(&hsd1, read_buffer, block, 1, TIMEOUT_MS) != HAL_OK){
+		log_mode = LOG_TYPE_DISABLE_LOGGING;
+#if DEBUG_ENABLED
 		ERROR_HANDLER_BLINKS(ERROR_WRITE); // Write failed
+#endif
+		return;
 	}
 
 	uint32_t block_crc32 = ((uint32_t)read_buffer[511] << 24) | ((uint32_t)read_buffer[510] << 16) | ((uint32_t)read_buffer[509] << 8)  | ((uint32_t)read_buffer[508]);
@@ -113,7 +128,11 @@ static void READ_BLOCK(uint8_t* data_storage, uint32_t block){
 static void WRITE_BLOCK(uint8_t* data_array, uint32_t data_length_bytes, uint32_t block){
 
 	if (data_length_bytes > BLOCK_SIZE - CRC32_BYTE_SIZE) {
+		log_mode = LOG_TYPE_DISABLE_LOGGING;
+#if DEBUG_ENABLED
 		ERROR_HANDLER_BLINKS(ERROR_BLOCK_LIMIT_REACHED); // Too much data
+#endif
+		return;
 	}
 
 	uint8_t single_write_buffer[BLOCK_SIZE] = {0};
@@ -127,11 +146,19 @@ static void WRITE_BLOCK(uint8_t* data_array, uint32_t data_length_bytes, uint32_
 	uint32_t start = HAL_GetTick();
 	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){
 		if (HAL_GetTick() - start > TIMEOUT_MS) {
+			log_mode = LOG_TYPE_DISABLE_LOGGING;
+#if DEBUG_ENABLED
 			ERROR_HANDLER_BLINKS(ERROR_TIMEOUT); // Timeout
+#endif
+			return;
 		}
 	}
 	if(HAL_SD_WriteBlocks(&hsd1, single_write_buffer, block, 1, TIMEOUT_MS) != HAL_OK){
+		log_mode = LOG_TYPE_DISABLE_LOGGING;
+#if DEBUG_ENABLED
 		ERROR_HANDLER_BLINKS(ERROR_WRITE); // Write failed
+#endif
+		return;
 	}
 }
 
@@ -181,18 +208,35 @@ static uint8_t FLIGHT_NUM_TO_INDEX(uint32_t relative_flight_num){
 static void READ_LATEST_FLIGHT(){
 	READ_BLOCK(raw_block_data, SUPERBLOCK_BLOCK);
 	memcpy(&sd_superblock, &raw_block_data, sizeof(sd_superblock));
-	if(sd_superblock.magic != SUPERBLOCK_MAGIC) ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
+	if(sd_superblock.magic != SUPERBLOCK_MAGIC){
+		log_mode = LOG_TYPE_DISABLE_LOGGING;
+#if DEBUG_ENABLED
+		ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
+#endif
+		return;
+	}
+#if VERBOSE_SERIAL
 	USB_PRINTLN_BLOCKING("Superblock magic number: 0x%08X correct!", sd_superblock.magic);
 	USB_PRINTLN_BLOCKING("Superblock version: %d\r\nLast Flight Num: %d\r\n", sd_superblock.version, sd_superblock.absolute_flight_num);
+#endif
 
 	latest_metadata_block = FLIGHT_NUM_TO_BLOCK(sd_superblock.relative_flight_num - 1);
 	latest_metadata_index = FLIGHT_NUM_TO_INDEX(sd_superblock.relative_flight_num - 1);
+	log_mode = sd_superblock.log_mode_flag;
 
 	if(sd_superblock.relative_flight_num == 0){		// hard fix bug on first flight because system is built on an existing flight before
 		READ_BLOCK(raw_block_data, LOG_METADATA_BLOCK_START);
 		memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
-		if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC) ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
+		if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC){
+			log_mode = LOG_TYPE_DISABLE_LOGGING;
+#if DEBUG_ENABLED
+			ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
+#endif
+			return;
+		}
+#if VERBOSE_SERIAL
 		USB_PRINTLN_BLOCKING("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
+#endif
 		current_metadata_index = 0;
 		latest_metadata_block = LOG_METADATA_BLOCK_START;
 		return;
@@ -200,8 +244,16 @@ static void READ_LATEST_FLIGHT(){
 
 	READ_BLOCK(raw_block_data, latest_metadata_block);
 	memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
-	if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC) ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
+	if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC){
+		log_mode = LOG_TYPE_DISABLE_LOGGING;
+#if DEBUG_ENABLED
+		ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
+#endif
+		return;
+	}
+#if VERBOSE_SERIAL
 	USB_PRINTLN_BLOCKING("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
+#endif
 
 
 	if(latest_metadata_index < 13){
@@ -256,19 +308,27 @@ uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_
 }
 
 void SD_LOGGER_LOOP_CALL(){
+	if(log_mode == LOG_TYPE_DISABLE_LOGGING) return;
 	// open file at arm
 	if(last_arm_status == false && armed == true){
 		last_arm_status = true;
 		READ_LATEST_FLIGHT();
+		if(log_mode == LOG_TYPE_DISABLE_LOGGING) return;	// in case something went wrong in READ_LATEST_FLIGHT
+
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].active_flag = true;
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number = sd_superblock.absolute_flight_num;
 		sd_superblock.relative_flight_num += 1;
 		sd_superblock.absolute_flight_num += 1;
 		last_log_block = sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].start_block;
 
+		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].log_version = LOG_VERSION;
+		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].log_mode = log_mode;
+
+		#if VERBOSE_SERIAL
 		USB_PRINTLN_BLOCKING("Current: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].start_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].end_block);
 		USB_PRINTLN_BLOCKING("Index 1: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[1].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[1].start_block, sd_file_metadata_block.sd_file_metadata_chunk[1].end_block);
 		USB_PRINTLN_BLOCKING("Index 2: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[2].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[2].start_block, sd_file_metadata_block.sd_file_metadata_chunk[2].end_block);
+		#endif
 
 		WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
 		WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
@@ -300,7 +360,11 @@ void SD_LOGGER_LOOP_CALL(){
 			if(buffer_block > 3){
 				// change buffers, write buffer to SD card, write value other buffer
 				if(WRITE_BUFFER_DMA(last_log_block) != 0){
-					ERROR_HANDLER_BLINKS(ERROR_DMA_WRITE);
+					log_mode = LOG_TYPE_DISABLE_LOGGING;		// unconditional executions
+					#if DEBUG_ENABLED
+					ERROR_HANDLER_BLINKS(ERROR_DMA_WRITE);		// conditional executions^
+					#endif
+					return;
 				}
 				last_log_block += 4;
 				buffer_block = 0;
@@ -365,6 +429,7 @@ void SD_LOGGER_SETUP_CARD(){
 	sd_superblock_config.latest_mission_metadata_block = MISSION_METADATA_BLOCK_START;
 
 	sd_superblock_config.active_mission_id = 0;		// standard mission with no waypoints, etc.
+	sd_superblock_config.log_mode_flag = LOG_TYPE_GENERAL;
 
 	SD_FILE_METADATA_CHUNK temporary_dummy = {0};
 	temporary_dummy.magic = LOG_METADATA_MAGIC;
