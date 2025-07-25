@@ -54,6 +54,12 @@ extern "C" {
 /* USER CODE BEGIN EC */
 #define VERBOSE_SERIAL 1
 #define DEBUG_ENABLED 1
+
+#if VERBOSE_SERIAL && DEBUG_ENABLED
+#define DEBUG_PRINT_VERBOSE(...) USB_PRINTLN_BLOCKING(__VA_ARGS__)
+#else
+#define DEBUG_PRINT(...)
+#endif
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/

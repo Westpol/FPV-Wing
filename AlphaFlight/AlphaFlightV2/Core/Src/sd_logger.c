@@ -86,13 +86,11 @@ static uint32_t CALCULATE_CRC32_HW(const void *data, size_t length) {
 static inline void VERIFY_CRC32(const void* data, size_t size, uint32_t expected_crc){
 	uint32_t calculated_crc = CALCULATE_CRC32_HW(data, size);
 	if(calculated_crc != expected_crc){
-#if VERBOSE_SERIAL
-		USB_PRINTLN_BLOCKING("Calculated CRC: %08X\nExpected CRC: %08X", calculated_crc, expected_crc);
-#endif
+		DEBUG_PRINT_VERBOSE("Calculated CRC: %08X\nExpected CRC: %08X", calculated_crc, expected_crc);
 		log_mode = LOG_TYPE_DISABLE_LOGGING;
-#if DEBUG_ENABLED
+		#if DEBUG_ENABLED
 		ERROR_HANDLER_BLINKS(ERROR_CRC_MISMATCH);
-#endif
+		#endif
 		return;
 	}
 }
@@ -105,17 +103,17 @@ static void READ_BLOCK(uint8_t* data_storage, uint32_t block){
 	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){
 		if (HAL_GetTick() - start > TIMEOUT_MS) {
 			log_mode = LOG_TYPE_DISABLE_LOGGING;
-#if DEBUG_ENABLED
+			#if DEBUG_ENABLED
 			ERROR_HANDLER_BLINKS(ERROR_TIMEOUT); // Timeout
-#endif
+			#endif
 			return;
 		}
 	}
 	if(HAL_SD_ReadBlocks(&hsd1, read_buffer, block, 1, TIMEOUT_MS) != HAL_OK){
 		log_mode = LOG_TYPE_DISABLE_LOGGING;
-#if DEBUG_ENABLED
+		#if DEBUG_ENABLED
 		ERROR_HANDLER_BLINKS(ERROR_WRITE); // Write failed
-#endif
+		#endif
 		return;
 	}
 
@@ -129,9 +127,9 @@ static void WRITE_BLOCK(uint8_t* data_array, uint32_t data_length_bytes, uint32_
 
 	if (data_length_bytes > BLOCK_SIZE - CRC32_BYTE_SIZE) {
 		log_mode = LOG_TYPE_DISABLE_LOGGING;
-#if DEBUG_ENABLED
+		#if DEBUG_ENABLED
 		ERROR_HANDLER_BLINKS(ERROR_BLOCK_LIMIT_REACHED); // Too much data
-#endif
+		#endif
 		return;
 	}
 
@@ -147,17 +145,17 @@ static void WRITE_BLOCK(uint8_t* data_array, uint32_t data_length_bytes, uint32_
 	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){
 		if (HAL_GetTick() - start > TIMEOUT_MS) {
 			log_mode = LOG_TYPE_DISABLE_LOGGING;
-#if DEBUG_ENABLED
+			#if DEBUG_ENABLED
 			ERROR_HANDLER_BLINKS(ERROR_TIMEOUT); // Timeout
-#endif
+			#endif
 			return;
 		}
 	}
 	if(HAL_SD_WriteBlocks(&hsd1, single_write_buffer, block, 1, TIMEOUT_MS) != HAL_OK){
 		log_mode = LOG_TYPE_DISABLE_LOGGING;
-#if DEBUG_ENABLED
+		#if DEBUG_ENABLED
 		ERROR_HANDLER_BLINKS(ERROR_WRITE); // Write failed
-#endif
+		#endif
 		return;
 	}
 }
@@ -210,15 +208,13 @@ static void READ_LATEST_FLIGHT(){
 	memcpy(&sd_superblock, &raw_block_data, sizeof(sd_superblock));
 	if(sd_superblock.magic != SUPERBLOCK_MAGIC){
 		log_mode = LOG_TYPE_DISABLE_LOGGING;
-#if DEBUG_ENABLED
+		#if DEBUG_ENABLED
 		ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
-#endif
+		#endif
 		return;
 	}
-#if VERBOSE_SERIAL
-	USB_PRINTLN_BLOCKING("Superblock magic number: 0x%08X correct!", sd_superblock.magic);
-	USB_PRINTLN_BLOCKING("Superblock version: %d\r\nLast Flight Num: %d\r\n", sd_superblock.version, sd_superblock.absolute_flight_num);
-#endif
+	DEBUG_PRINT_VERBOSE("Superblock magic number: 0x%08X correct!", sd_superblock.magic);
+	DEBUG_PRINT_VERBOSE("Superblock version: %d\r\nLast Flight Num: %d\r\n", sd_superblock.version, sd_superblock.absolute_flight_num);
 
 	latest_metadata_block = FLIGHT_NUM_TO_BLOCK(sd_superblock.relative_flight_num - 1);
 	latest_metadata_index = FLIGHT_NUM_TO_INDEX(sd_superblock.relative_flight_num - 1);
@@ -229,14 +225,13 @@ static void READ_LATEST_FLIGHT(){
 		memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
 		if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC){
 			log_mode = LOG_TYPE_DISABLE_LOGGING;
-#if DEBUG_ENABLED
+			#if DEBUG_ENABLED
 			ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
-#endif
+			#endif
 			return;
 		}
-#if VERBOSE_SERIAL
-		USB_PRINTLN_BLOCKING("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
-#endif
+
+		DEBUG_PRINT_VERBOSE("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
 		current_metadata_index = 0;
 		latest_metadata_block = LOG_METADATA_BLOCK_START;
 		return;
@@ -246,14 +241,12 @@ static void READ_LATEST_FLIGHT(){
 	memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
 	if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC){
 		log_mode = LOG_TYPE_DISABLE_LOGGING;
-#if DEBUG_ENABLED
+		#if DEBUG_ENABLED
 		ERROR_HANDLER_BLINKS(ERROR_WRONG_MAGIC);
-#endif
+		#endif
 		return;
 	}
-#if VERBOSE_SERIAL
-	USB_PRINTLN_BLOCKING("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
-#endif
+	DEBUG_PRINT_VERBOSE("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
 
 
 	if(latest_metadata_index < 13){
@@ -324,11 +317,9 @@ void SD_LOGGER_LOOP_CALL(){
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].log_version = LOG_VERSION;
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].log_mode = log_mode;
 
-		#if VERBOSE_SERIAL
-		USB_PRINTLN_BLOCKING("Current: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].start_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].end_block);
-		USB_PRINTLN_BLOCKING("Index 1: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[1].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[1].start_block, sd_file_metadata_block.sd_file_metadata_chunk[1].end_block);
-		USB_PRINTLN_BLOCKING("Index 2: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[2].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[2].start_block, sd_file_metadata_block.sd_file_metadata_chunk[2].end_block);
-		#endif
+		DEBUG_PRINT_VERBOSE("Current: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].start_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].end_block);
+		DEBUG_PRINT_VERBOSE("Index 1: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[1].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[1].start_block, sd_file_metadata_block.sd_file_metadata_chunk[1].end_block);
+		DEBUG_PRINT_VERBOSE("Index 2: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[2].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[2].start_block, sd_file_metadata_block.sd_file_metadata_chunk[2].end_block);
 
 		WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
 		WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
