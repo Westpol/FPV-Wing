@@ -1,0 +1,6 @@
+ToDo:
+-implement extern, remove pointer forwarding or value update functions
+
+Future plans:
+-implement CDC read function that reads commands from PC
+-implement switching and locking between PC and flight mode
