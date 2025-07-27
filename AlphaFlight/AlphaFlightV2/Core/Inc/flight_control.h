@@ -9,8 +9,6 @@
 #define INC_FLIGHT_CONTROL_H_
 
 #include "stm32f7xx_hal.h"
-#include "onboard-sensors.h"
-#include "crossfire.h"
 
 typedef enum{
 	DIRECT_CONTROL,
