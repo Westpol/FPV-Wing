@@ -10,9 +10,6 @@
 
 #include "stdint.h"
 #include "stdbool.h"
-#include "onboard-sensors.h"
-#include "crossfire.h"
-#include "m10-gps.h"
 
 #define SUPERBLOCK_MAGIC 0xFA55C0DE
 #define SUPERBLOCK_VERSION 1
@@ -118,7 +115,7 @@ typedef struct __attribute__((__packed__)) {
 _Static_assert(sizeof(SD_SUPERBLOCK) <= 508, "Superblock struct too large for SD block!");
 _Static_assert(sizeof(SD_FILE_METADATA_BLOCK) <= 508, "Metadata struct too large for SD block! Make Metadata chunk block smaller or reduce LOG_FILES_PER_METADATA_BLOCK");
 
-uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT);
+uint32_t SD_LOGGER_INIT();
 void SD_LOGGER_LOOP_CALL();
 void SD_LOGGER_FORWARD_ARM(bool ARM_STATUS);
 

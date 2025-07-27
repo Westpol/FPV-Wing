@@ -22,7 +22,7 @@ static uint16_t baro_cs_pin;
 static bool accel_right_for_calibration = false;
 
 static Baro_Calibration baro_calibration = {0};
-static Sensor_Data sensor_data = {0};
+IMU_Data imu_data = {0};
 static Raw_Data raw_data = {0};
 static ALPHA_VALUES alpha_values = {0};
 static uint32_t last_integration_us = 0;
@@ -234,28 +234,28 @@ static void GYRO_CONVERT_DATA(){
 	raw_data.gyro_x_raw = ((int16_t)gyro_rx[1] << 8) | gyro_rx[0];
 	raw_data.gyro_y_raw = ((int16_t)gyro_rx[3] << 8) | gyro_rx[2];
 	raw_data.gyro_z_raw = ((int16_t)gyro_rx[5] << 8) | gyro_rx[4];
-	sensor_data.gyro_x = (raw_data.gyro_x_raw / 32767.0) * 2000.0;
-	sensor_data.gyro_y = -(raw_data.gyro_y_raw / 32767.0) * 2000.0;
-	sensor_data.gyro_z = (raw_data.gyro_z_raw / 32767.0) * 2000.0;
+	imu_data.gyro_x = (raw_data.gyro_x_raw / 32767.0) * 2000.0;
+	imu_data.gyro_y = -(raw_data.gyro_y_raw / 32767.0) * 2000.0;
+	imu_data.gyro_z = (raw_data.gyro_z_raw / 32767.0) * 2000.0;
 
-	sensor_data.gyro_x_filtered = (1.0f - alpha_values.gyro_alpha) * sensor_data.gyro_x_filtered + alpha_values.gyro_alpha * sensor_data.gyro_x;
-	sensor_data.gyro_y_filtered = (1.0f - alpha_values.gyro_alpha) * sensor_data.gyro_y_filtered + alpha_values.gyro_alpha * sensor_data.gyro_y;
-	sensor_data.gyro_z_filtered = (1.0f - alpha_values.gyro_alpha) * sensor_data.gyro_z_filtered + alpha_values.gyro_alpha * sensor_data.gyro_z;
+	imu_data.gyro_x_filtered = (1.0f - alpha_values.gyro_alpha) * imu_data.gyro_x_filtered + alpha_values.gyro_alpha * imu_data.gyro_x;
+	imu_data.gyro_y_filtered = (1.0f - alpha_values.gyro_alpha) * imu_data.gyro_y_filtered + alpha_values.gyro_alpha * imu_data.gyro_y;
+	imu_data.gyro_z_filtered = (1.0f - alpha_values.gyro_alpha) * imu_data.gyro_z_filtered + alpha_values.gyro_alpha * imu_data.gyro_z;
 }
 
 static void ACCEL_CONVERT_DATA(uint8_t* accel_rx){
 	raw_data.accel_x_raw = ((int16_t)accel_rx[2] << 8) | accel_rx[1];
 	raw_data.accel_y_raw = ((int16_t)accel_rx[4] << 8) | accel_rx[3];
 	raw_data.accel_z_raw = ((int16_t)accel_rx[6] << 8) | accel_rx[5];
-	sensor_data.accel_x = (float)raw_data.accel_x_raw / 32768 * 1000 * 4 * 1.5;
-	sensor_data.accel_y = (float)raw_data.accel_y_raw / 32768 * 1000 * 4 * 1.5;
-	sensor_data.accel_z = (float)raw_data.accel_z_raw / 32768 * 1000 * 4 * 1.5;
+	imu_data.accel_x = (float)raw_data.accel_x_raw / 32768 * 1000 * 4 * 1.5;
+	imu_data.accel_y = (float)raw_data.accel_y_raw / 32768 * 1000 * 4 * 1.5;
+	imu_data.accel_z = (float)raw_data.accel_z_raw / 32768 * 1000 * 4 * 1.5;
 
-	sensor_data.accel_x_filtered = (1.0f - alpha_values.accel_alpha) * sensor_data.accel_x_filtered + alpha_values.accel_alpha * sensor_data.accel_x;
-	sensor_data.accel_y_filtered = (1.0f - alpha_values.accel_alpha) * sensor_data.accel_y_filtered + alpha_values.accel_alpha * sensor_data.accel_y;
-	sensor_data.accel_z_filtered = (1.0f - alpha_values.accel_alpha) * sensor_data.accel_z_filtered + alpha_values.accel_alpha * sensor_data.accel_z;
+	imu_data.accel_x_filtered = (1.0f - alpha_values.accel_alpha) * imu_data.accel_x_filtered + alpha_values.accel_alpha * imu_data.accel_x;
+	imu_data.accel_y_filtered = (1.0f - alpha_values.accel_alpha) * imu_data.accel_y_filtered + alpha_values.accel_alpha * imu_data.accel_y;
+	imu_data.accel_z_filtered = (1.0f - alpha_values.accel_alpha) * imu_data.accel_z_filtered + alpha_values.accel_alpha * imu_data.accel_z;
 
-	float overall_force = sensor_data.accel_x_filtered * sensor_data.accel_x_filtered + sensor_data.accel_y_filtered * sensor_data.accel_y_filtered + sensor_data.accel_z_filtered * sensor_data.accel_z_filtered;
+	float overall_force = imu_data.accel_x_filtered * imu_data.accel_x_filtered + imu_data.accel_y_filtered * imu_data.accel_y_filtered + imu_data.accel_z_filtered * imu_data.accel_z_filtered;
 
 	if(overall_force >= 902500 && overall_force <= 1102500){
 		//STATUS_LED_BLUE_ON();
@@ -270,14 +270,14 @@ static void ACCEL_CONVERT_DATA(uint8_t* accel_rx){
 static void BARO_CONVERT_DATA(){
 	raw_data.baro_temp_raw = ((uint32_t)baro_rx[6] << 16) | ((uint32_t)baro_rx[5] << 8) | baro_rx[4];
 	raw_data.baro_pressure_raw = ((uint32_t)baro_rx[3] << 16) | ((uint32_t)baro_rx[2] << 8) | baro_rx[1];
-	sensor_data.temp = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
-	sensor_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
+	imu_data.temp = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
+	imu_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
 
-	sensor_data.pressure_filtered = (1.0f - alpha_values.baro_alpha) * sensor_data.pressure_filtered + alpha_values.baro_alpha * sensor_data.pressure;
+	imu_data.pressure_filtered = (1.0f - alpha_values.baro_alpha) * imu_data.pressure_filtered + alpha_values.baro_alpha * imu_data.pressure;
 }
 
 static void BARO_CALCULATE_HEIGHT(){
-	sensor_data.height = (sensor_data.pressure_base - sensor_data.pressure_filtered) / 12.015397;
+	imu_data.height = (imu_data.pressure_base - imu_data.pressure_filtered) / 12.015397;
 }
 
 void GYRO_READ(){
@@ -301,17 +301,17 @@ void GYRO_INTEGRATE(){
 	uint32_t now = MICROS();
 	uint32_t delta_t = now - last_integration_us;
 	last_integration_us = now;
-	sensor_data.angle_x_fused += sensor_data.gyro_x_filtered * (delta_t / 1000000.0);
-	sensor_data.angle_y_fused += sensor_data.gyro_y_filtered * (delta_t / 1000000.0);
-	sensor_data.angle_z_fused += sensor_data.gyro_z_filtered * (delta_t / 1000000.0);
+	imu_data.angle_x_fused += imu_data.gyro_x_filtered * (delta_t / 1000000.0);
+	imu_data.angle_y_fused += imu_data.gyro_y_filtered * (delta_t / 1000000.0);
+	imu_data.angle_z_fused += imu_data.gyro_z_filtered * (delta_t / 1000000.0);
 }
 
 void GYRO_FUSION(){
 	if(accel_right_for_calibration){
-		sensor_data.angle_x_accel = atan2f(sensor_data.accel_y_filtered, sensor_data.accel_z_filtered) * 180.0f / M_PI;
-		sensor_data.angle_y_accel = -atan2f(-sensor_data.accel_x_filtered, sqrtf(sensor_data.accel_y_filtered * sensor_data.accel_y_filtered + sensor_data.accel_z_filtered * sensor_data.accel_z_filtered)) * 180.0f / M_PI;
-		sensor_data.angle_x_fused -= (sensor_data.angle_x_fused - sensor_data.angle_x_accel) * 0.005;
-		sensor_data.angle_y_fused -= (sensor_data.angle_y_fused - sensor_data.angle_y_accel) * 0.005;
+		imu_data.angle_x_accel = atan2f(imu_data.accel_y_filtered, imu_data.accel_z_filtered) * 180.0f / M_PI;
+		imu_data.angle_y_accel = -atan2f(-imu_data.accel_x_filtered, sqrtf(imu_data.accel_y_filtered * imu_data.accel_y_filtered + imu_data.accel_z_filtered * imu_data.accel_z_filtered)) * 180.0f / M_PI;
+		imu_data.angle_x_fused -= (imu_data.angle_x_fused - imu_data.angle_x_accel) * 0.005;
+		imu_data.angle_y_fused -= (imu_data.angle_y_fused - imu_data.angle_y_accel) * 0.005;
 	}
 }
 
@@ -319,17 +319,13 @@ void BARO_SET_BASE_PRESSURE(){
 	uint8_t counter = 0;
 	while(1){
 		BARO_READ();
-		if(sensor_data.pressure > 0){
-			sensor_data.pressure_base = sensor_data.pressure;
-			sensor_data.pressure_filtered = sensor_data.pressure;
+		if(imu_data.pressure > 0){
+			imu_data.pressure_base = imu_data.pressure;
+			imu_data.pressure_filtered = imu_data.pressure;
 			return;
 		}
 		if(counter++ > 100){
 			ERROR_HANDLER_BLINKS(1);
 		}
 	}
-}
-
-Sensor_Data* SENSOR_DATA_STRUCT(){
-	return &sensor_data;
 }

@@ -16,7 +16,7 @@ static uint32_t buffer_wrap_around_count = 0;
 __attribute__((aligned(32))) static uint8_t dma_buffer[GPS_BUFFER_SIZE] = {0};
 
 static GPS_PARSE_STRUCT parse_struct = {0};
-static GPS_NAV_PVT gps_nav_pvt = {0};
+GPS_NAV_PVT gps_nav_pvt = {0};
 
 static bool UBX_ChecksumValid(uint8_t *ubx, uint16_t payload_len) {
     uint8_t ck_a = 0;
@@ -116,9 +116,4 @@ void GPS_PARSE_BUFFER(void) {
 
 void GPS_OVERFLOW_INCREMENT(void){
 	buffer_wrap_around_count++;
-}
-
-
-GPS_NAV_PVT* GPS_NAV_PVT_STRUCT_POINTER(){
-	return &gps_nav_pvt;
 }

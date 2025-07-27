@@ -10,7 +10,6 @@
 
 #include "stm32f7xx_hal.h"
 #include "onboard-sensors.h"
-#include "m10-gps.h"
 #include "crossfire.h"
 
 typedef enum{
@@ -29,7 +28,6 @@ typedef struct{
 	uint32_t last_update_us;
 }FLY_BY_WIRE_SETPOINTS;
 
-void FC_INIT(Sensor_Data *sensor_data, GPS_NAV_PVT *gps_nav_pvt, CRSF_DATA *crsf_data);
 void FC_SANITY_CHECK();
 void FC_MODE_CHECK();
 void FC_PROCESS();

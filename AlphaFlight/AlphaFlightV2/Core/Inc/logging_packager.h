@@ -9,9 +9,6 @@
 #define INC_LOGGING_PACKAGER_H_
 
 #include "stdint.h"
-#include "onboard-sensors.h"
-#include "crossfire.h"
-#include "m10-gps.h"
 
 typedef enum{
 	LOG_TYPE_DISABLE_LOGGING = 0,
@@ -21,8 +18,6 @@ typedef enum{
 	LOG_TYPE_SENSORS,
 	LOG_TYPE_FLY_BY_WIRE
 }LOG_TYPES;
-
-void LOGGING_PACKAGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT);
 
 uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE);
 

@@ -12,9 +12,10 @@
 #include "attitude_pid.h"
 #include "debug.h"
 #include "sd_logger.h"
+#include "m10-gps.h"
 
-static Sensor_Data *sensor_data;
-static GPS_NAV_PVT *gps_nav_pvt;
+extern IMU_Data imu_data;
+extern GPS_NAV_PVT gps_nav_pvt;
 static CRSF_DATA *crsf_data;
 static FLIGHT_MODE current_flight_mode = DIRECT_CONTROL;
 static FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints = {0};
@@ -24,13 +25,6 @@ static bool arm_failed = false;
 
 static uint32_t last_process_execution_time = 0;
 
-
-void FC_INIT(Sensor_Data *sensor_d, GPS_NAV_PVT *gps_nav, CRSF_DATA *crsf_d){
-	sensor_data = sensor_d;
-	gps_nav_pvt = gps_nav;
-	crsf_data = crsf_d;
-}
-
 void FC_SANITY_CHECK(){
 	if(crsf_data->last_channel_update + 1000000 < MICROS()){
 		rx_lost = true;
@@ -38,7 +32,7 @@ void FC_SANITY_CHECK(){
 	else if(rx_lost){
 		rx_lost = false;
 	}
-	if(gps_nav_pvt->numSV < 5){
+	if(gps_nav_pvt.numSV < 5){
 		if(current_flight_mode == AUTOPILOT && !rx_lost){
 			current_flight_mode = FLY_BY_WIRE;
 		}
@@ -65,8 +59,8 @@ void FC_MODE_CHECK(){
 
 		if(crsf_data->channel[5] < 500){
 			current_flight_mode = DIRECT_CONTROL;
-			fly_by_wire_setpoints.roll_angle = sensor_data->angle_x_fused;
-			fly_by_wire_setpoints.pitch_angle = sensor_data->angle_y_fused;
+			fly_by_wire_setpoints.roll_angle = imu_data.angle_x_fused;
+			fly_by_wire_setpoints.pitch_angle = imu_data.angle_y_fused;
 		}
 		else if(crsf_data->channel[5] < 1500){
 			current_flight_mode = FLY_BY_WIRE;

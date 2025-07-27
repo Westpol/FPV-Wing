@@ -84,7 +84,7 @@ typedef struct{
 	float pressure_filtered;
 	float pressure_base;
 	float height;
-}Sensor_Data;
+}IMU_Data;
 
 typedef struct{
 	int16_t gyro_x_raw;
@@ -106,8 +106,6 @@ void BARO_READ(void);
 void GYRO_INTEGRATE(void);
 void GYRO_FUSION(void);
 void BARO_SET_BASE_PRESSURE();
-
-Sensor_Data* SENSOR_DATA_STRUCT();
 
 #define GYRO_PER_ACCEL_READ 2
 #define GYRO_PER_BARO_READ 10

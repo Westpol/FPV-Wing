@@ -117,9 +117,7 @@ static void PRINT_DATA(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-Sensor_Data* sensor_data;
-GPS_NAV_PVT* gps_nav_pvt_data;
-CRSF_DATA* crsf_data;
+
 /* USER CODE END 0 */
 
 /**
@@ -174,10 +172,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   progress_counter = 3;
 
-  sensor_data = SENSOR_DATA_STRUCT();
-  gps_nav_pvt_data = GPS_NAV_PVT_STRUCT_POINTER();
-  crsf_data = CRSF_GET_DATA_STRUCT();
-
   LL_SPI_Enable(SPI1);
   uint8_t counter = 0;
   while(SENSORS_INIT(SPI1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
@@ -213,12 +207,11 @@ int main(void)
 
   progress_counter = 8;
 
-  FC_INIT(sensor_data, gps_nav_pvt_data, crsf_data);
-  FC_PID_INIT(crsf_data, sensor_data);
+  FC_PID_INIT();
 
   progress_counter = 9;
 
-  uint32_t sd_logger_loop_time_delta = SD_LOGGER_INIT(sensor_data, crsf_data, gps_nav_pvt_data);
+  uint32_t sd_logger_loop_time_delta = SD_LOGGER_INIT();
 
   progress_counter = 10;
   //SCHEDULER_ADD_TASK(SCHEDULER_CHECK_EXECUTION_DELAY, 40000);		// 25 Hz

@@ -28,10 +28,6 @@
 #include "main.h"
 #include "logging_packager.h"
 
-static Sensor_Data* sensor_data;
-static CRSF_DATA* crsf_data;
-static GPS_NAV_PVT* gps_nav_pvt;
-
 static bool armed = false;
 static bool last_arm_status = false;
 
@@ -239,7 +235,7 @@ static void READ_LATEST_FLIGHT(){
 
 }
 
-uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_PVT* GPS_NAV_PVT){
+uint32_t SD_LOGGER_INIT(){
 
 
 	// Needs to be 32-byte aligned due to D-Cache
@@ -250,14 +246,7 @@ uint32_t SD_LOGGER_INIT(Sensor_Data* SENSOR_DATA, CRSF_DATA* CRSF_DATA, GPS_NAV_
 	// check init
 
 
-	//SD_LOGGER_SETUP_CARD();
-
-	sensor_data = SENSOR_DATA;
-	crsf_data = CRSF_DATA;
-	gps_nav_pvt = GPS_NAV_PVT;
-	LOGGING_PACKAGER_INIT(SENSOR_DATA, CRSF_DATA, GPS_NAV_PVT);
-
-	//SD_LOGGER_SETUP_CARD();
+	SD_LOGGER_SETUP_CARD();
 
 	return LOGGING_INTERVAL_MICROSECONDS(0);
 

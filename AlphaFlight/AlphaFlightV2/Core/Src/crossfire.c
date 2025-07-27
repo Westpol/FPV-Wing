@@ -16,7 +16,7 @@ static DMA_HandleTypeDef *crsf_dma;
 static uint32_t buffer_wrap_around_count = 0;
 __attribute__((aligned(32))) static uint8_t dma_buffer[CRSF_BUFFER_SIZE] = {0};
 static CRSF_PARSE_STRUCT parser = {0};
-static CRSF_DATA crsf_data = {0};
+CRSF_DATA crsf_data = {0};
 
 static uint8_t crc8tab[256] = {
 	    0x00, 0xD5, 0x7F, 0xAA, 0xFE, 0x2B, 0x81, 0x54, 0x29, 0xFC, 0x56, 0x83, 0xD7, 0x02, 0xA8, 0x7D,
@@ -169,9 +169,4 @@ void CRSF_PARSE_BUFFER(){
 
 void CRSF_OVERFLOW_INCREMENT(){
 	buffer_wrap_around_count++;
-}
-
-
-CRSF_DATA* CRSF_GET_DATA_STRUCT(){
-	return &crsf_data;
 }
