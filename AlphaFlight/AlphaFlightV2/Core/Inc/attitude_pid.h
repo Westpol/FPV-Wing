@@ -8,8 +8,6 @@
 #ifndef INC_ATTITUDE_PID_H_
 #define INC_ATTITUDE_PID_H_
 
-#include "flight_control.h"
-#include "onboard-sensors.h"
 #include "crossfire.h"
 #include "stdint.h"
 #include "stdbool.h"

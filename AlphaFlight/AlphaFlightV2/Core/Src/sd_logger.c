@@ -27,8 +27,9 @@
 #include "stm32f7xx_hal.h"
 #include "main.h"
 #include "logging_packager.h"
+#include "flight_control.h"
 
-static bool armed = false;
+extern bool arm_status;
 static bool last_arm_status = false;
 
 static uint8_t log_buffer_1[2048] __attribute__((aligned(32))) = {0};
@@ -256,7 +257,7 @@ uint32_t SD_LOGGER_INIT(){
 void SD_LOGGER_LOOP_CALL(){
 	if(log_mode == LOG_TYPE_DISABLE_LOGGING) return;
 	// open file at arm
-	if(last_arm_status == false && armed == true){
+	if(last_arm_status == false && arm_status == true){
 		last_arm_status = true;
 		READ_LATEST_FLIGHT();
 		if(log_mode == LOG_TYPE_DISABLE_LOGGING) return;	// in case something went wrong in READ_LATEST_FLIGHT
@@ -286,8 +287,8 @@ void SD_LOGGER_LOOP_CALL(){
 		active_log_buffer = log_buffer_1;
 		return;
 	}
-	// log file while armed
-	if(armed && last_arm_status){
+	// log file while arm_status
+	if(arm_status == true && last_arm_status == true){
 		uint8_t* array_pointer = LOGGING_PACKER_BY_MODE(0);
 
 		uint8_t array_length = array_pointer[0];
@@ -327,7 +328,7 @@ void SD_LOGGER_LOOP_CALL(){
 
 	}
 	// close file after disarm
-	if(last_arm_status == true && armed == false){
+	if(last_arm_status == true && arm_status == false){
 
 		// TODO: need to add flush rest of buffer
 
@@ -342,9 +343,6 @@ void SD_LOGGER_LOOP_CALL(){
 	}
 }
 
-void SD_LOGGER_FORWARD_ARM(bool ARM_STATUS){
-	armed = ARM_STATUS;
-}
 
 void SD_LOGGER_SETUP_CARD(){
 	SD_SUPERBLOCK sd_superblock_config = {0};

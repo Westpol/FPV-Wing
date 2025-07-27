@@ -8,14 +8,21 @@
 #include "logging_packager.h"
 #include "stm32f7xx_hal.h"
 #include "string.h"
+#include "stdbool.h"
 #include "main.h"
 #include "onboard-sensors.h"
 #include "crossfire.h"
 #include "m10-gps.h"
+#include "attitude_pid.h"
+#include "flight_control.h"
 
 extern IMU_Data imu_data;
 extern CRSF_DATA crsf_data;
 extern GPS_NAV_PVT gps_nav_pvt;
+extern FLY_BY_WIRE_PID_VALUES attitude_pid;
+
+extern bool arm_status;
+extern bool rx_lost;
 
 static uint8_t logging_buffer[128] = {0};
 static uint8_t* logging_buffer_pointer = logging_buffer;

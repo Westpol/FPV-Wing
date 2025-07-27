@@ -18,42 +18,42 @@ extern IMU_Data imu_data;
 extern GPS_NAV_PVT gps_nav_pvt;
 static CRSF_DATA *crsf_data;
 static FLIGHT_MODE current_flight_mode = DIRECT_CONTROL;
-static FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints = {0};
-static bool rx_lost = false;
-static bool armed = false;
+FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints = {0};
+bool rx_lost = false;
+bool arm_status = false;
 static bool arm_failed = false;
 
 static uint32_t last_process_execution_time = 0;
 
 void FC_SANITY_CHECK(){
-	if(crsf_data->last_channel_update + 1000000 < MICROS()){
+	if(crsf_data->last_channel_update + 5000000 < MICROS()){
 		rx_lost = true;
 	}
 	else if(rx_lost){
 		rx_lost = false;
 	}
-	if(gps_nav_pvt.numSV < 5){
+	/*if(gps_nav_pvt.numSV < 5){	TODO: Implement rxloss fallback logic
 		if(current_flight_mode == AUTOPILOT && !rx_lost){
 			current_flight_mode = FLY_BY_WIRE;
 		}
 		else if(rx_lost){
 			current_flight_mode = RETURN_TO_HOME_NO_GPS;
 		}
-	}
+	}*/
 }
 
 void FC_MODE_CHECK(){
 	if(!rx_lost){
-		if(crsf_data->channel[11] > 1000 && armed == false && arm_failed == false){
+		if(crsf_data->channel[11] > 1000 && arm_status == false && arm_failed == false){
 			if(crsf_data->channel[0] < 200){
-				armed = true;
+				arm_status = true;
 			}
 			else{
 				arm_failed = true;
 			}
 		}
-		if((crsf_data->channel[11] < 1000 && armed == true) || (crsf_data->channel[11] < 1000 && arm_failed == true)){
-			armed = false;
+		if((crsf_data->channel[11] < 1000 && arm_status == true) || (crsf_data->channel[11] < 1000 && arm_failed == true)){
+			arm_status = false;
 			arm_failed = false;
 		}
 
@@ -69,7 +69,6 @@ void FC_MODE_CHECK(){
 			current_flight_mode = AUTOPILOT;
 		}
 	}
-	SD_LOGGER_FORWARD_ARM(armed);
 }
 
 void FC_PROCESS(){
@@ -84,20 +83,16 @@ void FC_PROCESS(){
 
 	switch (current_flight_mode) {
 		case DIRECT_CONTROL:
-			FC_PID_DIRECT_CONTROL(armed);
+			FC_PID_DIRECT_CONTROL(arm_status);
 			break;
 		case DIRECT_CONTROL_WITH_LIMITS:
 			break;
 		case FLY_BY_WIRE:
 			//STATUS_LED_GREEN_ON();
-			FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(armed, dt);
+			FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(arm_status, dt);
 			//STATUS_LED_GREEN_OFF();
 			break;
 		default:
 			break;
 	}
-}
-
-FLY_BY_WIRE_SETPOINTS *FC_GET_SETPOINTS(){
-	return &fly_by_wire_setpoints;
 }

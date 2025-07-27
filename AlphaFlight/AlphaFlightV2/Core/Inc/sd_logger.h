@@ -117,7 +117,6 @@ _Static_assert(sizeof(SD_FILE_METADATA_BLOCK) <= 508, "Metadata struct too large
 
 uint32_t SD_LOGGER_INIT();
 void SD_LOGGER_LOOP_CALL();
-void SD_LOGGER_FORWARD_ARM(bool ARM_STATUS);
 
 void SD_LOGGER_SETUP_CARD();
 

@@ -31,6 +31,5 @@ typedef struct{
 void FC_SANITY_CHECK();
 void FC_MODE_CHECK();
 void FC_PROCESS();
-FLY_BY_WIRE_SETPOINTS *FC_GET_SETPOINTS();
 
 #endif /* INC_FLIGHT_CONTROL_H_ */
