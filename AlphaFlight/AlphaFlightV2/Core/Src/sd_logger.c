@@ -42,7 +42,7 @@ static uint8_t* active_log_buffer = &log_buffer_1[0];
 static uint32_t latest_metadata_block = 0;
 static uint8_t latest_metadata_index = 0;
 static uint8_t current_metadata_index = 0;
-static uint8_t log_mode = 1;
+static uint8_t log_mode = LOG_TYPE_GENERAL;
 
 static uint32_t last_log_block;
 static SD_SUPERBLOCK sd_superblock = {0};
