@@ -17,7 +17,7 @@
 #define LOG_METADATA_BLOCK_MAGIC 0xC5D4250A
 #define LOG_METADATA_MAGIC 0xA1F17E5C
 
-typedef struct __attribute__((packed)){
+typedef struct __attribute__((__packed__)) {
     uint32_t magic;           // Magic number to identify a valid struct
     uint16_t version;         // Metadata version
     uint8_t active_flag;	  // Flag to know the last active flight
@@ -32,7 +32,11 @@ typedef struct __attribute__((packed)){
     uint32_t end_block;       // Last SD block, 0 = corrupted/incomplete
 
     uint8_t log_finished;     // 1 = log completed successfully
-    uint8_t reserved[4];      // Padding / reserved for future use
+
+    uint8_t log_mode;		  // what data is logged e.g. Gyro, fly by wire, etc.
+    uint8_t log_version;	  // which logger version
+
+    uint8_t reserved[2];      // Padding / reserved for future use
 } SD_FILE_METADATA_CHUNK;
 
 typedef struct __attribute__((packed)){
@@ -41,7 +45,7 @@ typedef struct __attribute__((packed)){
 
 }SD_FILE_METADATA_BLOCK;
 
-typedef struct __attribute__((packed)){
+typedef struct __attribute__((__packed__)) {
     uint32_t magic;               // Magic number to detect valid superblock
     uint16_t version;             // Version for compatibility
 
@@ -72,7 +76,7 @@ typedef struct __attribute__((packed)){
     uint8_t  mission_status_flags;    // Bitfield for current mission state
     uint8_t  mission_config_version;  // To version mission file format
     uint8_t  default_log_profile_id;  // Which logging config to use if none specified
-    uint8_t  log_mode_flags;          // Flags for aggressive/debug/normal logging
+    uint8_t  log_mode_flag;          // Flags for aggressive/debug/normal logging
 } SD_SUPERBLOCK;
 
 typedef struct __attribute__((packed)){
