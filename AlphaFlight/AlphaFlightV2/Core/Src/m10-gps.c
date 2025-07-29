@@ -16,6 +16,7 @@ static uint32_t buffer_wrap_around_count = 0;
 __attribute__((aligned(32))) static uint8_t dma_buffer[GPS_BUFFER_SIZE] = {0};
 
 static GPS_PARSE_STRUCT parse_struct = {0};
+GPS_DATA gps_data = {0};
 GPS_NAV_PVT gps_nav_pvt = {0};
 
 static bool UBX_ChecksumValid(uint8_t *ubx, uint16_t payload_len) {
@@ -38,9 +39,14 @@ static uint16_t GPS_GET_DMA_POSITION() {
     return GPS_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(gps_dma);
 }
 
+static void GPS_CONVERT(){
+	gps_data.gspeed = 0;
+}
+
 static void GPS_DECODE(){
 	if(parse_struct.package_class == 0x01 && parse_struct.package_id == 0x07 && parse_struct.payload_len == 92 && UBX_ChecksumValid(parse_struct.ubx_package, parse_struct.payload_len)){
 		memcpy(&gps_nav_pvt, &parse_struct.ubx_package[6], parse_struct.payload_len);
+		GPS_CONVERT();
 	}
 }
 

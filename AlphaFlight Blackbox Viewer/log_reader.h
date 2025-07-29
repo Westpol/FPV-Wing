@@ -17,6 +17,9 @@
 #define LOG_METADATA_BLOCK_MAGIC 0xC5D4250A
 #define LOG_METADATA_MAGIC 0xA1F17E5C
 
+#define LOG_FRAME_START_MAGIC 0xC8
+#define LOG_FRAME_END_MAGIC 0x9A
+
 typedef struct __attribute__((__packed__)) {
     uint32_t magic;           // Magic number to identify a valid struct
     uint16_t version;         // Metadata version
@@ -80,9 +83,24 @@ typedef struct __attribute__((__packed__)) {
 } SD_SUPERBLOCK;
 
 typedef struct __attribute__((packed)){
-    uint32_t timestamp;
-    uint16_t channel;
-} LOG_ENTRY;
+	uint16_t start_magic;
+
+	uint32_t timestamp;
+
+	float angle_fused_x, angle_fused_y, angle_fused_z;
+
+	float baro_altimeter;
+
+	int32_t gps_lon, gps_lat, gps_height, gps_speed, gps_heading;
+	uint8_t gps_sats;
+
+	uint16_t crsf_ch[4];
+
+	uint16_t status_flags;
+
+	uint16_t end_magic;
+
+}T1V0_GENERAL_DATA;
 
 int INITIALIZE_SD_CARD(const char* PATH);
 

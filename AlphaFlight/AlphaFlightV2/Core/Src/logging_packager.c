@@ -16,6 +16,7 @@
 #include "attitude_pid.h"
 #include "flight_control.h"
 #include "scheduler.h"
+#include "time-utils.h"
 
 #define SET_FLAG_COND(flags, bit, cond) ((flags) = ((flags) & ~(1U << (bit))) | ((!!(cond)) << (bit)))
 
@@ -35,7 +36,9 @@ T1V0_GENERAL_DATA t1v0_general_data = {0};
 uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 
 	void snapshot_t1v0_general(){
-		t1v0_general_data.timestamp = HAL_GetTick();
+		t1v0_general_data.start_magic = LOG_FRAME_START_MAGIC;
+		t1v0_general_data.end_magic = LOG_FRAME_END_MAGIC;
+		t1v0_general_data.timestamp = MICROS();
 		t1v0_general_data.baro_altimeter = imu_data.height;
 		t1v0_general_data.crsf_ch[0] = crsf_data.channel[0];
 		t1v0_general_data.crsf_ch[1] = crsf_data.channel[1];

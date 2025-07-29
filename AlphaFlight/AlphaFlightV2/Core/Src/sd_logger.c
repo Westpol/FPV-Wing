@@ -247,7 +247,7 @@ uint32_t SD_LOGGER_INIT(){
 	// check init
 
 
-	//SD_LOGGER_SETUP_CARD();
+	SD_LOGGER_SETUP_CARD();
 	READ_LATEST_FLIGHT();
 
 	return LOGGING_PACKER_INTERVAL_MICROSECONDS(log_mode);
@@ -273,8 +273,6 @@ void SD_LOGGER_LOOP_CALL(){
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].log_mode = log_mode;
 
 		DEBUG_PRINT_VERBOSE("Current: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].start_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].end_block);
-		DEBUG_PRINT_VERBOSE("Index 1: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[1].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[1].start_block, sd_file_metadata_block.sd_file_metadata_chunk[1].end_block);
-		DEBUG_PRINT_VERBOSE("Index 2: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[2].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[2].start_block, sd_file_metadata_block.sd_file_metadata_chunk[2].end_block);
 
 		WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
 		WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
@@ -290,7 +288,7 @@ void SD_LOGGER_LOOP_CALL(){
 	}
 	// log file while arm_status
 	if(arm_status == true && last_arm_status == true){
-		uint8_t* array_pointer = LOGGING_PACKER_BY_MODE(0);
+		uint8_t* array_pointer = LOGGING_PACKER_BY_MODE(log_mode);
 
 		uint8_t array_length = array_pointer[0];
 
@@ -309,6 +307,7 @@ void SD_LOGGER_LOOP_CALL(){
 					LOG_FAIL_WITH_ERROR(ERROR_DMA_WRITE);		// conditional executions
 				}
 				last_log_block += 4;
+				DEBUG_PRINT_VERBOSE("Block %d", last_log_block);
 				buffer_block = 0;
 				buffer_index = 0;
 				if(current_buffer == 0){

@@ -10,6 +10,9 @@
 
 #include "stdint.h"
 
+#define LOG_FRAME_START_MAGIC 0xC8
+#define LOG_FRAME_END_MAGIC 0x9A
+
 typedef enum{
 	LOG_TYPE_DISABLE_LOGGING = 0,
 	LOG_TYPE_T1V0_GENERAL = 1,
@@ -20,6 +23,8 @@ typedef enum{
 }LOG_TYPES;
 
 typedef struct __attribute__((packed)){
+	uint16_t start_magic;
+
 	uint32_t timestamp;
 
 	float angle_fused_x, angle_fused_y, angle_fused_z;
@@ -32,6 +37,8 @@ typedef struct __attribute__((packed)){
 	uint16_t crsf_ch[4];
 
 	uint16_t status_flags;
+
+	uint16_t end_magic;
 
 }T1V0_GENERAL_DATA;
 
