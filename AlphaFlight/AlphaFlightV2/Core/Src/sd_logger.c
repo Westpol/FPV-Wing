@@ -250,7 +250,7 @@ uint32_t SD_LOGGER_INIT(){
 	//SD_LOGGER_SETUP_CARD();
 	READ_LATEST_FLIGHT();
 
-	return LOGGING_INTERVAL_MICROSECONDS(log_mode);
+	return LOGGING_PACKER_INTERVAL_MICROSECONDS(log_mode);
 
 
 }
@@ -368,7 +368,7 @@ void SD_LOGGER_SETUP_CARD(){
 	sd_superblock_config.latest_mission_metadata_block = MISSION_METADATA_BLOCK_START;
 
 	sd_superblock_config.active_mission_id = 0;		// standard mission with no waypoints, etc.
-	sd_superblock_config.log_mode_flag = LOG_TYPE_GENERAL;
+	sd_superblock_config.log_mode_flag = LOG_TYPE_T1V0_GENERAL;
 
 	SD_FILE_METADATA_CHUNK temporary_dummy = {0};
 	temporary_dummy.magic = LOG_METADATA_MAGIC;

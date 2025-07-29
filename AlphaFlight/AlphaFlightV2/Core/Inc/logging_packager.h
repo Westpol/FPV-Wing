@@ -12,17 +12,17 @@
 
 typedef enum{
 	LOG_TYPE_DISABLE_LOGGING = 0,
-	LOG_TYPE_GENERAL,
-	LOG_TYPE_THROTTLE,
-	LOG_TYPE_GYRO,
-	LOG_TYPE_SENSORS,
-	LOG_TYPE_FLY_BY_WIRE
+	LOG_TYPE_T1V0_GENERAL = 1,
+	LOG_TYPE_THROTTLE = 2,
+	LOG_TYPE_GYRO = 3,
+	LOG_TYPE_SENSORS = 4,
+	LOG_TYPE_FLY_BY_WIRE = 5
 }LOG_TYPES;
 
 typedef struct __attribute__((packed)){
 	uint32_t timestamp;
 
-	float gyro_fused_x, gyro_fused_y, gyro_fused_z;
+	float angle_fused_x, angle_fused_y, angle_fused_z;
 
 	float baro_altimeter;
 
@@ -37,6 +37,6 @@ typedef struct __attribute__((packed)){
 
 uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE);
 
-uint32_t LOGGING_INTERVAL_MICROSECONDS(uint16_t MODE);
+uint32_t LOGGING_PACKER_INTERVAL_MICROSECONDS(uint16_t MODE);
 
 #endif /* INC_LOGGING_PACKAGER_H_ */
