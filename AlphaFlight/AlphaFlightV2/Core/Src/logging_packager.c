@@ -15,6 +15,7 @@
 #include "m10-gps.h"
 #include "attitude_pid.h"
 #include "flight_control.h"
+#include "scheduler.h"
 
 extern IMU_Data imu_data;
 extern CRSF_DATA crsf_data;
@@ -48,7 +49,7 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 uint32_t LOGGING_INTERVAL_MICROSECONDS(uint16_t MODE){
 	switch (MODE) {
 		case 0:		// default
-			return 10000;
+			return HZ_TO_DELTA_T_US(10);
 		default:
 			break;
 	}

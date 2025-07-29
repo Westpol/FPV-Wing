@@ -446,11 +446,11 @@ __STATIC_INLINE uint16_t SWAPBYTE(uint8_t *addr)
 #endif /* HIBYTE */
 
 #ifndef MIN
-#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+#define MIN_F(a, b)  (((a) < (b)) ? (a) : (b))
 #endif /* MIN */
 
 #ifndef MAX
-#define MAX(a, b)  (((a) > (b)) ? (a) : (b))
+#define MAX_F(a, b)  (((a) > (b)) ? (a) : (b))
 #endif /* MAX */
 
 #if  defined ( __GNUC__ )

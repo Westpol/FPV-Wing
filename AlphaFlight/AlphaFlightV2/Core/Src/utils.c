@@ -7,14 +7,14 @@
 
 #include "utils.h"
 
-float MIN(float value, float min){
+float UTIL_MIN_F(float value, float min){
 	if(value <= min){
 		return min;
 	}
 	return value;
 }
 
-float MAX(float value, float max){
+float UTIL_MAX_F(float value, float max){
 	if(value >= max){
 		return max;
 	}

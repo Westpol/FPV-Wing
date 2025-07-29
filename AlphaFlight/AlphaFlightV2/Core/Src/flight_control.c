@@ -80,8 +80,8 @@ void FC_PROCESS(){
 		return;
 	}
 
-	fly_by_wire_setpoints.pitch_angle = MIN(MAX(fly_by_wire_setpoints.pitch_angle - ((((((float)crsf_data.channel[2] - 172.0) / 1637.0) * 2.0 - 1.0) * 10) / (1000000 / dt)), 30), -25);
-	fly_by_wire_setpoints.roll_angle = MIN(MAX(fly_by_wire_setpoints.roll_angle - ((((((float)crsf_data.channel[1] - 172.0) / 1637.0) * 2.0 - 1.0) * 15) / (1000000 / dt)), 45), -45);
+	fly_by_wire_setpoints.pitch_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.pitch_angle - ((((((float)crsf_data.channel[2] - 172.0) / 1637.0) * 2.0 - 1.0) * 10) / (1000000 / dt)), 30), -25);
+	fly_by_wire_setpoints.roll_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.roll_angle - ((((((float)crsf_data.channel[1] - 172.0) / 1637.0) * 2.0 - 1.0) * 15) / (1000000 / dt)), 45), -45);
 
 	switch (current_flight_mode) {
 		case DIRECT_CONTROL:

@@ -657,7 +657,7 @@ static void USBD_GetDescriptor(USBD_HandleTypeDef *pdev, USBD_SetupReqTypedef *r
   {
     if (len != 0U)
     {
-      len = MIN(len, req->wLength);
+      len = MIN_F(len, req->wLength);
       (void)USBD_CtlSendData(pdev, pbuf, len);
     }
     else
@@ -1004,7 +1004,7 @@ void USBD_GetString(uint8_t *desc, uint8_t *unicode, uint16_t *len)
   }
 
   pdesc = desc;
-  *len = MIN(USBD_MAX_STR_DESC_SIZ, ((uint16_t)USBD_GetLen(pdesc) * 2U) + 2U);
+  *len = MIN_F(USBD_MAX_STR_DESC_SIZ, ((uint16_t)USBD_GetLen(pdesc) * 2U) + 2U);
 
   unicode[idx] = *(uint8_t *)len;
   idx++;

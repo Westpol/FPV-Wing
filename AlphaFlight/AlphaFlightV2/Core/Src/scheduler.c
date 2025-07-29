@@ -64,3 +64,7 @@ void SCHEDULER_UPDATE(){
 		}
 	}
 }
+
+uint32_t HZ_TO_DELTA_T_US(uint16_t HZ){
+	return 1000000 / HZ;
+}

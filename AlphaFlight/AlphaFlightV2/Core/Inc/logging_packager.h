@@ -19,6 +19,22 @@ typedef enum{
 	LOG_TYPE_FLY_BY_WIRE
 }LOG_TYPES;
 
+typedef struct __attribute__((packed)){
+	uint32_t timestamp;
+
+	float gyro_fused_x, gyro_fused_y, gyro_fused_z;
+
+	float baro_altimeter;
+
+	int32_t gps_lon, gps_lat, gps_height, gps_speed, gps_heading;
+	uint8_t gps_sats;
+
+	uint16_t crsf_ch[4];
+
+	uint16_t status_flags;
+
+}T1V0_GENERAL_DATA;
+
 uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE);
 
 uint32_t LOGGING_INTERVAL_MICROSECONDS(uint16_t MODE);

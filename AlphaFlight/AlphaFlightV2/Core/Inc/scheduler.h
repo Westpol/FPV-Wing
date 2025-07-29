@@ -28,4 +28,6 @@ void SCHEDULER_CHECK_EXECUTION_DELAY();
 void SCHEDULER_ADD_TASK(task_func_t task_func, uint32_t period);
 void SCHEDULER_UPDATE(void);
 
+uint32_t HZ_TO_DELTA_T_US(uint16_t HZ);
+
 #endif /* INC_SCHEDULER_H_ */
