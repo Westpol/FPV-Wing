@@ -39,8 +39,38 @@ static uint16_t GPS_GET_DMA_POSITION() {
     return GPS_BUFFER_SIZE - __HAL_DMA_GET_COUNTER(gps_dma);
 }
 
+static uint32_t GPS_DATETIME_TO_UNIX(uint16_t year, uint8_t month, uint8_t day,
+                              uint8_t hour, uint8_t min, uint8_t sec) {
+	if(year < 2000){
+		return 0;	// In case of no time fix yet
+	}
+    if (month < 3) {
+        month += 12;
+        year -= 1;
+    }
+    uint32_t days = 365 * (year - 1970)
+                  + (year - 1969) / 4
+                  - (year - 1901) / 100
+                  + (year - 1601) / 400
+                  + (153 * (month - 3) + 2) / 5
+                  + day - 1;
+    return days * 86400 + hour * 3600 + min * 60 + sec;
+}
+
 static void GPS_CONVERT(){
-	gps_data.gspeed = 0;
+	gps_data.unix_timestamp = GPS_DATETIME_TO_UNIX(gps_nav_pvt.year, gps_nav_pvt.month, gps_nav_pvt.day, gps_nav_pvt.hour, gps_nav_pvt.min, gps_nav_pvt.sec);
+	gps_data.lat = (double)gps_nav_pvt.lat / 0.0000001;
+	gps_data.lon = (double)gps_nav_pvt.lon / 0.0000001;
+	gps_data.gspeed = (double)gps_nav_pvt.gSpeed / 1000.0;
+	gps_data.height = (double)gps_nav_pvt.hMSL / 1000.0;
+	gps_data.heading = (double)gps_nav_pvt.heading / 0.00001;
+	gps_data.velN = (double)gps_nav_pvt.velN / 1000.0;
+	gps_data.velE = (double)gps_nav_pvt.velE / 1000.0;
+	gps_data.velD = (double)gps_nav_pvt.velD / 1000.0;
+	gps_data.numSV = gps_nav_pvt.numSV;
+	gps_data.hAcc = gps_nav_pvt.hAcc;
+	gps_data.vAcc = gps_nav_pvt.vAcc;
+	gps_data.fix_type = gps_nav_pvt.fixType;
 }
 
 static void GPS_DECODE(){

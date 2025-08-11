@@ -120,6 +120,7 @@ static void PRINT_DATA(void);
 /* USER CODE BEGIN 0 */
 extern CRSF_DATA crsf_data;
 extern GPS_NAV_PVT gps_nav_pvt;
+extern GPS_DATA gps_data;
 extern IMU_Data imu_data;
 extern bool arm_status;
 /* USER CODE END 0 */
@@ -1295,7 +1296,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 #if PRINT_DEBUG_DATA
 static void PRINT_DATA(){
-	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  GPS Sats: %d  |  CRSF Ch 6: %d  |  CRSF RX Aktualitate: %ld  | Accel X: %f | arm: %d", MICROS(), imu_data.angle_y_fused, gps_nav_pvt.numSV, crsf_data.channel[5], MICROS() - crsf_data.last_channel_update, imu_data.accel_x, arm_status);
+	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  GPS Sats: %d  |   Accel X: %f  |  GPS Timestamp: %ld  |  GPS Year: %d  |  GPS Fix Tag: %d  |  GPS sats: %d", MICROS(), imu_data.angle_y_fused, gps_data.numSV, imu_data.accel_x, gps_data.unix_timestamp, gps_nav_pvt.year, gps_data.fix_type, gps_data.numSV);
 }
 #endif
 

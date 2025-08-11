@@ -58,17 +58,19 @@ typedef struct __attribute__((packed)){
 } GPS_NAV_PVT;
 
 typedef struct __attribute__((packed)){
-	float lat;
-	float lon;
-	float gspeed;      // m/s
-	float height;      // MSL, in meters
-	float heading;     // deg
-	float velN;        // m/s
-	float velE;        // m/s
-	float velD;        // m/s
+	uint32_t unix_timestamp;
+	double lat;
+	double lon;
+	double gspeed;      // m/s
+	double height;      // MSL, in meters
+	double heading;     // deg
+	double velN;        // m/s
+	double velE;        // m/s
+	double velD;        // m/s
+	uint8_t fix_type;
 	uint8_t numSV;
-	uint8_t hAcc_dm;   // horizontal accuracy (decimeters)
-	uint8_t vAcc_dm;   // vertical accuracy (decimeters)
+	uint32_t hAcc;   // horizontal accuracy
+	uint32_t vAcc;   // vertical accuracy
 } GPS_DATA;
 
 typedef struct{
