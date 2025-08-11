@@ -40,20 +40,30 @@ static uint16_t GPS_GET_DMA_POSITION() {
 }
 
 static uint32_t GPS_DATETIME_TO_UNIX(uint16_t year, uint8_t month, uint8_t day,
-                              uint8_t hour, uint8_t min, uint8_t sec) {
-	if(year < 2000){
-		return 0;	// In case of no time fix yet
-	}
-    if (month < 3) {
-        month += 12;
-        year -= 1;
+                                     uint8_t hour, uint8_t min, uint8_t sec) {
+    if (year < 2025) return 0;
+
+    // Days per month, non-leap year
+    static const uint8_t days_in_month[] = { 31,28,31,30,31,30,31,31,30,31,30,31 };
+
+    uint32_t days = 0;
+
+    // Add days for years since 1970
+    for (uint16_t y = 1970; y < year; y++) {
+        days += (y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)) ? 366 : 365;
     }
-    uint32_t days = 365 * (year - 1970)
-                  + (year - 1969) / 4
-                  - (year - 1901) / 100
-                  + (year - 1601) / 400
-                  + (153 * (month - 3) + 2) / 5
-                  + day - 1;
+
+    // Add days for months in current year
+    for (uint8_t m = 1; m < month; m++) {
+        days += days_in_month[m - 1];
+        if (m == 2 && (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0))) {
+            days += 1; // Leap day
+        }
+    }
+
+    // Add days in current month
+    days += day - 1;
+
     return days * 86400 + hour * 3600 + min * 60 + sec;
 }
 
