@@ -94,7 +94,7 @@ static void MEMCPY_FROM_RINGBUFFER(uint8_t *dest, const uint8_t *src_ring, uint1
 static void CRSF_DECODE(){
 	if(parser.payload_type == 0x16 && VALIDATE_CRSF_CRC()){
 		CRSF_DECODE_CHANNELS(&parser.crsf_package[3], crsf_data.channel);
-		crsf_data.last_channel_update = MICROS();
+		crsf_data.last_channel_update = MICROS64();
 	}
 }
 

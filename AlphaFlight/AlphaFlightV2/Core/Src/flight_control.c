@@ -25,10 +25,10 @@ bool rx_lost = false;
 bool arm_status = false;
 static bool arm_failed = false;
 
-static uint32_t last_process_execution_time = 0;
+static uint64_t last_process_execution_time = 0;
 
 void FC_SANITY_CHECK(){
-	if(crsf_data.last_channel_update + 5000000 < MICROS()){
+	if(crsf_data.last_channel_update + 5000000 < MICROS64()){
 		rx_lost = true;
 	}
 	else if(rx_lost){
@@ -74,8 +74,8 @@ void FC_MODE_CHECK(){
 }
 
 void FC_PROCESS(){
-	uint32_t dt = MICROS() - last_process_execution_time;
-	last_process_execution_time = MICROS();
+	uint64_t dt = MICROS64() - last_process_execution_time;
+	last_process_execution_time = MICROS64();
 	if(dt > 100000){
 		return;
 	}

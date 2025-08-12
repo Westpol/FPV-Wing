@@ -1296,7 +1296,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 #if PRINT_DEBUG_DATA
 static void PRINT_DATA(){
-	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  GPS Sats: %d  |   Accel X: %f  |  GPS Timestamp: %ld  |  GPS Year: %d  |  GPS Month: %d  |  GPS Day: %d  |  GPS Fix Tag: %d  |  GPS sats: %d", MICROS(), imu_data.angle_y_fused, gps_data.numSV, imu_data.accel_x, gps_data.unix_timestamp, gps_nav_pvt.year, gps_nav_pvt.month, gps_nav_pvt.day, gps_data.fix_type, gps_data.numSV);
+	USB_PRINTLN("Executed at: %ld  |  Angle Gyro Y: %f  |  GPS Sats: %d  |   Accel X: %f  |  GPS Timestamp: %ld  |  GPS Year: %d  |  GPS Month: %d  |  GPS Day: %d  |  GPS Fix Tag: %d  |  GPS sats: %d", MICROS64(), imu_data.angle_y_fused, gps_data.numSV, imu_data.accel_x, gps_data.unix_timestamp, gps_nav_pvt.year, gps_nav_pvt.month, gps_nav_pvt.day, gps_data.fix_type, gps_data.numSV);
 }
 #endif
 

@@ -25,7 +25,7 @@ static Baro_Calibration baro_calibration = {0};
 IMU_Data imu_data = {0};
 static Raw_Data raw_data = {0};
 static ALPHA_VALUES alpha_values = {0};
-static uint32_t last_integration_us = 0;
+static uint64_t last_integration_us = 0;
 
 static uint8_t gyro_rx[6] = {0};
 
@@ -298,8 +298,8 @@ void BARO_READ(){
 }
 
 void GYRO_INTEGRATE(){
-	uint32_t now = MICROS();
-	uint32_t delta_t = now - last_integration_us;
+	uint64_t now = MICROS64();
+	uint64_t delta_t = now - last_integration_us;
 	last_integration_us = now;
 	imu_data.angle_x_fused += imu_data.gyro_x_filtered * (delta_t / 1000000.0);
 	imu_data.angle_y_fused += imu_data.gyro_y_filtered * (delta_t / 1000000.0);

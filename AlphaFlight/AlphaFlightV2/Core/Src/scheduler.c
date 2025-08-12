@@ -11,12 +11,12 @@
 
 static task_t tasks[MAX_TASKS];
 static uint8_t task_count = 0;
-static uint32_t current_time = 0;
+static uint64_t current_time = 0;
 
 
 
 void SCHEDULER_INIT(){
-	current_time = MICROS();
+	current_time = MICROS64();
 	for(int i = 0; i < task_count; i++){
 		tasks[i].time_last_execute = current_time;
 		tasks[i].time_to_execute = current_time + tasks[i].period;
@@ -38,8 +38,8 @@ void SCHEDULER_ADD_TASK(task_func_t task_func, uint32_t period){	// add tasks in
 
 void SCHEDULER_CHECK_EXECUTION_DELAY(){
 	uint8_t longest_delay_index = 0;
-	int32_t longest_delay_value = 1;
-	current_time = MICROS();
+	int64_t longest_delay_value = 1;
+	current_time = MICROS64();
 	for(int i = 0; i < task_count; i++){
 		if((int32_t)(current_time - tasks[i].time_to_execute) <= longest_delay_value){
 			longest_delay_index = i;
@@ -54,7 +54,7 @@ void SCHEDULER_CHECK_EXECUTION_DELAY(){
 }
 
 void SCHEDULER_UPDATE(){
-	current_time = MICROS();
+	current_time = MICROS64();
 	for(int i = 0; i < task_count; i++){
 		if((int32_t)(current_time - tasks[i].time_to_execute) >= 0){
 			tasks[i].time_last_execute = current_time;
