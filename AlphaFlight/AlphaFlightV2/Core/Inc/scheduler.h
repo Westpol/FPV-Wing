@@ -19,8 +19,8 @@ typedef void (*task_func_t)(void);
 typedef struct{
 	task_func_t task_func;
 	uint32_t period;
-	uint32_t time_last_execute;
-	uint32_t time_to_execute;
+	uint64_t time_last_execute;
+	uint64_t time_to_execute;
 }task_t;
 
 void SCHEDULER_INIT();
