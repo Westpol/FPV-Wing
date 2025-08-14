@@ -85,13 +85,13 @@ typedef struct __attribute__((__packed__)) {
 typedef struct __attribute__((packed)){
 	uint16_t start_magic;
 
-	uint32_t timestamp;
+	uint64_t timestamp;
 
 	float angle_fused_x, angle_fused_y, angle_fused_z;
 
 	float baro_altimeter;
 
-	int32_t gps_lon, gps_lat, gps_height, gps_speed, gps_heading;
+	double gps_lon, gps_lat, gps_height, gps_speed, gps_heading;
 	uint8_t gps_sats;
 
 	uint16_t crsf_ch[4];

@@ -12,6 +12,7 @@
 
 #define LOG_FRAME_START_MAGIC 0xC8
 #define LOG_FRAME_END_MAGIC 0x9A
+#define BUFFER_SIZE 254
 
 typedef enum{
 	LOG_TYPE_DISABLE_LOGGING = 0,

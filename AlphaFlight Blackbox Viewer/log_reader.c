@@ -120,7 +120,7 @@ static void PRINT_FLIGHT_DATA(int chosen_flight){
         T1V0_GENERAL_DATA log_entry = {0};
         while(block_position < BLOCK_SIZE - 4 - entry_length){
             memcpy(&log_entry, block_buffer + block_position, sizeof(T1V0_GENERAL_DATA));
-            printf("Time: %dus, Height: %fm, Angle X: %f, Angle Y: %f\n", log_entry.timestamp, log_entry.baro_altimeter, log_entry.angle_fused_x, log_entry.angle_fused_y);
+            printf("Time: %ldus, Height: %fm, Angle X: %f, Angle Y: %f\n", log_entry.timestamp, log_entry.baro_altimeter, log_entry.angle_fused_x, log_entry.angle_fused_y);
             //uint32_t timestamp = *(uint32_t*)(block_buffer + block_position);
             //uint16_t channel   = *(uint16_t*)(block_buffer + block_position + 4);
             //printf("Time: %d, Throttle Value: %d\n", timestamp, channel);
@@ -142,7 +142,7 @@ static void EXPORT_FLIGHT(int chosen_flight){
         T1V0_GENERAL_DATA log_entry = {0};
         while(block_position < BLOCK_SIZE - 4 - entry_length){
             memcpy(&log_entry, block_buffer + block_position, sizeof(T1V0_GENERAL_DATA));
-            fprintf(of2, "%d, %f\n", log_entry.timestamp, log_entry.baro_altimeter);
+            fprintf(of2, "%ld, %f\n", log_entry.timestamp, log_entry.baro_altimeter);
             block_position += entry_length;
         }
     }

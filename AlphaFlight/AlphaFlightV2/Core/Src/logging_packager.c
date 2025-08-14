@@ -29,7 +29,7 @@ extern FLY_BY_WIRE_PID_VALUES attitude_pid;
 extern bool arm_status;
 extern bool rx_lost;
 
-static uint8_t logging_buffer[128] = {0};
+static uint8_t logging_buffer[BUFFER_SIZE] = {0};
 static uint8_t* logging_buffer_pointer = logging_buffer;
 
 T1V0_GENERAL_DATA t1v0_general_data = {0};
