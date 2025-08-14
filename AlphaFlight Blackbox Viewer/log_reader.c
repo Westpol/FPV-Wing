@@ -120,7 +120,7 @@ static void PRINT_FLIGHT_DATA(int chosen_flight){
         T1V0_GENERAL_DATA log_entry = {0};
         while(block_position < BLOCK_SIZE - 4 - entry_length){
             memcpy(&log_entry, block_buffer + block_position, sizeof(T1V0_GENERAL_DATA));
-            printf("Time: %ldus, Height: %fm, Angle X: %f, Angle Y: %f\n", log_entry.timestamp, log_entry.baro_altimeter, log_entry.angle_fused_x, log_entry.angle_fused_y);
+            printf("Time: %ldus, Height: %fm, Angle X: %f, Angle Y: %f, GPS lon: %f, GPS lat: %f, GPS height: %f, GPS speed: %f, GPS heading: %f, GPS sats: %d, Status Flags: %X\n", log_entry.timestamp, log_entry.baro_altimeter, log_entry.angle_fused_x, log_entry.angle_fused_y, log_entry.gps_lon, log_entry.gps_lat, log_entry.gps_height, log_entry.gps_speed, log_entry.gps_heading, log_entry.gps_sats, log_entry.status_flags);
             //uint32_t timestamp = *(uint32_t*)(block_buffer + block_position);
             //uint16_t channel   = *(uint16_t*)(block_buffer + block_position + 4);
             //printf("Time: %d, Throttle Value: %d\n", timestamp, channel);
@@ -135,6 +135,7 @@ static void EXPORT_FLIGHT(int chosen_flight){
     const int end_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].end_block;
     uint8_t block_buffer[512] = {0};
     FILE* of2 = fopen("test.csv", "wb");
+    fprintf(of2, "timestamp, barometer\n");
     for(int i = start_block; i <= end_block; i++){
         READ_SINGLE_BLOCK(block_buffer, i);
         int block_position = 0;

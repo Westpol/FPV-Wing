@@ -28,6 +28,7 @@ extern FLY_BY_WIRE_PID_VALUES attitude_pid;
 
 extern bool arm_status;
 extern bool rx_lost;
+extern bool accel_right_for_calibration;
 
 static uint8_t logging_buffer[BUFFER_SIZE] = {0};
 static uint8_t* logging_buffer_pointer = logging_buffer;
@@ -57,6 +58,7 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 
 		SET_FLAG_COND(t1v0_general_data.status_flags, 0, arm_status);
 		SET_FLAG_COND(t1v0_general_data.status_flags, 1, rx_lost);
+		SET_FLAG_COND(t1v0_general_data.status_flags, 2, accel_right_for_calibration);
 	}
 
 	switch (MODE) {

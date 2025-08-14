@@ -19,7 +19,7 @@ static uint16_t accel_cs_pin;
 static GPIO_TypeDef *baro_cs_port;
 static uint16_t baro_cs_pin;
 
-static bool accel_right_for_calibration = false;
+bool accel_right_for_calibration = false;
 
 static Baro_Calibration baro_calibration = {0};
 IMU_Data imu_data = {0};
