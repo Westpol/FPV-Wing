@@ -118,13 +118,16 @@ void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 	HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, 6);
 }
 
-void CRSF_PARSE_BUFFER(){
+void CRSF_PARSE_BUFFER(void){
 
 	uintptr_t addr = (uintptr_t)dma_buffer;
 	size_t size = CRSF_BUFFER_SIZE;
 
 	if ((addr % CACHE_LINE_SIZE != 0) || (size % CACHE_LINE_SIZE != 0)) {
+		#if DEBUG_ENABLED
 		ERROR_HANDLER_BLINKS(5);
+		#endif
+		return;
 	}
 
 	SCB_InvalidateDCache_by_Addr((uint32_t*)addr, size);

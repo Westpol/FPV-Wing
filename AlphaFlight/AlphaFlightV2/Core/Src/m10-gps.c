@@ -118,7 +118,10 @@ void GPS_PARSE_BUFFER(void) {
 	size_t size = GPS_BUFFER_SIZE;
 
 	if ((addr % CACHE_LINE_SIZE != 0) || (size % CACHE_LINE_SIZE != 0)) {
+		#if DEBUG_ENABLED
 		ERROR_HANDLER_BLINKS(5);
+		#endif
+		return;
 	}
 
 	SCB_InvalidateDCache_by_Addr((uint32_t*)addr, size);
