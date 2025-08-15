@@ -28,16 +28,18 @@ typedef struct __attribute__((packed)){
 
 	uint64_t timestamp;
 
-	float angle_fused_x, angle_fused_y, angle_fused_z;
+	float angle_fused_x, angle_fused_y, angle_fused_z;		// onboard-sensors
 
 	float baro_altimeter;
 
-	double gps_lon, gps_lat, gps_height, gps_speed, gps_heading;
+	double gps_lon, gps_lat, gps_height, gps_speed, gps_heading;		// GPS
 	uint8_t gps_sats;
 
-	uint16_t crsf_ch[4];
+	uint16_t crsf_ch[4];		// user inputs
 
 	uint16_t status_flags;
+
+	float pid_correction_roll, pid_correction_pitch;
 
 	uint16_t end_magic;
 

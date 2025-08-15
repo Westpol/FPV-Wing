@@ -52,8 +52,8 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-#define VERBOSE_SERIAL 1
-#define DEBUG_ENABLED 1
+#define VERBOSE_SERIAL 0
+#define DEBUG_ENABLED 0
 #define PRINT_DEBUG_DATA 0
 
 #if VERBOSE_SERIAL && DEBUG_ENABLED

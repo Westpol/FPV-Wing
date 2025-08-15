@@ -59,8 +59,8 @@ void FC_PID_DIRECT_CONTROL(bool armed){
 void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(bool armed, uint32_t dt){
 	attitude_pid.pitch_error = fly_by_wire_setpoints.pitch_angle - imu_data.angle_x_fused;
 	attitude_pid.roll_error = fly_by_wire_setpoints.roll_angle - imu_data.angle_y_fused;
-	attitude_pid.pitch_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.pitch_error_accumulated + (attitude_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -0.15), 0.15);
-	attitude_pid.roll_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.roll_error_accumulated + (attitude_pid.roll_error * fbw_pid_settings.roll_i * dt), -0.15), 0.15);
+	//attitude_pid.pitch_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.pitch_error_accumulated + (attitude_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -0.15), 0.15);
+	//attitude_pid.roll_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.roll_error_accumulated + (attitude_pid.roll_error * fbw_pid_settings.roll_i * dt), -0.15), 0.15);
 	attitude_pid.pitch_pid_correction = -((attitude_pid.pitch_error * fbw_pid_settings.pitch_p) + attitude_pid.pitch_error_accumulated + (((attitude_pid.pitch_error - attitude_pid.pitch_error_last) / dt) * fbw_pid_settings.pitch_d)) + fbw_pid_settings.pitch_gain;
 	attitude_pid.roll_pid_correction = -((attitude_pid.roll_error * fbw_pid_settings.roll_p) + attitude_pid.roll_error_accumulated + (((attitude_pid.roll_error - attitude_pid.roll_error_last) / dt) * fbw_pid_settings.roll_d)) + fbw_pid_settings.roll_gain;
 	attitude_pid.pitch_error_last = attitude_pid.pitch_error;

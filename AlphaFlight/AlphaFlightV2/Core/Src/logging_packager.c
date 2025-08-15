@@ -55,6 +55,8 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 		t1v0_general_data.angle_fused_x = imu_data.angle_x_fused;
 		t1v0_general_data.angle_fused_y = imu_data.angle_y_fused;
 		t1v0_general_data.angle_fused_z = imu_data.angle_z_fused;
+		t1v0_general_data.pid_correction_roll = attitude_pid.roll_pid_correction;
+		t1v0_general_data.pid_correction_pitch = attitude_pid.pitch_pid_correction;
 
 		SET_FLAG_COND(t1v0_general_data.status_flags, 0, arm_status);
 		SET_FLAG_COND(t1v0_general_data.status_flags, 1, rx_lost);
