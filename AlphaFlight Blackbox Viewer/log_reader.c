@@ -5,6 +5,7 @@
     #include <unistd.h>
     #include <string.h>
     #include "stdbool.h"
+    #include <time.h>
 
     uint8_t super_block_buffer[512] = {0};
     uint8_t metadata_block_buffer[512] = {0};
@@ -120,7 +121,7 @@ static void PRINT_FLIGHT_DATA(int chosen_flight){
         T1V0_GENERAL_DATA log_entry = {0};
         while(block_position < BLOCK_SIZE - 4 - entry_length){
             memcpy(&log_entry, block_buffer + block_position, sizeof(T1V0_GENERAL_DATA));
-            printf("Time: %ldus, Height: %fm, Angle X: %f, Angle Y: %f, GPS lon: %f, GPS lat: %f, GPS height: %f, GPS speed: %f, GPS heading: %f, GPS sats: %d, Status Flags: %X\n", log_entry.timestamp, log_entry.baro_altimeter, log_entry.angle_fused_x, log_entry.angle_fused_y, log_entry.gps_lon, log_entry.gps_lat, log_entry.gps_height, log_entry.gps_speed, log_entry.gps_heading, log_entry.gps_sats, log_entry.status_flags);
+            //printf("Time: %ldus, Height: %fm, Angle X: %f, Angle Y: %f, GPS lon: %f, GPS lat: %f, GPS height: %f, GPS speed: %f, GPS heading: %f, GPS sats: %d, Status Flags: %X\n", log_entry.timestamp, log_entry.baro_altimeter, log_entry.angle_fused_x, log_entry.angle_fused_y, log_entry.gps_lon, log_entry.gps_lat, log_entry.gps_height, log_entry.gps_speed, log_entry.gps_heading, log_entry.gps_sats, log_entry.status_flags);
             //uint32_t timestamp = *(uint32_t*)(block_buffer + block_position);
             //uint16_t channel   = *(uint16_t*)(block_buffer + block_position + 4);
             //printf("Time: %d, Throttle Value: %d\n", timestamp, channel);
@@ -163,7 +164,11 @@ int INITIALIZE_SD_CARD(const char* PATH){
         return 1;
     }
     memcpy(&sd_superblock, &super_block_buffer, sizeof(sd_superblock));
-
+    
+    if(sd_superblock.magic != SUPERBLOCK_MAGIC){
+        perror("Wrong superblock magic number");
+        return 1;
+    }
     int minimum_flight_num = sd_superblock.absolute_flight_num - sd_superblock.relative_flight_num;
     int maximum_flight_num = sd_superblock.relative_flight_num - 1;
     printf("Choose between flight number %d and %d: ", minimum_flight_num, maximum_flight_num);
@@ -180,10 +185,7 @@ int INITIALIZE_SD_CARD(const char* PATH){
         return 1;
     }
     memcpy(&sd_metadata_block, &metadata_block_buffer, sizeof(sd_metadata_block));
-    if(sd_superblock.magic != SUPERBLOCK_MAGIC){
-        perror("Wrong superblock magic number");
-        return 1;
-    }
+
     #if VERBOSE_OUTPUT
     printf("Superblock version: %d\nRelative flight number: %d\nMagic number: %08X\n", sd_superblock.version, sd_superblock.relative_flight_num, sd_superblock.magic);
     for(int i = 0; i < sd_superblock.relative_flight_num; i++){
@@ -192,6 +194,11 @@ int INITIALIZE_SD_CARD(const char* PATH){
     }
     #endif
     printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n", sd_metadata_block.sd_file_metadata_chunk[flight_chosen].flight_number, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].active_flag, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].log_finished, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].start_block, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].end_block);
+    char buff[21];
+    const long int time_unix = sd_metadata_block.sd_file_metadata_chunk[flight_chosen].timestamp_unix;
+    strftime(buff, 20, "%d.%m.%Y %H:%M:%S", localtime(&time_unix));
+    buff[20] = '\0';
+    printf("%s\n", buff);
     printf("Dumping data to test.bin...\n");
     DUMP_FLIGHT_TO_BIN(flight_chosen);
     printf("Done.\n");
