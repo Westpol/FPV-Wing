@@ -135,7 +135,7 @@ static void EXPORT_FLIGHT(int chosen_flight){
     const int end_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].end_block;
     uint8_t block_buffer[512] = {0};
     FILE* of2 = fopen("test.csv", "wb");
-    fprintf(of2, "timestamp, barometer\n");
+    fprintf(of2, "timestamp,gyro_fused_x,gyro_fused_y,baro_height,gps_lon,gps_lat,gps_height,gps_speed,gps_heading,gps_sats,status_flags,pid_correction_roll,pid_correction_pitch,crsf_1,crsf_2,crsf_3,crsf_4\n");
     for(int i = start_block; i <= end_block; i++){
         READ_SINGLE_BLOCK(block_buffer, i);
         int block_position = 0;
@@ -143,7 +143,7 @@ static void EXPORT_FLIGHT(int chosen_flight){
         T1V0_GENERAL_DATA log_entry = {0};
         while(block_position < BLOCK_SIZE - 4 - entry_length){
             memcpy(&log_entry, block_buffer + block_position, sizeof(T1V0_GENERAL_DATA));
-            fprintf(of2, "%ld, %f\n", log_entry.timestamp, log_entry.baro_altimeter);
+            fprintf(of2, "%ld,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%d,%d,%d,%d\n", log_entry.timestamp, log_entry.angle_fused_x, log_entry.angle_fused_y, log_entry.baro_altimeter, log_entry.gps_lon, log_entry.gps_lat, log_entry.gps_height, log_entry.gps_speed, log_entry.gps_heading, log_entry.gps_sats, log_entry.status_flags, log_entry.pid_correction_roll, log_entry.pid_correction_pitch, log_entry.crsf_ch[0], log_entry.crsf_ch[1], log_entry.crsf_ch[2], log_entry.crsf_ch[3]);
             block_position += entry_length;
         }
     }
