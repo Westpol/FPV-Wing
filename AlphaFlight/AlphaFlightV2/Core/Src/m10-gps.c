@@ -69,11 +69,11 @@ static uint32_t GPS_DATETIME_TO_UNIX(uint16_t year, uint8_t month, uint8_t day,
 
 static void GPS_CONVERT(){
 	gps_data.unix_timestamp = GPS_DATETIME_TO_UNIX(gps_nav_pvt.year, gps_nav_pvt.month, gps_nav_pvt.day, gps_nav_pvt.hour, gps_nav_pvt.min, gps_nav_pvt.sec);
-	gps_data.lat = (double)gps_nav_pvt.lat / 0.0000001;
-	gps_data.lon = (double)gps_nav_pvt.lon / 0.0000001;
+	gps_data.lat = (double)gps_nav_pvt.lat * 0.0000001;
+	gps_data.lon = (double)gps_nav_pvt.lon * 0.0000001;
 	gps_data.gspeed = (double)gps_nav_pvt.gSpeed / 1000.0;
 	gps_data.height = (double)gps_nav_pvt.hMSL / 1000.0;
-	gps_data.heading = (double)gps_nav_pvt.heading / 0.00001;
+	gps_data.heading = (double)gps_nav_pvt.heading * 0.00001;
 	gps_data.velN = (double)gps_nav_pvt.velN / 1000.0;
 	gps_data.velE = (double)gps_nav_pvt.velE / 1000.0;
 	gps_data.velD = (double)gps_nav_pvt.velD / 1000.0;
