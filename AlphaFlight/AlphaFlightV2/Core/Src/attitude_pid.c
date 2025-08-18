@@ -43,14 +43,14 @@ static void FC_PID_MIXER(float pitchDeflection, float rollDeflection, float thro
 }
 
 void FC_PID_INIT(){
-	fbw_pid_settings.pitch_d = 0.1;
-	fbw_pid_settings.pitch_p = 0.1;
+	fbw_pid_settings.pitch_d = 10.0;
+	fbw_pid_settings.pitch_p = 10.0;
 	fbw_pid_settings.pitch_i = 0.001;
-	fbw_pid_settings.pitch_gain = 0.1;
-	fbw_pid_settings.roll_d = 0.1;
-	fbw_pid_settings.roll_p = 0.1;
+	fbw_pid_settings.pitch_gain = 1.0;
+	fbw_pid_settings.roll_d = 10.0;
+	fbw_pid_settings.roll_p = 10.0;
 	fbw_pid_settings.roll_i = 0.001;
-	fbw_pid_settings.roll_gain = 0.1;
+	fbw_pid_settings.roll_gain = 1.0;
 }
 
 void FC_PID_DIRECT_CONTROL(bool armed){
