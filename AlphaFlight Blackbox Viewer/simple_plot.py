@@ -4,6 +4,7 @@ import csv
 timestamps = []
 baro_height = []
 crsf_throttle = []
+gps_speed = []
 
 with open("test.csv") as f:
     reader = csv.reader(f)
@@ -12,11 +13,13 @@ with open("test.csv") as f:
             timestamps.append(int(row[0]))
             baro_height.append(float(row[3]))
             crsf_throttle.append(int(row[13]) / 40)
+            gps_speed.append(float(row[7]))
         except:
             print(row)
 
 plt.plot(baro_height, label="Baro Height")
 plt.plot(crsf_throttle, label="Throttle input")
+plt.plot(gps_speed, label="GPS speed")
 plt.plot()
 plt.ylabel("Stuff")
 plt.title("Fuck yeh")
