@@ -17,6 +17,7 @@
 #include "flight_control.h"
 #include "scheduler.h"
 #include "time-utils.h"
+#include "flight_state.h"
 
 #define SET_FLAG_COND(flags, bit, cond) ((flags) = ((flags) & ~(1U << (bit))) | ((!!(cond)) << (bit)))
 
@@ -26,8 +27,6 @@ extern GPS_NAV_PVT gps_nav_pvt;
 extern GPS_DATA gps_data;
 extern FLY_BY_WIRE_PID_VALUES attitude_pid;
 
-extern bool arm_status;
-extern bool rx_lost;
 extern bool accel_right_for_calibration;
 
 static uint8_t logging_buffer[BUFFER_SIZE] = {0};
@@ -58,8 +57,8 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 		t1v0_general_data.pid_correction_roll = attitude_pid.roll_pid_correction;
 		t1v0_general_data.pid_correction_pitch = attitude_pid.pitch_pid_correction;
 
-		SET_FLAG_COND(t1v0_general_data.status_flags, 0, arm_status);
-		SET_FLAG_COND(t1v0_general_data.status_flags, 1, rx_lost);
+		SET_FLAG_COND(t1v0_general_data.status_flags, 0, FLIGHT_STATE_IS_ARMED());
+		SET_FLAG_COND(t1v0_general_data.status_flags, 1, FLIGHT_STATE_IS_RX_LOSS());
 		SET_FLAG_COND(t1v0_general_data.status_flags, 2, accel_right_for_calibration);
 	}
 

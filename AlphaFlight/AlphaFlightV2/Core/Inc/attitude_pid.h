@@ -44,8 +44,8 @@ typedef struct{
 }FLY_BY_WIRE_PID_VALUES;
 
 void FC_PID_INIT();
-void FC_PID_DIRECT_CONTROL(bool armed);
-void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(bool armed, uint32_t dt);
+void FC_PID_DIRECT_CONTROL();
+void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt);
 
 // debug
 void FC_PID_PRINT_CURRENT_SERVO_POINTS();

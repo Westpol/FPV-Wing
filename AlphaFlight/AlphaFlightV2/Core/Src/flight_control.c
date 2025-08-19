@@ -15,24 +15,23 @@
 #include "m10-gps.h"
 #include "onboard-sensors.h"
 #include "crossfire.h"
+#include "flight_state.h"
 
 extern IMU_Data imu_data;
 extern GPS_NAV_PVT gps_nav_pvt;
 extern CRSF_DATA crsf_data;
 static FLIGHT_MODE current_flight_mode = DIRECT_CONTROL;
 FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints = {0};
-bool rx_lost = false;
-bool arm_status = false;
 static bool arm_failed = false;
 
 static uint64_t last_process_execution_time = 0;
 
 void FC_SANITY_CHECK(){
 	if(crsf_data.last_channel_update + 5000000 < MICROS64()){
-		rx_lost = true;
+		FLIGHT_STATE_RX_LOSS(FLIGHT_STATE_RXLOSS_CHANGE_KEY);
 	}
-	else if(rx_lost){
-		rx_lost = false;
+	else if(FLIGHT_STATE_IS_RX_LOSS()){
+		FLIGHT_STATE_RX_VALID(FLIGHT_STATE_RXLOSS_CHANGE_KEY);
 	}
 	/*if(gps_nav_pvt.numSV < 5){	TODO: Implement rxloss fallback logic
 		if(current_flight_mode == AUTOPILOT && !rx_lost){
@@ -45,17 +44,17 @@ void FC_SANITY_CHECK(){
 }
 
 void FC_MODE_CHECK(){
-	if(!rx_lost){
-		if(crsf_data.channel[11] > 1000 && arm_status == false && arm_failed == false){
+	if(!FLIGHT_STATE_IS_RX_LOSS()){
+		if(crsf_data.channel[11] > 1000 && FLIGHT_STATE_IS_ARMED() == false && arm_failed == false){
 			if(crsf_data.channel[0] < 200){
-				arm_status = true;
+				FLIGHT_STATE_ARM(FLIGHT_STATE_ARM_CHANGE_KEY);
 			}
 			else{
 				arm_failed = true;
 			}
 		}
-		if((crsf_data.channel[11] < 1000 && arm_status == true) || (crsf_data.channel[11] < 1000 && arm_failed == true)){
-			arm_status = false;
+		if((crsf_data.channel[11] < 1000 && FLIGHT_STATE_IS_ARMED()) || (crsf_data.channel[11] < 1000 && arm_failed == true)){
+			FLIGHT_STATE_DISARM(FLIGHT_STATE_ARM_CHANGE_KEY);
 			arm_failed = false;
 		}
 
@@ -85,13 +84,13 @@ void FC_PROCESS(){
 
 	switch (current_flight_mode) {
 		case DIRECT_CONTROL:
-			FC_PID_DIRECT_CONTROL(arm_status);
+			FC_PID_DIRECT_CONTROL();
 			break;
 		case DIRECT_CONTROL_WITH_LIMITS:
 			break;
 		case FLY_BY_WIRE:
 			//STATUS_LED_GREEN_ON();
-			FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(arm_status, dt);
+			FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(dt);
 			//STATUS_LED_GREEN_OFF();
 			break;
 		default:

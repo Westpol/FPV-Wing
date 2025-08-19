@@ -14,6 +14,7 @@
 #include "flight_control.h"
 #include "onboard-sensors.h"
 #include "crossfire.h"
+#include "flight_state.h"
 
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 static CURRENT_SERVO_POINTS current_servo_points;
@@ -54,8 +55,8 @@ void FC_PID_INIT(){
 	fbw_pid_settings.roll_gain = 1.0;
 }
 
-void FC_PID_DIRECT_CONTROL(bool armed){
-	if(armed){
+void FC_PID_DIRECT_CONTROL(){
+	if(FLIGHT_STATE_IS_ARMED()){
 		FC_PID_MIXER(((((float)crsf_data.channel[2] - 172.0) / 1637.0) * 2.0 - 1.0), ((((float)crsf_data.channel[1] - 172.0) / 1637.0) * 2.0 - 1.0), (((float)crsf_data.channel[0] - 172.0) / 1637.0));
 	}
 	else{
@@ -63,7 +64,7 @@ void FC_PID_DIRECT_CONTROL(bool armed){
 	}
 }
 
-void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(bool armed, uint32_t dt){
+void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float dt_seconds = dt / 1000000.0;
 	if(dt_seconds == 0.0f) return;
 	angle_x_lowpass = imu_data.angle_x_fused * lowpass_alpha_x + angle_x_lowpass * (1 -lowpass_alpha_x);
@@ -77,7 +78,7 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(bool armed, uint32_t dt){
 	attitude_pid.pitch_error_last = attitude_pid.pitch_error;
 	attitude_pid.roll_error_last = attitude_pid.roll_error;
 
-	if(armed){
+	if(FLIGHT_STATE_IS_ARMED()){
 		FC_PID_MIXER(attitude_pid.pitch_pid_correction, attitude_pid.roll_pid_correction, (((float)crsf_data.channel[0] - 172.0) / 1637.0));
 	}
 	else{

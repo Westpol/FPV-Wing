@@ -29,8 +29,8 @@
 #include "logging_packager.h"
 #include "flight_control.h"
 #include "m10-gps.h"
+#include "flight_state.h"
 
-extern bool arm_status;
 static bool last_arm_status = false;
 
 static uint8_t log_buffer_1[2048] __attribute__((aligned(32))) = {0};
@@ -260,7 +260,7 @@ uint32_t SD_LOGGER_INIT(){
 void SD_LOGGER_LOOP_CALL(){
 	if(log_mode == LOG_TYPE_DISABLE_LOGGING) return;
 	// open file at arm
-	if(last_arm_status == false && arm_status == true){
+	if(last_arm_status == false && FLIGHT_STATE_IS_ARMED() == true){
 		last_arm_status = true;
 		READ_LATEST_FLIGHT();
 		if(log_mode == LOG_TYPE_DISABLE_LOGGING) return;	// in case something went wrong in READ_LATEST_FLIGHT
@@ -290,7 +290,7 @@ void SD_LOGGER_LOOP_CALL(){
 		return;
 	}
 	// log file while arm_status
-	if(arm_status == true && last_arm_status == true){
+	if(FLIGHT_STATE_IS_ARMED() == true && last_arm_status == true){
 		uint8_t* array_pointer = LOGGING_PACKER_BY_MODE(log_mode);
 
 		uint8_t array_length = array_pointer[0];
@@ -331,7 +331,7 @@ void SD_LOGGER_LOOP_CALL(){
 
 	}
 	// close file after disarm
-	if(last_arm_status == true && arm_status == false){
+	if(last_arm_status == true && FLIGHT_STATE_IS_ARMED() == false){
 
 		// TODO: need to add flush rest of buffer
 
