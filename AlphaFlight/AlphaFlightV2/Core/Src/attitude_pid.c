@@ -13,6 +13,7 @@
 #include "servo.h"
 #include "flight_control.h"
 #include "onboard-sensors.h"
+#include "crossfire.h"
 
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 static CURRENT_SERVO_POINTS current_servo_points;
