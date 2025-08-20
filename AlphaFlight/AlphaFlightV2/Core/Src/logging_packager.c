@@ -41,10 +41,10 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 		t1v0_general_data.end_magic = LOG_FRAME_END_MAGIC;
 		t1v0_general_data.timestamp = MICROS64();
 		t1v0_general_data.baro_altimeter = imu_data.height;
-		t1v0_general_data.crsf_ch[0] = crsf_data.channel[0];
-		t1v0_general_data.crsf_ch[1] = crsf_data.channel[1];
-		t1v0_general_data.crsf_ch[2] = crsf_data.channel[2];
-		t1v0_general_data.crsf_ch[3] = crsf_data.channel[3];
+		t1v0_general_data.crsf_ch[0] = crsf_data.channel_raw[0];
+		t1v0_general_data.crsf_ch[1] = crsf_data.channel_raw[1];
+		t1v0_general_data.crsf_ch[2] = crsf_data.channel_raw[2];
+		t1v0_general_data.crsf_ch[3] = crsf_data.channel_raw[3];
 		t1v0_general_data.gps_heading = gps_data.heading;
 		t1v0_general_data.gps_height = gps_data.height;
 		t1v0_general_data.gps_lat = gps_data.lat;

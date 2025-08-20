@@ -91,10 +91,24 @@ static void MEMCPY_FROM_RINGBUFFER(uint8_t *dest, const uint8_t *src_ring, uint1
     }
 }
 
+#define CRSF_MIN 173.0f
+#define CRSF_MAX   1809.0f
+#define CRSF_SCALE ((CRSF_MAX - CRSF_MIN) / 100.0f)
+
+static void CRSF_NORMALIZE(){
+	for(int i = 0; i < 16; i++){
+		crsf_data.channel_norm[i] = ((float)crsf_data.channel_raw[i] - CRSF_MIN) / CRSF_SCALE;
+		if(crsf_data.channel_norm[i] < 0.0f) crsf_data.channel_norm[i] = 0.0f;
+		if(crsf_data.channel_norm[i] > 100.0f) crsf_data.channel_norm[i] = 100.0f;
+
+	}
+}
+
 static void CRSF_DECODE(){
 	if(parser.payload_type == 0x16 && VALIDATE_CRSF_CRC()){
-		CRSF_DECODE_CHANNELS(&parser.crsf_package[3], crsf_data.channel);
+		CRSF_DECODE_CHANNELS(&parser.crsf_package[3], crsf_data.channel_raw);
 		crsf_data.last_channel_update = MICROS64();
+		CRSF_NORMALIZE();
 	}
 }
 
