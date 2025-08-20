@@ -74,8 +74,8 @@ void FC_PID_DIRECT_CONTROL(){
 void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float dt_seconds = dt / 1000000.0;
 	if(dt_seconds == 0.0f) return;
-	angle_x_lowpass = imu_data.angle_x_fused * lowpass_alpha_x + angle_x_lowpass * (1 -lowpass_alpha_x);
-	angle_y_lowpass = imu_data.angle_y_fused * lowpass_alpha_y + angle_y_lowpass * (1 -lowpass_alpha_y);
+	angle_x_lowpass = imu_data.angle_x_fused * lowpass_alpha_x + angle_x_lowpass * (1 - lowpass_alpha_x);
+	angle_y_lowpass = imu_data.angle_y_fused * lowpass_alpha_y + angle_y_lowpass * (1 - lowpass_alpha_y);
 	attitude_pid.pitch_error = fly_by_wire_setpoints.pitch_angle - angle_y_lowpass;
 	attitude_pid.roll_error = fly_by_wire_setpoints.roll_angle - angle_x_lowpass;
 	//attitude_pid.pitch_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.pitch_error_accumulated + (attitude_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -0.15), 0.15);

@@ -53,7 +53,7 @@ void FC_MODE_CHECK(){
 				arm_failed = true;
 			}
 		}
-		if((crsf_data.channel_norm[CRSF_CHANNEL_THROTTLE] < 60 && FLIGHT_STATE_IS_ARMED()) || (crsf_data.channel_norm[CRSF_CHANNEL_THROTTLE] < 60 && arm_failed == true)){
+		if((crsf_data.channel_norm[CRSF_CHANNEL_ARM_SWITCH] < 60 && FLIGHT_STATE_IS_ARMED()) || (crsf_data.channel_norm[CRSF_CHANNEL_ARM_SWITCH] < 60 && arm_failed == true)){
 			FLIGHT_STATE_DISARM(FLIGHT_STATE_ARM_CHANGE_KEY);
 			arm_failed = false;
 		}

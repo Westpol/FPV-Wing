@@ -36,6 +36,7 @@
 #include "attitude_pid.h"
 #include "sd_logger.h"
 #include "utils.h"
+#include "flight_state.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
