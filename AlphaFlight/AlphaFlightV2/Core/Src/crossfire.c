@@ -18,6 +18,8 @@ __attribute__((aligned(32))) static uint8_t dma_buffer[CRSF_BUFFER_SIZE] = {0};
 static CRSF_PARSE_STRUCT parser = {0};
 CRSF_DATA crsf_data = {0};
 
+static uint8_t telemetry_data[64] = {0};
+
 static uint8_t crc8tab[256] = {
 	    0x00, 0xD5, 0x7F, 0xAA, 0xFE, 0x2B, 0x81, 0x54, 0x29, 0xFC, 0x56, 0x83, 0xD7, 0x02, 0xA8, 0x7D,
 	    0x52, 0x87, 0x2D, 0xF8, 0xAC, 0x79, 0xD3, 0x06, 0x7B, 0xAE, 0x04, 0xD1, 0x85, 0x50, 0xFA, 0x2F,
@@ -121,15 +123,40 @@ void CRSF_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 }
 
 void CRSF_HANDLE_TELEMETRY(){
-	CRSF_SEND_TELEMETRY(0x0A);		// airspeed
+	//CRSF_SEND_TELEMETRY(0x0A);		// airspeed
+	CRSF_SEND_TELEMETRY(0x08);		//Battery
 }
 
 void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
-	uint8_t payload_data[3] = {TELEMETRY_TYPE, 0x05, 0x7C};
-	uint8_t crc = crc8(payload_data, 3);
-	uint8_t telemetry_data[6] = {0xEE, 0x04, TELEMETRY_TYPE, 0x05, 0x7C, crc};
+	if(TELEMETRY_TYPE == 0x0A){
+		uint8_t payload_data[3] = {TELEMETRY_TYPE, 0x00, 0x64};
+		uint8_t crc = crc8(payload_data, 3);
+		telemetry_data[0] = 0xC8;
+		telemetry_data[1] = 4;
+		telemetry_data[2] = payload_data[0];
+		telemetry_data[3] = payload_data[1];
+		telemetry_data[4] = payload_data[2];
+		telemetry_data[5] = crc;
+		HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, 6);
+	}
+	if(TELEMETRY_TYPE == 0x08){
+		uint8_t payload_data[9] = {TELEMETRY_TYPE, 0x00, 0x64, 0x00, 0x64, 0x00, 0x00, 0xff, 0x14};
+		uint8_t crc = crc8(payload_data, 9);
+		telemetry_data[0] = 0xC8;
+		telemetry_data[1] = 10;
+		telemetry_data[2] = payload_data[0];
+		telemetry_data[3] = payload_data[1];
+		telemetry_data[4] = payload_data[2];
+		telemetry_data[5] = payload_data[3];
+		telemetry_data[6] = payload_data[4];
+		telemetry_data[7] = payload_data[5];
+		telemetry_data[8] = payload_data[6];
+		telemetry_data[9] = payload_data[7];
+		telemetry_data[10] = payload_data[8];
+		telemetry_data[11] = crc;
 
-	HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, 6);
+		HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, 12);
+	}
 }
 
 void CRSF_PARSE_BUFFER(void){
