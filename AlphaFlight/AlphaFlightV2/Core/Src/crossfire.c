@@ -21,7 +21,6 @@ CRSF_DATA crsf_data = {0};
 
 static uint8_t telemetry_data[64] = {0};
 
-extern GPS_NAV_PVT gps_nav_pvt;
 extern GPS_DATA gps_data;
 
 static uint8_t crc8tab[256] = {
@@ -176,6 +175,7 @@ void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 
 		memcpy(&telemetry_data[2], payload_data, payload_length_gps_simple);
 		telemetry_data[payload_length_gps_simple + 2] = crc;
+		HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, payload_length_gps_simple + 3);
 	}
 
 	if(TELEMETRY_TYPE == 0x0A){		// Airspeed
