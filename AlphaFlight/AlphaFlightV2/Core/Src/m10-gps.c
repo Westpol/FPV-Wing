@@ -72,7 +72,7 @@ static void GPS_CONVERT(){
 	gps_data.lat = (double)gps_nav_pvt.lat * 0.0000001;
 	gps_data.lon = (double)gps_nav_pvt.lon * 0.0000001;
 	gps_data.gspeed = (double)gps_nav_pvt.gSpeed / 1000.0;
-	gps_data.height = (double)gps_nav_pvt.hMSL / 1000.0;
+	gps_data.altitude = (double)gps_nav_pvt.hMSL / 1000.0;
 	gps_data.heading = (double)gps_nav_pvt.heading * 0.00001;
 	gps_data.velN = (double)gps_nav_pvt.velN / 1000.0;
 	gps_data.velE = (double)gps_nav_pvt.velE / 1000.0;

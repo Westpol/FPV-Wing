@@ -10,6 +10,7 @@
 #include "stdbool.h"
 #include "time-utils.h"
 #include "main.h"
+#include "m10-gps.h"
 
 static UART_HandleTypeDef *crsf_uart;
 static DMA_HandleTypeDef *crsf_dma;
@@ -19,6 +20,9 @@ static CRSF_PARSE_STRUCT parser = {0};
 CRSF_DATA crsf_data = {0};
 
 static uint8_t telemetry_data[64] = {0};
+
+extern GPS_NAV_PVT gps_nav_pvt;
+extern GPS_DATA gps_data;
 
 static uint8_t crc8tab[256] = {
 	    0x00, 0xD5, 0x7F, 0xAA, 0xFE, 0x2B, 0x81, 0x54, 0x29, 0xFC, 0x56, 0x83, 0xD7, 0x02, 0xA8, 0x7D,
@@ -124,11 +128,57 @@ void CRSF_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 
 void CRSF_HANDLE_TELEMETRY(){
 	//CRSF_SEND_TELEMETRY(0x0A);		// airspeed
-	CRSF_SEND_TELEMETRY(0x08);		//Battery
+	//CRSF_SEND_TELEMETRY(0x08);		//Battery
+	CRSF_SEND_TELEMETRY(0x02);			// GPS
 }
 
+#define FC_BROADCAST_BYTE 0xC8
+
 void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
-	if(TELEMETRY_TYPE == 0x0A){
+	if(TELEMETRY_TYPE == 0x02){		// GPS standard
+		#define payload_length_gps_simple 16
+
+	    int32_t latitude = (int32_t)(gps_data.lat * 10000000.0f);       // degree / 10`000`000
+	    int32_t longitude = (int32_t)(gps_data.lon * 10000000.0f);      // degree / 10`000`000
+	    uint16_t groundspeed = (uint16_t)(gps_data.gspeed * 100.0f);   // km/h / 100
+	    uint16_t heading = (uint16_t)(gps_data.heading * 100.0f);       // degree / 100
+	    uint16_t altitude = (uint16_t)(gps_data.altitude + 1000.0f);      // meter - 1000m offset
+	    uint8_t satellites = gps_data.numSV;     // # of sats in view
+	    uint8_t payload_data[payload_length_gps_simple] = {0};
+
+	    payload_data[0] = TELEMETRY_TYPE;
+
+	    payload_data[1] = (latitude >> 24) & 0xFF;
+	    payload_data[2] = (latitude >> 16) & 0xFF;
+	    payload_data[3] = (latitude >> 8) & 0xFF;
+	    payload_data[4] = latitude & 0xFF;
+
+	    payload_data[5] = (longitude >> 24) & 0xFF;
+		payload_data[6] = (longitude >> 16) & 0xFF;
+		payload_data[7] = (longitude >> 8) & 0xFF;
+		payload_data[8] = longitude & 0xFF;
+
+		payload_data[9] = (groundspeed >> 8) & 0xFF;
+		payload_data[10] = groundspeed & 0xFF;
+
+		payload_data[11] = (heading >> 8) & 0xFF;
+		payload_data[12] = heading & 0xFF;
+
+		payload_data[13] = (altitude >> 8) & 0xFF;
+		payload_data[14] = altitude & 0xFF;
+
+		payload_data[15] = satellites;
+
+		uint8_t crc = crc8(payload_data, payload_length_gps_simple);
+
+		telemetry_data[0] = FC_BROADCAST_BYTE;
+		telemetry_data[1] = payload_length_gps_simple + 1;		// payload with telemetry type included length byte with CRC bit added
+
+		memcpy(&telemetry_data[2], payload_data, payload_length_gps_simple);
+		telemetry_data[payload_length_gps_simple + 2] = crc;
+	}
+
+	if(TELEMETRY_TYPE == 0x0A){		// Airspeed
 		uint8_t payload_data[3] = {TELEMETRY_TYPE, 0x00, 0x64};
 		uint8_t crc = crc8(payload_data, 3);
 		telemetry_data[0] = 0xC8;
@@ -139,7 +189,8 @@ void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 		telemetry_data[5] = crc;
 		HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, 6);
 	}
-	if(TELEMETRY_TYPE == 0x08){
+
+	if(TELEMETRY_TYPE == 0x08){		//Batt Info
 		uint8_t payload_data[9] = {TELEMETRY_TYPE, 0x00, 0x64, 0x00, 0x64, 0x00, 0x00, 0xff, 0x14};
 		uint8_t crc = crc8(payload_data, 9);
 		telemetry_data[0] = 0xC8;

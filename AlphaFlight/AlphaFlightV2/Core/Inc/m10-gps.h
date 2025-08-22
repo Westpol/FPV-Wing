@@ -62,7 +62,7 @@ typedef struct __attribute__((packed)){
 	double lat;
 	double lon;
 	double gspeed;      // m/s
-	double height;      // MSL, in meters
+	double altitude;      // MSL, in meters
 	double heading;     // deg
 	double velN;        // m/s
 	double velE;        // m/s
