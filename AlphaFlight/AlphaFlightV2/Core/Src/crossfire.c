@@ -11,6 +11,7 @@
 #include "time-utils.h"
 #include "main.h"
 #include "m10-gps.h"
+#include "flight_state.h"
 
 static UART_HandleTypeDef *crsf_uart;
 static DMA_HandleTypeDef *crsf_dma;
@@ -127,13 +128,38 @@ void CRSF_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 
 void CRSF_HANDLE_TELEMETRY(){
 	//CRSF_SEND_TELEMETRY(0x0A);		// airspeed
-	//CRSF_SEND_TELEMETRY(0x08);		//Battery
-	CRSF_SEND_TELEMETRY(0x02);			// GPS
+	//CRSF_SEND_TELEMETRY(0x08);		// battery
+	//CRSF_SEND_TELEMETRY(0x02);			// GPS
+	CRSF_SEND_TELEMETRY(0x21);		// flight mode
 }
 
 #define FC_BROADCAST_BYTE 0xC8
 
 void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
+
+	if(TELEMETRY_TYPE == 0x21){
+		const uint8_t* message = FLIGHT_STATE_GET_STATE_STRING();
+		uint8_t length_counter = 0;
+		while(*(message + length_counter) != '\0'){
+			length_counter ++;
+			if(length_counter > 60) return;
+		}
+		uint8_t string_length = length_counter + 1;
+
+		uint8_t payload_data[string_length + 1];
+		payload_data[0] = TELEMETRY_TYPE;
+
+		for(int i = 0; i <= length_counter; i++){
+			payload_data[i + 1] = *(message + i);
+		}
+		uint8_t crc = crc8(payload_data, string_length + 1);
+
+		telemetry_data[0] = FC_BROADCAST_BYTE;
+		telemetry_data[1] = string_length + 2;
+		memcpy(&telemetry_data[2], payload_data, string_length + 1);
+		telemetry_data[string_length + 3] = crc;
+		HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, string_length + 4);
+	}
 	if(TELEMETRY_TYPE == 0x02){		// GPS standard
 		#define payload_length_gps_simple 16
 

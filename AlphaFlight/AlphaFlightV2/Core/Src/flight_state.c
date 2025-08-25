@@ -69,6 +69,6 @@ uint8_t FLIGHT_STATE_GET_FLAG(void){
 	return flight_flag;
 }
 
-const uint8_t* FLIGHT_STATE_GET_STATE_STRING(){
+const uint8_t* FLIGHT_STATE_GET_STATE_STRING(void){
 	return flight_state_messages[flight_flag];
 }
