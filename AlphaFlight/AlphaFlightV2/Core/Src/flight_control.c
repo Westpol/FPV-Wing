@@ -48,14 +48,17 @@ void FC_MODE_CHECK(){
 		if(crsf_data.channel_norm[CRSF_CHANNEL_ARM_SWITCH] > 60 && FLIGHT_STATE_IS_ARMED() == false && arm_failed == false){
 			if(crsf_data.channel_norm[CRSF_CHANNEL_THROTTLE] < 1){
 				FLIGHT_STATE_ARM(FLIGHT_STATE_ARM_CHANGE_KEY);
+				FLIGHT_STATE_SET_EVENT(FLIGHT_STATE_ARMED);
 			}
 			else{
 				arm_failed = true;
+				FLIGHT_STATE_SET_EVENT(FLIGHT_STATE_ARM_FAILED);
 			}
 		}
 		if((crsf_data.channel_norm[CRSF_CHANNEL_ARM_SWITCH] < 60 && FLIGHT_STATE_IS_ARMED()) || (crsf_data.channel_norm[CRSF_CHANNEL_ARM_SWITCH] < 60 && arm_failed == true)){
 			FLIGHT_STATE_DISARM(FLIGHT_STATE_ARM_CHANGE_KEY);
 			arm_failed = false;
+			FLIGHT_STATE_SET_EVENT(FLIGHT_STATE_DISARMED);
 		}
 
 		if(crsf_data.channel_norm[CRSF_CHANNEL_MODE_SWITCH] < 10){
@@ -89,9 +92,7 @@ void FC_PROCESS(){
 		case DIRECT_CONTROL_WITH_LIMITS:
 			break;
 		case FLY_BY_WIRE:
-			//STATUS_LED_GREEN_ON();
 			FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(dt);
-			//STATUS_LED_GREEN_OFF();
 			break;
 		default:
 			break;
