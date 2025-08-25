@@ -70,7 +70,8 @@ void FC_MODE_CHECK(){
 			current_flight_mode = FLY_BY_WIRE;
 		}
 		else{
-			current_flight_mode = AUTOPILOT;
+			//current_flight_mode = AUTOPILOT;
+			current_flight_mode = FLY_BY_WIRE;
 		}
 	}
 }
