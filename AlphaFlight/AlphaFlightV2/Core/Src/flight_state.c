@@ -11,7 +11,7 @@
 #define FLIGHT_STATE_RXLOSS_MAGIC 0x65
 
 static uint8_t flight_flag = 0;
-static const uint8_t *flight_state_messages[3] = {(const uint8_t*)"arm", (const uint8_t*)"disarm", (const uint8_t*)"armfail"};
+static const uint8_t *flight_state_messages[3] = {(const uint8_t*)"disarm", (const uint8_t*)"arm", (const uint8_t*)"armfail"};
 
 static struct {
     uint8_t armed;
