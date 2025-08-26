@@ -12,6 +12,7 @@
 #include "main.h"
 #include "m10-gps.h"
 #include "flight_state.h"
+#include "onboard-sensors.h"
 
 static UART_HandleTypeDef *crsf_uart;
 static DMA_HandleTypeDef *crsf_dma;
@@ -23,6 +24,7 @@ CRSF_DATA crsf_data = {0};
 static uint8_t telemetry_data[64] = {0};
 
 extern GPS_DATA gps_data;
+extern IMU_Data imu_data;
 
 static uint8_t crc8tab[256] = {
 	    0x00, 0xD5, 0x7F, 0xAA, 0xFE, 0x2B, 0x81, 0x54, 0x29, 0xFC, 0x56, 0x83, 0xD7, 0x02, 0xA8, 0x7D,
@@ -130,12 +132,49 @@ void CRSF_HANDLE_TELEMETRY(){
 	//CRSF_SEND_TELEMETRY(0x0A);		// airspeed
 	//CRSF_SEND_TELEMETRY(0x08);		// battery
 	//CRSF_SEND_TELEMETRY(0x02);			// GPS
-	CRSF_SEND_TELEMETRY(0x21);		// flight mode
+	//CRSF_SEND_TELEMETRY(0x21);		// flight mode
+	CRSF_SEND_TELEMETRY(0x1E);		// attitude
 }
 
 #define FC_BROADCAST_BYTE 0xC8
 
 void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
+
+	if(TELEMETRY_TYPE == 0x1E){
+		#define payload_length_attitude 7
+		uint8_t payload_data[payload_length_attitude] = {0};
+		int16_t pitch = (int16_t)(imu_data.angle_y_fused * (3.14159f / 180.0f) * 10000.0f);
+		int16_t roll = (int16_t)(imu_data.angle_x_fused * (3.14159f / 180.0f) * 10000.0f);
+		int16_t yaw = (int16_t)(imu_data.angle_z_fused * (3.14159f / 180.0f) * 10000.0f);
+
+		payload_data[0] = TELEMETRY_TYPE;
+
+		payload_data[1] = (pitch >> 8) & 0xFF;
+		payload_data[2] = pitch & 0xFF;
+
+		payload_data[3] = (roll >> 8) & 0xFF;
+		payload_data[4] = roll & 0xFF;
+
+		payload_data[5] = (yaw >> 8) & 0xFF;
+		payload_data[6] = yaw & 0xFF;
+
+		uint8_t crc = crc8(payload_data, payload_length_attitude);
+		telemetry_data[0] = 0xC8;
+		telemetry_data[1] = payload_length_attitude + 1;
+		telemetry_data[2] = payload_data[0];
+
+		telemetry_data[3] = payload_data[1];
+		telemetry_data[4] = payload_data[2];
+
+		telemetry_data[5] = payload_data[3];
+		telemetry_data[6] = payload_data[4];
+
+		telemetry_data[7] = payload_data[5];
+		telemetry_data[8] = payload_data[6];
+
+		telemetry_data[9] = crc;
+		HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, payload_length_attitude + 3);
+	}
 
 	if(TELEMETRY_TYPE == 0x21){
 		const uint8_t* message = FLIGHT_STATE_GET_STATE_STRING();

@@ -9,10 +9,14 @@ WiFiUDP udp;
 
 #define CRSF_SYNC_BYTE 0xC8 // RC packets (TX → RX)
 #define CRSF_PACKET_LENGTH 0x0A
+#define CRSF_TYPE_BATTERY 0x08
+#define CRSF_TYPE_FLIGHT_MODE 0x21
 
 uint16_t channels[16];
 
 uint8_t buffer[64];  // Buffer to store incoming data
+uint8_t usedBufferLength = 0;
+bool validFrame = false;
 uint8_t bufferIndex = 0;
 
 const uint16_t udpPort = 8888;
@@ -32,20 +36,36 @@ void setup() {
 }
 
 void loop() {
+  if(validFrame && bufferIndex == 0){
+    sendUDP(buffer, usedBufferLength);
+    validFrame = false;
+  }
   while (mySerial.available()) {
     uint8_t byteIn = mySerial.read();
     if(bufferIndex > 0){
       printHex(byteIn);
       bufferIndex--;
+      buffer[usedBufferLength++] = byteIn;
+      if(usedBufferLength > 60){
+        return;
+      }
     }
     if(byteIn == CRSF_SYNC_BYTE){
       while (!mySerial.available()) {}
-      uint8_t byte2In = mySerial.read();
-      if(byte2In == CRSF_PACKET_LENGTH){
-      bufferIndex = CRSF_PACKET_LENGTH;
+      uint8_t lengthByte = mySerial.read();
+      while (!mySerial.available()) {}
+      uint8_t typeByte = mySerial.read();
+      if(typeByte == CRSF_TYPE_FLIGHT_MODE || typeByte == CRSF_TYPE_BATTERY){
+      bufferIndex = lengthByte - 1;
       Serial.println("");
       printHex(byteIn);
-      printHex(byte2In);
+      printHex(lengthByte);
+      printHex(typeByte);
+      buffer[0] = byteIn;
+      buffer[1] = lengthByte;
+      buffer[2] = typeByte;
+      usedBufferLength = 3;
+      validFrame = true;
       }
       else{
         return;
