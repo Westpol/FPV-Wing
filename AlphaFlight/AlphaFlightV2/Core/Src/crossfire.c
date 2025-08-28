@@ -131,9 +131,9 @@ void CRSF_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 }
 
 void CRSF_HANDLE_TELEMETRY(){
-	static const uint8_t msgs[] = {0x1E, 0x0A, 0x1E, 0x08, 0x1E, 0x21, 0x1E, 0x02};
+	static const uint8_t msgs[] = {0x1E, 0x0A, 0x08, 0x1E, 0x21, 0x02};
 	CRSF_SEND_TELEMETRY(msgs[crsf_circle_counter]);
-	crsf_circle_counter = (crsf_circle_counter + 1) % 8;
+	crsf_circle_counter = (crsf_circle_counter + 1) % (sizeof(msgs) / sizeof(msgs[0]));
 }
 
 #define FC_BROADCAST_BYTE 0xC8
