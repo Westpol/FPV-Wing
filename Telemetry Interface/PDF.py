@@ -6,7 +6,7 @@ import math
 class Screen:
     def __init__(self):
         pygame.init()
-        self.screen_height = 1000
+        self.screen_height = 1050
         self.screen_width = 1500
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.attitude = (0, 0, 0.0)     # (pitch, roll, yaw - use GPS heading for yaw)
@@ -109,6 +109,14 @@ class Screen:
         pygame.draw.rect(artificial_horizon_mask, (0, 0, 0), (180 + 427, 0, 1000, 1000))
         artificial_horizon_mask.set_colorkey((255, 255, 255))
         self.screen.blit(artificial_horizon_mask, (0,0))
+
+        heading_surface = pygame.Surface((430, 65), pygame.SRCALPHA)
+
+        pygame.draw.rect(heading_surface, PFD_INDICATOR_BACKGROUND_GRAY, (0, 0, 430, 60))
+        pygame.draw.lines(heading_surface, PFD_WHITE, False, [(1, 65), (1, 1), (427, 1), (427, 65)], 4)
+        heading_surface = pygame.transform.rotozoom(heading_surface, 0, 1.0)
+
+        self.screen.blit(heading_surface, (180, 925))
 
         top_mask_static_things = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
 
