@@ -26,6 +26,8 @@ static uint8_t telemetry_data[64] = {0};
 extern GPS_DATA gps_data;
 extern IMU_Data imu_data;
 
+static uint8_t crsf_circle_counter = 0;
+
 static uint8_t crc8tab[256] = {
 	    0x00, 0xD5, 0x7F, 0xAA, 0xFE, 0x2B, 0x81, 0x54, 0x29, 0xFC, 0x56, 0x83, 0xD7, 0x02, 0xA8, 0x7D,
 	    0x52, 0x87, 0x2D, 0xF8, 0xAC, 0x79, 0xD3, 0x06, 0x7B, 0xAE, 0x04, 0xD1, 0x85, 0x50, 0xFA, 0x2F,
@@ -129,18 +131,16 @@ void CRSF_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 }
 
 void CRSF_HANDLE_TELEMETRY(){
-	//CRSF_SEND_TELEMETRY(0x0A);		// airspeed
-	//CRSF_SEND_TELEMETRY(0x08);		// battery
-	//CRSF_SEND_TELEMETRY(0x02);			// GPS
-	//CRSF_SEND_TELEMETRY(0x21);		// flight mode
-	CRSF_SEND_TELEMETRY(0x1E);		// attitude
+	static const uint8_t msgs[] = {0x1E, 0x0A, 0x1E, 0x08, 0x1E, 0x21, 0x1E, 0x02};
+	CRSF_SEND_TELEMETRY(msgs[crsf_circle_counter]);
+	crsf_circle_counter = (crsf_circle_counter + 1) % 8;
 }
 
 #define FC_BROADCAST_BYTE 0xC8
 
 void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 
-	if(TELEMETRY_TYPE == 0x1E){
+	if(TELEMETRY_TYPE == 0x1E){		// attitude
 		#define payload_length_attitude 7
 		uint8_t payload_data[payload_length_attitude] = {0};
 		int16_t pitch = (int16_t)(imu_data.angle_y_fused * (3.14159f / 180.0f) * 10000.0f);
@@ -176,7 +176,7 @@ void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 		HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, payload_length_attitude + 3);
 	}
 
-	if(TELEMETRY_TYPE == 0x21){
+	if(TELEMETRY_TYPE == 0x21){		// flight state
 		const uint8_t* message = FLIGHT_STATE_GET_STATE_STRING();
 		uint8_t length_counter = 0;
 		while(*(message + length_counter) != '\0'){
@@ -256,7 +256,10 @@ void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 	}
 
 	if(TELEMETRY_TYPE == 0x08){		//Batt Info
+		int16_t vbat = (int16_t)(imu_data.vbat * 10.0f);
 		uint8_t payload_data[9] = {TELEMETRY_TYPE, 0x00, 0x64, 0x00, 0x64, 0x00, 0x00, 0xff, 0x14};
+		payload_data[1] = (vbat >> 8) & 0xFF;
+		payload_data[2] = vbat & 0xFF;
 		uint8_t crc = crc8(payload_data, 9);
 		telemetry_data[0] = 0xC8;
 		telemetry_data[1] = 10;

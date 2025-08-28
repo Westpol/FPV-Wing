@@ -11,6 +11,7 @@ WiFiUDP udp;
 #define CRSF_PACKET_LENGTH 0x0A
 #define CRSF_TYPE_BATTERY 0x08
 #define CRSF_TYPE_FLIGHT_MODE 0x21
+#define CRSF_TYPE_ATTITUDE 0x1E
 
 uint16_t channels[16];
 
@@ -53,9 +54,10 @@ void loop() {
     if(byteIn == CRSF_SYNC_BYTE){
       while (!mySerial.available()) {}
       uint8_t lengthByte = mySerial.read();
+      if(lengthByte > 30) return;
       while (!mySerial.available()) {}
       uint8_t typeByte = mySerial.read();
-      if(typeByte == CRSF_TYPE_FLIGHT_MODE || typeByte == CRSF_TYPE_BATTERY){
+      if(typeByte == CRSF_TYPE_FLIGHT_MODE || typeByte == CRSF_TYPE_BATTERY || typeByte == CRSF_TYPE_ATTITUDE){
       bufferIndex = lengthByte - 1;
       Serial.println("");
       printHex(byteIn);

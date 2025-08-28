@@ -11,6 +11,8 @@
 #include "time-utils.h"
 #include "main.h"
 
+extern ADC_HandleTypeDef hadc1;
+
 static SPI_TypeDef *sensor_spi;
 static GPIO_TypeDef *gyro_cs_port;
 static uint16_t gyro_cs_pin;
@@ -258,11 +260,11 @@ static void ACCEL_CONVERT_DATA(uint8_t* accel_rx){
 	float overall_force = imu_data.accel_x_filtered * imu_data.accel_x_filtered + imu_data.accel_y_filtered * imu_data.accel_y_filtered + imu_data.accel_z_filtered * imu_data.accel_z_filtered;
 
 	if(overall_force >= 902500 && overall_force <= 1102500){
-		//STATUS_LED_BLUE_ON();
+		STATUS_LED_BLUE_ON();
 		accel_right_for_calibration = true;
 	}
 	else{
-		//STATUS_LED_BLUE_OFF();
+		STATUS_LED_BLUE_OFF();
 		accel_right_for_calibration = false;
 	}
 }
@@ -328,4 +330,21 @@ void BARO_SET_BASE_PRESSURE(){
 			ERROR_HANDLER_BLINKS(1);
 		}
 	}
+}
+
+static uint32_t BATTERY_READ_SAMPLE(){
+	HAL_ADC_Start(&hadc1);
+	    if(HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK){
+	        return HAL_ADC_GetValue(&hadc1); // 12-bit value: 0–4095
+	    }
+	    return 0;
+	}
+
+#define BAT_NEW_SAMPLE_ALPHA_VALUE 0.01f
+#define BAT_VOLTAGE_DIVIDER_SCALING 11.062138728f
+void BATTERY_UPDATE(void){
+	uint32_t current_battery_value = BATTERY_READ_SAMPLE();
+	float voltage = ((float)current_battery_value / 4095.0f) * 3.3f * BAT_VOLTAGE_DIVIDER_SCALING;
+	imu_data.vbat = imu_data.vbat * (1.0f - BAT_NEW_SAMPLE_ALPHA_VALUE) + voltage * BAT_NEW_SAMPLE_ALPHA_VALUE;
+	imu_data.vbat_raw = current_battery_value;
 }

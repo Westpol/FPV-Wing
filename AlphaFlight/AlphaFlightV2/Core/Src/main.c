@@ -231,9 +231,10 @@ int main(void)
   SCHEDULER_ADD_TASK(FC_SANITY_CHECK, HZ_TO_DELTA_T_US(100));		// 100 Hz
   SCHEDULER_ADD_TASK(FC_MODE_CHECK, HZ_TO_DELTA_T_US(100));		// 100 Hz
   SCHEDULER_ADD_TASK(FC_PROCESS, HZ_TO_DELTA_T_US(100));		// 100 Hz
+  SCHEDULER_ADD_TASK(BATTERY_UPDATE, HZ_TO_DELTA_T_US(100));		// 100 Hz
   SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, HZ_TO_DELTA_T_US(25));	// 25 Hz
   SCHEDULER_ADD_TASK(SD_LOGGER_LOOP_CALL, sd_logger_loop_time_delta);
-  SCHEDULER_ADD_TASK(CRSF_HANDLE_TELEMETRY, HZ_TO_DELTA_T_US(25));	// 5 Hz
+  SCHEDULER_ADD_TASK(CRSF_HANDLE_TELEMETRY, HZ_TO_DELTA_T_US(20));	// 5 Hz
   //SCHEDULER_ADD_TASK(FC_PID_PRINT_CURRENT_SERVO_POINTS, 100000);
   #if PRINT_DEBUG_DATA
   SCHEDULER_ADD_TASK(PRINT_DATA, 100000);	// 10 Hz
@@ -1300,7 +1301,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 static void PRINT_DATA(){
 	//USB_PRINTLN("Executed at: %lu%lu  |  Angle Gyro Y: %f  |  GPS Sats: %d  |   Accel X: %f  |  GPS Timestamp: %ld  |  GPS Year: %d  |  GPS Month: %d  |  GPS Day: %d  |  GPS Fix Tag: %d  |  GPS sats: %d  |  GPS Lat: %f", (uint32_t)(MICROS64() >> 32), (uint32_t)(MICROS64() & 0xFFFFFFFF), imu_data.angle_y_fused, gps_data.numSV, imu_data.accel_x, gps_data.unix_timestamp, gps_nav_pvt.year, gps_nav_pvt.month, gps_nav_pvt.day, gps_data.fix_type, gps_data.numSV, gps_data.lat);
 	//USB_PRINTLN("Angle Gyro X: %f  |  Setpoint Angle X: %f  |  Throttle: %f  |  CRSF Pitch: %f  |  CRSF Roll: %f", imu_data.angle_y_fused, fly_by_wire_setpoints.pitch_angle, crsf_data.channel_norm[CRSF_CHANNEL_THROTTLE], crsf_data.channel_norm[CRSF_CHANNEL_PITCH], crsf_data.channel_norm[CRSF_CHANNEL_ROLL]);
-	USB_PRINTLN("lat: %f  |  lon: %f  |  altitude: %f  |  gspeed: %f  |  heading: %f  |  num sats: %d", gps_data.lat, gps_data.lon, gps_data.altitude, gps_data.gspeed, gps_data.heading, gps_data.numSV);	// GPS
+	USB_PRINTLN("lat: %f  |  lon: %f  |  altitude: %f  |  gspeed: %f  |  heading: %f  |  num sats: %d  |  vbat: %f  |  vbat raw: %d", gps_data.lat, gps_data.lon, gps_data.altitude, gps_data.gspeed, gps_data.heading, gps_data.numSV, imu_data.vbat, imu_data.vbat_raw);	// GPS
 }
 #endif
 

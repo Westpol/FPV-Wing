@@ -1,7 +1,8 @@
 import pygame
 import time
 import math
-
+import socket
+import struct
 
 class Screen:
     def __init__(self):
@@ -16,6 +17,7 @@ class Screen:
         self.running = True
         self.clock = pygame.time.Clock()
         self.delta_t = 0
+        self.telemetry = Telemetry()
 
 
     def start(self):
@@ -26,7 +28,9 @@ class Screen:
 
             self.update_display()
 
-            self.delta_t = self.clock.tick(10) / 1000
+            self.telemetry.wait_for_package()
+            self.attitude = (self.telemetry.pitch, self.telemetry.roll, self.telemetry.yaw)
+
         pygame.quit()
 
     def update_values(self, index, value):
@@ -61,7 +65,7 @@ class Screen:
         pygame.draw.rect(artificial_horizon, PFD_SKY_BLUE, (0, 0, ARTIFICIAL_HORIZON_DIMENSIONS, ARTIFICIAL_HORIZON_DIMENSIONS / 2))
         pygame.draw.rect(artificial_horizon, PFD_EARTH_BROWN, (0, ARTIFICIAL_HORIZON_DIMENSIONS / 2, ARTIFICIAL_HORIZON_DIMENSIONS, ARTIFICIAL_HORIZON_DIMENSIONS / 2))
         pygame.draw.line(artificial_horizon, PFD_WHITE, (0, ARTIFICIAL_HORIZON_DIMENSIONS / 2), (ARTIFICIAL_HORIZON_DIMENSIONS, ARTIFICIAL_HORIZON_DIMENSIONS / 2), 4)
-        offset = (self.gps_heading % 10) / 10
+        offset = -((self.gps_heading % 10) / 10)
         for i in range(int(-(ARTIFICIAL_HORIZON_DIMENSIONS / 80 + 2) / 2), int((ARTIFICIAL_HORIZON_DIMENSIONS / 80 + 2) / 2)):
             x_pos = (i * 80) + (offset * 80) + 600
             pygame.draw.line(artificial_horizon, PFD_WHITE, (x_pos, ARTIFICIAL_HORIZON_DIMENSIONS / 2), (x_pos, ARTIFICIAL_HORIZON_DIMENSIONS / 2 + 15), 4)
@@ -113,7 +117,27 @@ class Screen:
         heading_surface = pygame.Surface((430, 65), pygame.SRCALPHA)
 
         pygame.draw.rect(heading_surface, PFD_INDICATOR_BACKGROUND_GRAY, (0, 0, 430, 60))
-        pygame.draw.lines(heading_surface, PFD_WHITE, False, [(1, 65), (1, 1), (427, 1), (427, 65)], 4)
+        pygame.draw.lines(heading_surface, PFD_WHITE, False, [(1, 65), (1, 1), (426, 1), (426, 65)], 4)
+
+        heading_offset = -((self.attitude[2] % 10) * 10)
+        equalized_heading = int((self.gps_heading % 360) / 10)
+        font2 = pygame.font.SysFont("Arial", 40)
+        for i in range(-4, 5):
+            pygame.draw.line(heading_surface, PFD_WHITE, (214 + (100 * i) + 50 + heading_offset, 0), (214 + (100 * i) + 50 + heading_offset, 13), 4)
+            pygame.draw.line(heading_surface, PFD_WHITE, (214 + (100 * i) + heading_offset, 0), (214 + (100 * i) + heading_offset, 28), 4)
+            if 10 <= equalized_heading + i < 36:
+                text = font2.render(str(abs(equalized_heading + i)), True, PFD_WHITE)
+                heading_surface.blit(text, (195 + i * 100 + heading_offset,25))
+            elif 0 <= equalized_heading + i < 36:
+                text = font2.render(str(abs(equalized_heading + i)), True, PFD_WHITE)
+                heading_surface.blit(text, (205 + i * 100 + heading_offset, 25))
+            elif equalized_heading + i < 0:
+                text = font2.render(str(abs(36 + equalized_heading + i)), True, PFD_WHITE)
+                heading_surface.blit(text, (195 + i * 100 + heading_offset,25))
+            elif equalized_heading + i > 35:
+                text = font2.render(str(abs(0 + ((equalized_heading + i) % 36))), True, PFD_WHITE)
+                heading_surface.blit(text, (205 + i * 100 + heading_offset,25))
+
         heading_surface = pygame.transform.rotozoom(heading_surface, 0, 1.0)
 
         self.screen.blit(heading_surface, (180, 925))
@@ -129,11 +153,49 @@ class Screen:
         pygame.draw.polygon(top_mask_static_things, PFD_YELLOW, right_wing_points, width=3)
         pygame.draw.polygon(top_mask_static_things, PFD_FOREGROUND_BLACK, left_wing_points)
         pygame.draw.polygon(top_mask_static_things, PFD_YELLOW, left_wing_points, width=3)
+        pygame.draw.rect(top_mask_static_things, PFD_YELLOW, (180+412, 905, 6, 35))
 
         top_mask_static_things = pygame.transform.rotozoom(top_mask_static_things, 0, 1.0)
         self.screen.blit(top_mask_static_things, (PFD_CENTER[0] - 600, PFD_CENTER[1] - 600))
 
         pygame.display.flip()
+
+
+class Telemetry:
+    def __init__(self):
+        self.pitch = 0
+        self.roll = 0
+        self.yaw = 0
+        UDP_IP = "0.0.0.0"
+        UDP_PORT = 8888
+        self.last_attitude_update = 0
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.bind((UDP_IP, UDP_PORT))
+
+        print(f"Listening on UDP {UDP_IP}:{UDP_PORT}")
+
+    def wait_for_package(self):
+        packet, addr = self.sock.recvfrom(1024)  # buffer size 1024 bytes
+        #print(f"From {addr}: {packet.hex(' ')}")
+        if packet[0] == 0xC8:
+            if packet[2] == 0x1E:  # Attitude
+                payload = packet[3:9]
+                pitch_raw, roll_raw, yaw_raw = struct.unpack('>hhh', payload)
+                scale = 0.0001  # 100 µrad = 0.0001 rad
+                pitch_rad = pitch_raw * scale
+                roll_rad = roll_raw * scale
+                yaw_rad = yaw_raw * scale
+
+                rad2deg = 180.0 / math.pi
+                self.pitch = pitch_rad * rad2deg
+                self.roll = roll_rad * rad2deg
+                self.yaw = yaw_rad * rad2deg
+                print(1.0 / (time.time() - self.last_attitude_update), " Hz")
+                self.last_attitude_update = time.time()
+            else:
+                self.wait_for_package()
+
+
 
 
 if __name__ == "__main__":
