@@ -84,6 +84,7 @@ typedef struct{
 	float pressure_filtered;
 	float pressure_base;
 	float height;
+	float vertical_speed_cm_s;
 	float vbat;
 	uint32_t vbat_raw;
 }IMU_Data;
