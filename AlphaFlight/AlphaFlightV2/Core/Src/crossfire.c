@@ -133,40 +133,55 @@ void CRSF_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 }
 
 void CRSF_HANDLE_TELEMETRY(){
-	static const uint8_t msgs[] = {0x1E, 0x0A, 0x08, 0x1E, 0x21, 0x02, 0x09};
+	static const uint8_t msgs[] = {0x1E, 0x0A, 0x08, 0x1E, 0x21, 0x02, 0x09, 0x07};
 	CRSF_SEND_TELEMETRY(msgs[crsf_circle_counter]);
 	crsf_circle_counter = (crsf_circle_counter + 1) % (sizeof(msgs) / sizeof(msgs[0]));
-}
-
-static int8_t sign(int16_t vs_cm){
-	if(vs_cm > 0) return 1;
-	if(vs_cm < 0) return -1;
-	if(vs_cm == 0) return 0;
-	return 0;
 }
 
 #define FC_BROADCAST_BYTE 0xC8
 
 void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 
+	if(TELEMETRY_TYPE == 0x07){
+		#define payload_length_vario 3
+		int16_t vertical_speed = (int16_t)imu_data.vertical_speed_cm_s;
+		uint8_t payload_data[payload_length_vario] = {0};
+
+		payload_data[0] = TELEMETRY_TYPE;
+
+		payload_data[1] = (vertical_speed >> 8) & 0xFF;
+		payload_data[2] = vertical_speed & 0xFF;
+
+		uint8_t crc = crc8(payload_data, payload_length_vario);
+
+		telemetry_data[0] = 0xC8;
+		telemetry_data[1] = payload_length_vario + 1;
+
+		telemetry_data[2] = payload_data[0];
+
+		telemetry_data[3] = payload_data[1];
+		telemetry_data[4] = payload_data[2];
+		telemetry_data[5] = crc;
+
+		HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, payload_length_vario + 3);
+
+	}
+
 	if(TELEMETRY_TYPE == 0x09){		// Baro / vertical speed
-		#define payload_length 4
-		#define Kl 100		// linearity constant
-		#define Kr .026f
+		#define payload_length_baro 4
 
 		uint16_t baro_height = (uint16_t)(imu_data.height * 10 + 10000) & 0x7FFF;
-		int8_t vertical_speed_ranged = (int8_t)(log(abs((int16_t)imu_data.vertical_speed_cm_s)/Kl + 1)/Kr) * sign((int16_t)imu_data.vertical_speed_cm_s);
 
-		uint8_t payload_data[payload_length] = {0};
+		uint8_t payload_data[payload_length_baro] = {0};
 		payload_data[0] = TELEMETRY_TYPE;
 		payload_data[1] = (baro_height >> 8) & 0xFF;
 		payload_data[2] = baro_height & 0xFF;
-		payload_data[3] = vertical_speed_ranged;
+		payload_data[3] = 0;
 
-		uint8_t crc = crc8(payload_data, payload_length);
+		uint8_t crc = crc8(payload_data, payload_length_baro);
 
 		telemetry_data[0] = 0xC8;
-		telemetry_data[1] = payload_length + 1;
+		telemetry_data[1] = payload_length_baro + 1;
 
 		telemetry_data[2] = payload_data[0];
 
@@ -175,7 +190,7 @@ void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 		telemetry_data[5] = payload_data[3];
 		telemetry_data[6] = crc;
 
-		HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, payload_length + 3);
+		HAL_UART_Transmit_DMA(crsf_uart, telemetry_data, payload_length_baro + 3);
 
 	}
 

@@ -32,7 +32,7 @@ static uint64_t last_integration_us = 0;
 static uint8_t gyro_rx[6] = {0};
 
 static uint8_t baro_rx[7] = {0};
-uint64_t baro_last_vs_update_time = 10;
+uint64_t baro_last_vs_update_time = 0;
 
 __attribute__((optimize("O0"))) static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t *rxbuffer, uint8_t readLength){
 	reg |= READ_BYTE;
@@ -284,9 +284,13 @@ static void BARO_CALCULATE_HEIGHT(){
 	float last_height = imu_data.height;
 	imu_data.height = (imu_data.pressure_base - imu_data.pressure_filtered) / 12.015397;
 	uint64_t now = MICROS64();
-	float vertical_speed_cm_s = ((imu_data.height - last_height) * 100.0f) * (1000000 / (float)(now - baro_last_vs_update_time));
+	float delta_time_seconds = (float)(now - baro_last_vs_update_time) / 1000000.0f;
 	baro_last_vs_update_time = now;
-	imu_data.vertical_speed_cm_s = imu_data.vertical_speed_cm_s * (1.0 - vertical_speed_lowpass_alpha) + vertical_speed_cm_s * vertical_speed_lowpass_alpha;
+	float delta_height_centimeters = (imu_data.height - last_height) * 100.0f;
+	if(delta_time_seconds > 0){
+		float vertical_speed_cm_s = delta_height_centimeters / delta_time_seconds;
+		imu_data.vertical_speed_cm_s = imu_data.vertical_speed_cm_s * (1.0 - vertical_speed_lowpass_alpha) + vertical_speed_cm_s * vertical_speed_lowpass_alpha;
+	}
 }
 
 void GYRO_READ(){
