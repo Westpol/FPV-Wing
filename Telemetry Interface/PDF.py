@@ -36,8 +36,7 @@ class Screen:
     def update_values(self, index, value):
         pass
 
-    def update_display(self):
-        self.screen.fill((0, 0, 0))
+    def draw_artificial_horizon(self):
         PFD_SKY_BLUE = (5, 150, 255)
         PFD_EARTH_BROWN = (154, 71, 16)
         PFD_GREEN = (0, 255, 3)
@@ -56,29 +55,40 @@ class Screen:
         PFD_CENTER = (400, 600)
 
         ARTIFICIAL_HORIZON_DIMENSIONS = 1200
-        artificial_horizon = pygame.Surface((ARTIFICIAL_HORIZON_DIMENSIONS, ARTIFICIAL_HORIZON_DIMENSIONS), pygame.SRCALPHA)
 
-        #test_surface.fill(PFD_SKY_BLUE)
+        artificial_horizon = pygame.Surface((ARTIFICIAL_HORIZON_DIMENSIONS, ARTIFICIAL_HORIZON_DIMENSIONS),
+                                            pygame.SRCALPHA)
 
-        #pygame.draw.line(test_surface, (0, 0, 0), (0, 25), (50, 25))
+        # test_surface.fill(PFD_SKY_BLUE)
 
-        pygame.draw.rect(artificial_horizon, PFD_SKY_BLUE, (0, 0, ARTIFICIAL_HORIZON_DIMENSIONS, ARTIFICIAL_HORIZON_DIMENSIONS / 2))
-        pygame.draw.rect(artificial_horizon, PFD_EARTH_BROWN, (0, ARTIFICIAL_HORIZON_DIMENSIONS / 2, ARTIFICIAL_HORIZON_DIMENSIONS, ARTIFICIAL_HORIZON_DIMENSIONS / 2))
-        pygame.draw.line(artificial_horizon, PFD_WHITE, (0, ARTIFICIAL_HORIZON_DIMENSIONS / 2), (ARTIFICIAL_HORIZON_DIMENSIONS, ARTIFICIAL_HORIZON_DIMENSIONS / 2), 4)
+        # pygame.draw.line(test_surface, (0, 0, 0), (0, 25), (50, 25))
+
+        pygame.draw.rect(artificial_horizon, PFD_SKY_BLUE,
+                         (0, 0, ARTIFICIAL_HORIZON_DIMENSIONS, ARTIFICIAL_HORIZON_DIMENSIONS / 2))
+        pygame.draw.rect(artificial_horizon, PFD_EARTH_BROWN, (
+        0, ARTIFICIAL_HORIZON_DIMENSIONS / 2, ARTIFICIAL_HORIZON_DIMENSIONS, ARTIFICIAL_HORIZON_DIMENSIONS / 2))
+        pygame.draw.line(artificial_horizon, PFD_WHITE, (0, ARTIFICIAL_HORIZON_DIMENSIONS / 2),
+                         (ARTIFICIAL_HORIZON_DIMENSIONS, ARTIFICIAL_HORIZON_DIMENSIONS / 2), 4)
         offset = -((self.gps_heading % 10) / 10)
-        for i in range(int(-(ARTIFICIAL_HORIZON_DIMENSIONS / 80 + 2) / 2), int((ARTIFICIAL_HORIZON_DIMENSIONS / 80 + 2) / 2)):
+        for i in range(int(-(ARTIFICIAL_HORIZON_DIMENSIONS / 80 + 2) / 2),
+                       int((ARTIFICIAL_HORIZON_DIMENSIONS / 80 + 2) / 2)):
             x_pos = (i * 80) + (offset * 80) + 600
-            pygame.draw.line(artificial_horizon, PFD_WHITE, (x_pos, ARTIFICIAL_HORIZON_DIMENSIONS / 2), (x_pos, ARTIFICIAL_HORIZON_DIMENSIONS / 2 + 15), 4)
+            pygame.draw.line(artificial_horizon, PFD_WHITE, (x_pos, ARTIFICIAL_HORIZON_DIMENSIONS / 2),
+                             (x_pos, ARTIFICIAL_HORIZON_DIMENSIONS / 2 + 15), 4)
 
-        for i in range(-4, 5):      # 10 degree lines
+        for i in range(-4, 5):  # 10 degree lines
             if i == 0:
                 continue
             y_pos = i * PFD_ATTITUDE_10_DEGREES_PIXEL_DISTANCE + 600
-            pygame.draw.line(artificial_horizon, PFD_WHITE, (ARTIFICIAL_HORIZON_DIMENSIONS / 2 - PFD_PITCH_MARKING_10_DEGREE_WIDTH / 2, y_pos), (ARTIFICIAL_HORIZON_DIMENSIONS / 2 + PFD_PITCH_MARKING_10_DEGREE_WIDTH / 2, y_pos), 4)
+            pygame.draw.line(artificial_horizon, PFD_WHITE,
+                             (ARTIFICIAL_HORIZON_DIMENSIONS / 2 - PFD_PITCH_MARKING_10_DEGREE_WIDTH / 2, y_pos),
+                             (ARTIFICIAL_HORIZON_DIMENSIONS / 2 + PFD_PITCH_MARKING_10_DEGREE_WIDTH / 2, y_pos), 4)
 
-        for i in range(-4, 4):      # 5 degree lines
+        for i in range(-4, 4):  # 5 degree lines
             y_pos = i * PFD_ATTITUDE_10_DEGREES_PIXEL_DISTANCE + 650
-            pygame.draw.line(artificial_horizon, PFD_WHITE, (ARTIFICIAL_HORIZON_DIMENSIONS / 2 - PFD_PITCH_MARKING_5_DEGREE_WIDTH / 2, y_pos), (ARTIFICIAL_HORIZON_DIMENSIONS / 2 + PFD_PITCH_MARKING_5_DEGREE_WIDTH / 2, y_pos), 4)
+            pygame.draw.line(artificial_horizon, PFD_WHITE,
+                             (ARTIFICIAL_HORIZON_DIMENSIONS / 2 - PFD_PITCH_MARKING_5_DEGREE_WIDTH / 2, y_pos),
+                             (ARTIFICIAL_HORIZON_DIMENSIONS / 2 + PFD_PITCH_MARKING_5_DEGREE_WIDTH / 2, y_pos), 4)
 
         for i in range(-8, 8):  # 2.5 degree lines
             y_pos = i * (PFD_ATTITUDE_10_DEGREES_PIXEL_DISTANCE / 2) + 625
@@ -101,7 +111,8 @@ class Screen:
 
         rotated_rect = rotated_horizon.get_rect()
         pitch_pixel = self.attitude[0] * 10
-        rotated_rect.center = (PFD_CENTER[0] + (math.sin(math.radians(self.attitude[1])) * (pitch_pixel)), PFD_CENTER[1] + (math.cos(math.radians(self.attitude[1])) * (pitch_pixel)))
+        rotated_rect.center = (PFD_CENTER[0] + (math.sin(math.radians(self.attitude[1])) * (pitch_pixel)),
+                               PFD_CENTER[1] + (math.cos(math.radians(self.attitude[1])) * (pitch_pixel)))
 
         self.screen.blit(rotated_horizon, rotated_rect.topleft)
 
@@ -112,7 +123,27 @@ class Screen:
         pygame.draw.rect(artificial_horizon_mask, (0, 0, 0), (180 - 300, 0, 300, 1000))
         pygame.draw.rect(artificial_horizon_mask, (0, 0, 0), (180 + 427, 0, 1000, 1000))
         artificial_horizon_mask.set_colorkey((255, 255, 255))
-        self.screen.blit(artificial_horizon_mask, (0,0))
+        self.screen.blit(artificial_horizon_mask, (0, 0))
+
+    def draw_heading(self):
+        PFD_SKY_BLUE = (5, 150, 255)
+        PFD_EARTH_BROWN = (154, 71, 16)
+        PFD_GREEN = (0, 255, 3)
+        PFD_INDICATOR_BACKGROUND_GRAY = (118, 118, 122)
+        PFD_FOREGROUND_BLACK = (3, 3, 9)
+        PFD_YELLOW = (254, 254, 3)
+        PFD_WHITE = (255, 255, 255)
+        PFD_HEIGHT = 830
+        PFD_WIDTH = 800
+        PFD_ATTITUDE_10_DEGREES_PIXEL_DISTANCE = 100
+        PFD_ATTITUDE_PIXELS_PER_DEGREE = 10
+        PFD_PITCH_MARKING_2_5_DEGREE_WIDTH = 30
+        PFD_PITCH_MARKING_5_DEGREE_WIDTH = 50
+        PFD_PITCH_MARKING_10_DEGREE_WIDTH = 100
+
+        PFD_CENTER = (400, 600)
+
+        ARTIFICIAL_HORIZON_DIMENSIONS = 1200
 
         heading_surface = pygame.Surface((430, 65), pygame.SRCALPHA)
 
@@ -123,40 +154,91 @@ class Screen:
         equalized_heading = int((self.gps_heading % 360) / 10)
         font2 = pygame.font.SysFont("Arial", 40)
         for i in range(-4, 5):
-            pygame.draw.line(heading_surface, PFD_WHITE, (214 + (100 * i) + 50 + heading_offset, 0), (214 + (100 * i) + 50 + heading_offset, 13), 4)
-            pygame.draw.line(heading_surface, PFD_WHITE, (214 + (100 * i) + heading_offset, 0), (214 + (100 * i) + heading_offset, 28), 4)
+            pygame.draw.line(heading_surface, PFD_WHITE, (214 + (100 * i) + 50 + heading_offset, 0),
+                             (214 + (100 * i) + 50 + heading_offset, 13), 4)
+            pygame.draw.line(heading_surface, PFD_WHITE, (214 + (100 * i) + heading_offset, 0),
+                             (214 + (100 * i) + heading_offset, 28), 4)
             if 10 <= equalized_heading + i < 36:
                 text = font2.render(str(abs(equalized_heading + i)), True, PFD_WHITE)
-                heading_surface.blit(text, (195 + i * 100 + heading_offset,25))
+                heading_surface.blit(text, (195 + i * 100 + heading_offset, 25))
             elif 0 <= equalized_heading + i < 36:
                 text = font2.render(str(abs(equalized_heading + i)), True, PFD_WHITE)
                 heading_surface.blit(text, (205 + i * 100 + heading_offset, 25))
             elif equalized_heading + i < 0:
                 text = font2.render(str(abs(36 + equalized_heading + i)), True, PFD_WHITE)
-                heading_surface.blit(text, (195 + i * 100 + heading_offset,25))
+                heading_surface.blit(text, (195 + i * 100 + heading_offset, 25))
             elif equalized_heading + i > 35:
                 text = font2.render(str(abs(0 + ((equalized_heading + i) % 36))), True, PFD_WHITE)
-                heading_surface.blit(text, (205 + i * 100 + heading_offset,25))
+                heading_surface.blit(text, (205 + i * 100 + heading_offset, 25))
 
         heading_surface = pygame.transform.rotozoom(heading_surface, 0, 1.0)
 
         self.screen.blit(heading_surface, (180, 925))
 
+    def draw_top_mask(self):
+        PFD_SKY_BLUE = (5, 150, 255)
+        PFD_EARTH_BROWN = (154, 71, 16)
+        PFD_GREEN = (0, 255, 3)
+        PFD_INDICATOR_BACKGROUND_GRAY = (118, 118, 122)
+        PFD_FOREGROUND_BLACK = (3, 3, 9)
+        PFD_YELLOW = (254, 254, 3)
+        PFD_WHITE = (255, 255, 255)
+        PFD_HEIGHT = 830
+        PFD_WIDTH = 800
+        PFD_ATTITUDE_10_DEGREES_PIXEL_DISTANCE = 100
+        PFD_ATTITUDE_PIXELS_PER_DEGREE = 10
+        PFD_PITCH_MARKING_2_5_DEGREE_WIDTH = 30
+        PFD_PITCH_MARKING_5_DEGREE_WIDTH = 50
+        PFD_PITCH_MARKING_10_DEGREE_WIDTH = 100
+
+        PFD_CENTER = (400, 600)
+
+        ARTIFICIAL_HORIZON_DIMENSIONS = 1200
+
         top_mask_static_things = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
 
         center_rect = pygame.Rect(592, 592, 18, 18)
-        #pygame.draw.rect(self.screen, PFD_FOREGROUND_BLACK, center_rect)
+        # pygame.draw.rect(self.screen, PFD_FOREGROUND_BLACK, center_rect)
         pygame.draw.rect(top_mask_static_things, PFD_YELLOW, center_rect, width=4)
-        right_wing_points = [(592 + 100, 592), (592 + 200, 592), (592 + 200, 608), (592 + 120, 608), (592 + 120, 620), (592 + 100, 620)]
-        left_wing_points = [(592 - 100, 592), (592 - 200, 592), (592 - 200, 608), (592 - 120, 608), (592 - 120, 620), (592 - 100, 620)]
+        right_wing_points = [(592 + 100, 592), (592 + 200, 592), (592 + 200, 608), (592 + 120, 608), (592 + 120, 620),
+                             (592 + 100, 620)]
+        left_wing_points = [(592 - 100, 592), (592 - 200, 592), (592 - 200, 608), (592 - 120, 608), (592 - 120, 620),
+                            (592 - 100, 620)]
         pygame.draw.polygon(top_mask_static_things, PFD_FOREGROUND_BLACK, right_wing_points)
         pygame.draw.polygon(top_mask_static_things, PFD_YELLOW, right_wing_points, width=3)
         pygame.draw.polygon(top_mask_static_things, PFD_FOREGROUND_BLACK, left_wing_points)
         pygame.draw.polygon(top_mask_static_things, PFD_YELLOW, left_wing_points, width=3)
-        pygame.draw.rect(top_mask_static_things, PFD_YELLOW, (180+412, 905, 6, 35))
+        pygame.draw.rect(top_mask_static_things, PFD_YELLOW, (180 + 412, 905, 6, 35))
 
         top_mask_static_things = pygame.transform.rotozoom(top_mask_static_things, 0, 1.0)
         self.screen.blit(top_mask_static_things, (PFD_CENTER[0] - 600, PFD_CENTER[1] - 600))
+
+    def update_display(self):
+        self.screen.fill((0, 0, 0))
+        PFD_SKY_BLUE = (5, 150, 255)
+        PFD_EARTH_BROWN = (154, 71, 16)
+        PFD_GREEN = (0, 255, 3)
+        PFD_INDICATOR_BACKGROUND_GRAY = (118, 118, 122)
+        PFD_FOREGROUND_BLACK = (3, 3, 9)
+        PFD_YELLOW = (254, 254, 3)
+        PFD_WHITE = (255, 255, 255)
+        PFD_HEIGHT = 830
+        PFD_WIDTH = 800
+        PFD_ATTITUDE_10_DEGREES_PIXEL_DISTANCE = 100
+        PFD_ATTITUDE_PIXELS_PER_DEGREE = 10
+        PFD_PITCH_MARKING_2_5_DEGREE_WIDTH = 30
+        PFD_PITCH_MARKING_5_DEGREE_WIDTH = 50
+        PFD_PITCH_MARKING_10_DEGREE_WIDTH = 100
+
+        PFD_CENTER = (400, 600)
+
+        ARTIFICIAL_HORIZON_DIMENSIONS = 1200
+
+        self.draw_artificial_horizon()
+
+        self.draw_heading()
+
+        self.draw_top_mask()
 
         pygame.display.flip()
 
@@ -175,7 +257,11 @@ class Telemetry:
         print(f"Listening on UDP {UDP_IP}:{UDP_PORT}")
 
     def wait_for_package(self):
-        packet, addr = self.sock.recvfrom(1024)  # buffer size 1024 bytes
+        self.sock.settimeout(0.1)
+        try:
+            packet, addr = self.sock.recvfrom(1024)  # buffer size 1024 bytes
+        except:
+            return
         #print(f"From {addr}: {packet.hex(' ')}")
         if packet[0] == 0xC8:
             if packet[2] == 0x1E:  # Attitude
