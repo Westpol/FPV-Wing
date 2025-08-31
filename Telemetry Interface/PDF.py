@@ -11,7 +11,7 @@ class Screen:
         self.screen_width = 1500
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
         self.attitude = (0, 0, 0.0)     # (pitch, roll, yaw - use GPS heading for yaw)
-        self.gps_speed = 0.0
+        self.gps_speed = 0
         self.gps_heading = 0
         self.baro_altitude = 0.0
         self.running = True
@@ -47,6 +47,7 @@ class Screen:
                     self.running = False
 
             self.update_display()
+            self.gps_speed += 1
 
             self.telemetry.wait_for_package()
             self.attitude = (self.telemetry.pitch, self.telemetry.roll, self.telemetry.yaw)
@@ -176,14 +177,40 @@ class Screen:
         pygame.draw.polygon(top_mask_static_things, self.PFD_YELLOW, left_wing_points, width=3)
         pygame.draw.rect(top_mask_static_things, self.PFD_YELLOW, (180 + 412, 905, 6, 35))
 
+        pygame.draw.line(top_mask_static_things, self.PFD_YELLOW, (100, 602), (216, 602), 5)
+        pygame.draw.line(top_mask_static_things, self.PFD_YELLOW, (275, 602), (310, 602), 5)
+        pygame.draw.polygon(top_mask_static_things, self.PFD_YELLOW, ((300, 602), (330, 592), (330, 612)))
+
         top_mask_static_things = pygame.transform.rotozoom(top_mask_static_things, 0, 1.0)
         self.screen.blit(top_mask_static_things, (self.PFD_CENTER[0] - 600, self.PFD_CENTER[1] - 600))
 
     def draw_speed(self):
-        speed_mask = pygame.Surface((120, 450), pygame.SRCALPHA)
+        speed_mask = pygame.Surface((120, 425), pygame.SRCALPHA)
 
         pygame.draw.rect(speed_mask, self.PFD_INDICATOR_BACKGROUND_GRAY, (0, 0, 90, 425))
-        pygame.draw.line(speed_mask, self.PFD_WHITE, (0, 0), (120, 0), 4)
+        pygame.draw.line(speed_mask, self.PFD_WHITE, (0, 1), (120, 1), 3)
+        pygame.draw.line(speed_mask, self.PFD_WHITE, (0, 422), (120, 422), 3)
+        pygame.draw.line(speed_mask, self.PFD_WHITE, (90, 0), (90, 500), 3)
+        pygame.draw.line(speed_mask, self.PFD_WHITE, (0, 425 // 2), (150, 425 // 2))
+
+        pixels_per_knot = 10  # 10 px per knot
+        base_speed = int(self.gps_speed // 10) * 10
+        offset = (self.gps_speed - base_speed) * pixels_per_knot  # smooth scroll
+
+        font2 = pygame.font.SysFont("Arial", 35)
+
+        for i in range(-4, 5):
+            tick_value = base_speed + i * 10
+            if tick_value >= 0:
+                y_pos = (425 // 2) + offset - (i * 10 * pixels_per_knot)
+                mid_y = y_pos + (5 * pixels_per_knot)
+                pygame.draw.line(speed_mask, self.PFD_WHITE, (70, y_pos), (90, y_pos), 3)
+                if tick_value > 0:
+                    pygame.draw.line(speed_mask, self.PFD_WHITE, (80, mid_y), (90, mid_y), 3)
+
+                # label
+                text = font2.render(str(tick_value), True, self.PFD_WHITE)
+                speed_mask.blit(text, (5, y_pos - 20))
 
         speed_mask = pygame.transform.rotozoom(speed_mask, 0, 1.0)
 
