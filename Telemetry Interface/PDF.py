@@ -47,7 +47,6 @@ class Screen:
                     self.running = False
 
             self.update_display()
-            self.gps_speed += 1
 
             self.telemetry.wait_for_package()
             self.attitude = (self.telemetry.pitch, self.telemetry.roll, self.telemetry.yaw)
@@ -191,7 +190,6 @@ class Screen:
         pygame.draw.line(speed_mask, self.PFD_WHITE, (0, 1), (120, 1), 3)
         pygame.draw.line(speed_mask, self.PFD_WHITE, (0, 422), (120, 422), 3)
         pygame.draw.line(speed_mask, self.PFD_WHITE, (90, 0), (90, 500), 3)
-        pygame.draw.line(speed_mask, self.PFD_WHITE, (0, 425 // 2), (150, 425 // 2))
 
         pixels_per_knot = 10  # 10 px per knot
         base_speed = int(self.gps_speed // 10) * 10
@@ -229,7 +227,6 @@ class Screen:
         self.draw_top_mask()
 
         pygame.display.flip()
-
 
 class Telemetry:
     def __init__(self):
