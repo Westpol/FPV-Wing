@@ -19,6 +19,7 @@ class Screen:
         self.delta_t = 0
         self.telemetry = Telemetry()
 
+        # color and size defines
         self.PFD_SKY_BLUE = (5, 150, 255)
         self.PFD_EARTH_BROWN = (154, 71, 16)
         self.PFD_GREEN = (0, 255, 3)
@@ -178,12 +179,25 @@ class Screen:
         top_mask_static_things = pygame.transform.rotozoom(top_mask_static_things, 0, 1.0)
         self.screen.blit(top_mask_static_things, (self.PFD_CENTER[0] - 600, self.PFD_CENTER[1] - 600))
 
+    def draw_speed(self):
+        speed_mask = pygame.Surface((120, 450), pygame.SRCALPHA)
+
+        pygame.draw.rect(speed_mask, self.PFD_INDICATOR_BACKGROUND_GRAY, (0, 0, 90, 425))
+        pygame.draw.line(speed_mask, self.PFD_WHITE, (0, 0), (120, 0), 4)
+
+        speed_mask = pygame.transform.rotozoom(speed_mask, 0, 1.0)
+
+        self.screen.blit(speed_mask, (15, 390))
+
+
     def update_display(self):
         self.screen.fill((0, 0, 0))
 
         self.draw_artificial_horizon()
 
         self.draw_heading()
+
+        self.draw_speed()
 
         self.draw_top_mask()
 
