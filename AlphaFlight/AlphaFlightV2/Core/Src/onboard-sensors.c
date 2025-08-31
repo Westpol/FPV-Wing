@@ -270,13 +270,14 @@ static void ACCEL_CONVERT_DATA(uint8_t* accel_rx){
 	}
 }
 
+#define BARO_PRESSURE_ALPHA 0.3f
 static void BARO_CONVERT_DATA(){
 	raw_data.baro_temp_raw = ((uint32_t)baro_rx[6] << 16) | ((uint32_t)baro_rx[5] << 8) | baro_rx[4];
 	raw_data.baro_pressure_raw = ((uint32_t)baro_rx[3] << 16) | ((uint32_t)baro_rx[2] << 8) | baro_rx[1];
 	imu_data.temp = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
 	imu_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
 
-	imu_data.pressure_filtered = (1.0f - alpha_values.baro_alpha) * imu_data.pressure_filtered + alpha_values.baro_alpha * imu_data.pressure;
+	imu_data.pressure_filtered = (1.0f - BARO_PRESSURE_ALPHA) * imu_data.pressure_filtered + BARO_PRESSURE_ALPHA * imu_data.pressure;
 }
 
 #define vertical_speed_lowpass_alpha 0.3f
