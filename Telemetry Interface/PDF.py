@@ -13,7 +13,7 @@ class Screen:
         self.attitude = (0, 0, 0.0)     # (pitch, roll, yaw - use GPS heading for yaw)
         self.gps_speed = 0
         self.gps_heading = 0
-        self.baro_altitude = 0.0
+        self.baro_altitude = 150.0
         self.running = True
         self.clock = pygame.time.Clock()
         self.delta_t = 0
@@ -214,6 +214,37 @@ class Screen:
 
         self.screen.blit(speed_mask, (15, 390))
 
+    def draw_height(self):
+        height_mask = pygame.Surface((120, 425), pygame.SRCALPHA)
+
+        pygame.draw.rect(height_mask, self.PFD_INDICATOR_BACKGROUND_GRAY, (10, 0, 75, 425))
+        pygame.draw.line(height_mask, self.PFD_WHITE, (10, 1), (115, 1), 3)
+        pygame.draw.line(height_mask, self.PFD_WHITE, (10, 422), (115, 422), 3)
+        pygame.draw.line(height_mask, self.PFD_WHITE, (85, 0), (85, 500), 3)
+
+        pixels_per_knot = 10  # 10 px per knot
+        base_speed = int(self.baro_altitude // 10) * 10
+        offset = (self.baro_altitude - base_speed) * pixels_per_knot  # smooth scroll
+
+        font2 = pygame.font.SysFont("Arial", 35)
+
+        for i in range(-4, 5):
+            tick_value = base_speed + i * 10
+            if tick_value >= 0:
+                y_pos = (425 // 2) + offset - (i * 10 * pixels_per_knot)
+                mid_y = y_pos + (5 * pixels_per_knot)
+                pygame.draw.line(height_mask, self.PFD_WHITE, (75, y_pos), (85, y_pos), 3)
+                pygame.draw.lines(height_mask, self.PFD_WHITE, False, [(0, y_pos + 5), (10, y_pos), (0, y_pos - 5)], 3)
+                if tick_value > 0:
+                    pygame.draw.line(height_mask, self.PFD_WHITE, (75, mid_y), (85, mid_y), 3)
+
+                # label
+                text = font2.render(str(tick_value), True, self.PFD_WHITE)
+                height_mask.blit(text, (15, y_pos - 20))
+
+        height_mask = pygame.transform.rotozoom(height_mask, 0, 1.0)
+
+        self.screen.blit(height_mask, (660, 390))
 
     def update_display(self):
         self.screen.fill((0, 0, 0))
@@ -223,6 +254,8 @@ class Screen:
         self.draw_heading()
 
         self.draw_speed()
+
+        self.draw_height()
 
         self.draw_top_mask()
 
