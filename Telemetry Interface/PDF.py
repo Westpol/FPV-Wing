@@ -13,7 +13,7 @@ class Screen:
         self.attitude = (0, 0, 0.0)     # (pitch, roll, yaw - use GPS heading for yaw)
         self.gps_speed = 0
         self.gps_heading = 0
-        self.baro_altitude = 150.0
+        self.baro_altitude = 15.0
         self.running = True
         self.clock = pygame.time.Clock()
         self.delta_t = 0
@@ -179,6 +179,15 @@ class Screen:
         pygame.draw.line(top_mask_static_things, self.PFD_YELLOW, (100, 602), (216, 602), 5)
         pygame.draw.line(top_mask_static_things, self.PFD_YELLOW, (275, 602), (310, 602), 5)
         pygame.draw.polygon(top_mask_static_things, self.PFD_YELLOW, ((300, 602), (330, 592), (330, 612)))
+
+        width_base = 869
+        height_coords = [(width_base, 632), (width_base + 75, 632), (width_base + 75, 652), (width_base + 130, 652), (width_base + 130, 552), (width_base + 75, 552), (width_base + 75, 572), (width_base, 572)]
+        pygame.draw.polygon(top_mask_static_things, self.PFD_FOREGROUND_BLACK, height_coords)
+        pygame.draw.lines(top_mask_static_things, self.PFD_YELLOW, False, height_coords, 3)
+
+        font2 = pygame.font.SysFont("Arial", 40)
+        text = font2.render(str(int(self.baro_altitude)), True, self.PFD_GREEN)
+        top_mask_static_things.blit(text, (880, 582))
 
         top_mask_static_things = pygame.transform.rotozoom(top_mask_static_things, 0, 1.0)
         self.screen.blit(top_mask_static_things, (self.PFD_CENTER[0] - 600, self.PFD_CENTER[1] - 600))
