@@ -142,7 +142,7 @@ void CRSF_HANDLE_TELEMETRY(){
 
 void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 
-	if(TELEMETRY_TYPE == 0x07){
+	if(TELEMETRY_TYPE == 0x07){		// vario
 		#define payload_length_vario 3
 		int16_t vertical_speed = (int16_t)imu_data.vertical_speed_cm_s;
 		uint8_t payload_data[payload_length_vario] = {0};

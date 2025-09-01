@@ -26,6 +26,7 @@ extern CRSF_DATA crsf_data;
 extern GPS_NAV_PVT gps_nav_pvt;
 extern GPS_DATA gps_data;
 extern FLY_BY_WIRE_PID_VALUES attitude_pid;
+extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 
 extern bool accel_right_for_calibration;
 
@@ -56,6 +57,8 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 		t1v0_general_data.angle_fused_z = imu_data.angle_z_fused;
 		t1v0_general_data.pid_correction_roll = attitude_pid.roll_pid_correction;
 		t1v0_general_data.pid_correction_pitch = attitude_pid.pitch_pid_correction;
+		t1v0_general_data.fbw_setpoint_pitch = fly_by_wire_setpoints.pitch_angle;
+		t1v0_general_data.fbw_setpoint_roll = fly_by_wire_setpoints.roll_angle;
 
 		SET_FLAG_COND(t1v0_general_data.status_flags, 0, FLIGHT_STATE_IS_ARMED());
 		SET_FLAG_COND(t1v0_general_data.status_flags, 1, FLIGHT_STATE_IS_RX_LOSS());

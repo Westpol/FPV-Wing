@@ -76,6 +76,13 @@ void FC_MODE_CHECK(){
 	}
 }
 
+static float FC_CRSF_DEADBAND(float value, float deadband_width, float deadband_point){
+	if(value > (deadband_point - deadband_width) && value < (deadband_point + deadband_width)){
+		return deadband_point;
+	}
+	return value;
+}
+
 void FC_PROCESS(){
 	uint64_t dt = MICROS64() - last_process_execution_time;
 	last_process_execution_time = MICROS64();
@@ -83,8 +90,8 @@ void FC_PROCESS(){
 		return;
 	}
 
-	fly_by_wire_setpoints.pitch_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.pitch_angle + (((crsf_data.channel_norm[CRSF_CHANNEL_PITCH] / 50.0f - 1) * 10.0f) / (1000000.0f / dt)), 30), -25);
-	fly_by_wire_setpoints.roll_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.roll_angle - (((crsf_data.channel_norm[CRSF_CHANNEL_ROLL] / 50.0f - 1) * 15.0) / (1000000.0f / dt)), 45), -45);
+	fly_by_wire_setpoints.pitch_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.pitch_angle + (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CRSF_CHANNEL_PITCH], 0.5, 50) / 50.0f - 1) * 10.0f) / (1000000.0f / dt)), 30), -25);
+	fly_by_wire_setpoints.roll_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.roll_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CRSF_CHANNEL_ROLL], 0.5, 50) / 50.0f - 1) * 15.0) / (1000000.0f / dt)), 45), -45);
 
 	switch (current_flight_mode) {
 		case DIRECT_CONTROL:

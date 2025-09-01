@@ -50,6 +50,7 @@ class Screen:
 
             self.telemetry.wait_for_package()
             self.attitude = (self.telemetry.pitch, self.telemetry.roll, self.telemetry.yaw)
+            self.baro_altitude = self.telemetry.altitude
 
         pygame.quit()
 
@@ -275,6 +276,7 @@ class Telemetry:
         self.pitch = 0
         self.roll = 0
         self.yaw = 0
+        self.altitude = 0
         UDP_IP = "0.0.0.0"
         UDP_PORT = 8888
         self.last_attitude_update = 0
@@ -291,6 +293,7 @@ class Telemetry:
             return
         #print(f"From {addr}: {packet.hex(' ')}")
         if packet[0] == 0xC8:
+            print(hex(packet[2]))
             if packet[2] == 0x1E:  # Attitude
                 payload = packet[3:9]
                 pitch_raw, roll_raw, yaw_raw = struct.unpack('>hhh', payload)
@@ -303,8 +306,12 @@ class Telemetry:
                 self.pitch = pitch_rad * rad2deg
                 self.roll = roll_rad * rad2deg
                 self.yaw = yaw_rad * rad2deg
-                print(1.0 / (time.time() - self.last_attitude_update), " Hz")
+                #print(1.0 / (time.time() - self.last_attitude_update), " Hz")
                 self.last_attitude_update = time.time()
+            elif packet[2] == 0x09:
+                payload = packet[3:5]
+                baro_height = struct.unpack(">H", payload)
+                self.altitude = (baro_height[0] - 10000) / 10.0
             else:
                 self.wait_for_package()
 

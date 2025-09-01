@@ -40,6 +40,7 @@ typedef struct __attribute__((packed)){
 	uint16_t status_flags;
 
 	float pid_correction_roll, pid_correction_pitch;
+	float fbw_setpoint_roll, fbw_setpoint_pitch;
 
 	uint16_t end_magic;
 
