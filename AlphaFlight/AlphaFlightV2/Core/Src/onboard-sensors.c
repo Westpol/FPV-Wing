@@ -21,8 +21,6 @@ static uint16_t accel_cs_pin;
 static GPIO_TypeDef *baro_cs_port;
 static uint16_t baro_cs_pin;
 
-bool accel_right_for_calibration = false;
-
 static Baro_Calibration baro_calibration = {0};
 IMU_Data imu_data = {0};
 static Raw_Data raw_data = {0};
@@ -257,17 +255,6 @@ static void ACCEL_CONVERT_DATA(uint8_t* accel_rx){
 	imu_data.accel_x_filtered = (1.0f - alpha_values.accel_alpha) * imu_data.accel_x_filtered + alpha_values.accel_alpha * imu_data.accel_x;
 	imu_data.accel_y_filtered = (1.0f - alpha_values.accel_alpha) * imu_data.accel_y_filtered + alpha_values.accel_alpha * imu_data.accel_y;
 	imu_data.accel_z_filtered = (1.0f - alpha_values.accel_alpha) * imu_data.accel_z_filtered + alpha_values.accel_alpha * imu_data.accel_z;
-
-	float overall_force = imu_data.accel_x_filtered * imu_data.accel_x_filtered + imu_data.accel_y_filtered * imu_data.accel_y_filtered + imu_data.accel_z_filtered * imu_data.accel_z_filtered;
-
-	if(overall_force >= 902500 && overall_force <= 1102500){
-		STATUS_LED_BLUE_ON();
-		accel_right_for_calibration = true;
-	}
-	else{
-		STATUS_LED_BLUE_OFF();
-		accel_right_for_calibration = false;
-	}
 }
 
 #define BARO_PRESSURE_ALPHA 0.3f
@@ -321,12 +308,10 @@ void GYRO_INTEGRATE(){
 }
 
 void GYRO_FUSION(){
-	if(accel_right_for_calibration){
-		imu_data.angle_x_accel = atan2f(imu_data.accel_y_filtered, imu_data.accel_z_filtered) * 180.0f / M_PI;
-		imu_data.angle_y_accel = -atan2f(-imu_data.accel_x_filtered, sqrtf(imu_data.accel_y_filtered * imu_data.accel_y_filtered + imu_data.accel_z_filtered * imu_data.accel_z_filtered)) * 180.0f / M_PI;
-		imu_data.angle_x_fused -= (imu_data.angle_x_fused - imu_data.angle_x_accel) * 0.005;
-		imu_data.angle_y_fused -= (imu_data.angle_y_fused - imu_data.angle_y_accel) * 0.005;
-	}
+	imu_data.angle_x_accel = atan2f(imu_data.accel_y_filtered, imu_data.accel_z_filtered) * 180.0f / M_PI;
+	imu_data.angle_y_accel = -atan2f(-imu_data.accel_x_filtered, sqrtf(imu_data.accel_y_filtered * imu_data.accel_y_filtered + imu_data.accel_z_filtered * imu_data.accel_z_filtered)) * 180.0f / M_PI;
+	imu_data.angle_x_fused -= (imu_data.angle_x_fused - imu_data.angle_x_accel) * 0.005;
+	imu_data.angle_y_fused -= (imu_data.angle_y_fused - imu_data.angle_y_accel) * 0.005;
 }
 
 void BARO_SET_BASE_PRESSURE(){

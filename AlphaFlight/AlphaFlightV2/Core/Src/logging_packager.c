@@ -28,8 +28,6 @@ extern GPS_DATA gps_data;
 extern FLY_BY_WIRE_PID_VALUES attitude_pid;
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 
-extern bool accel_right_for_calibration;
-
 static uint8_t logging_buffer[BUFFER_SIZE] = {0};
 static uint8_t* logging_buffer_pointer = logging_buffer;
 
@@ -62,7 +60,6 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 
 		SET_FLAG_COND(t1v0_general_data.status_flags, 0, FLIGHT_STATE_IS_ARMED());
 		SET_FLAG_COND(t1v0_general_data.status_flags, 1, FLIGHT_STATE_IS_RX_LOSS());
-		SET_FLAG_COND(t1v0_general_data.status_flags, 2, accel_right_for_calibration);
 	}
 
 	switch (MODE) {
