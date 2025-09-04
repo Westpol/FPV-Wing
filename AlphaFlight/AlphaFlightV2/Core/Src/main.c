@@ -181,8 +181,9 @@ int main(void)
 
   LL_SPI_Enable(SPI1);
   uint8_t counter = 0;
-  while(SENSORS_INIT(SPI1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0){
+  while(SENSORS_INIT(SPI1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0 || imu_data.accel_x == 0){
 	  HAL_Delay(100);
+	  ACCEL_READ();
 	  if(counter++ > 10){
 		  ERROR_HANDLER_BLINKS(1);
 	  }
@@ -1302,7 +1303,7 @@ static void PRINT_DATA(){
 	//USB_PRINTLN("Executed at: %lu%lu  |  Angle Gyro Y: %f  |  GPS Sats: %d  |   Accel X: %f  |  GPS Timestamp: %ld  |  GPS Year: %d  |  GPS Month: %d  |  GPS Day: %d  |  GPS Fix Tag: %d  |  GPS sats: %d  |  GPS Lat: %f", (uint32_t)(MICROS64() >> 32), (uint32_t)(MICROS64() & 0xFFFFFFFF), imu_data.angle_y_fused, gps_data.numSV, imu_data.accel_x, gps_data.unix_timestamp, gps_nav_pvt.year, gps_nav_pvt.month, gps_nav_pvt.day, gps_data.fix_type, gps_data.numSV, gps_data.lat);
 	//USB_PRINTLN("Angle Gyro X: %f  |  Setpoint Angle X: %f  |  Throttle: %f  |  CRSF Pitch: %f  |  CRSF Roll: %f", imu_data.angle_y_fused, fly_by_wire_setpoints.pitch_angle, crsf_data.channel_norm[CRSF_CHANNEL_THROTTLE], crsf_data.channel_norm[CRSF_CHANNEL_PITCH], crsf_data.channel_norm[CRSF_CHANNEL_ROLL]);
 	//USB_PRINTLN("lat: %f  |  lon: %f  |  altitude: %f  |  gspeed: %f  |  heading: %f  |  num sats: %d  |  vbat: %f  |  vbat raw: %d  |  Accel X: %f", gps_data.lat, gps_data.lon, gps_data.altitude, gps_data.gspeed, gps_data.heading, gps_data.numSV, imu_data.vbat, imu_data.vbat_raw, imu_data.accel_x);	// GPS
-	USB_PRINTLN("Pitch angle: %f  |  Roll angle: %f", imu_data.pitch_angle, imu_data.roll_angle);
+	USB_PRINTLN("Pitch angle: %f  |  Roll angle: %f  |  Accel: %f  |  Time: %d", imu_data.pitch_angle, imu_data.roll_angle, imu_data.accel_x, MICROS64());
 }
 #endif
 
