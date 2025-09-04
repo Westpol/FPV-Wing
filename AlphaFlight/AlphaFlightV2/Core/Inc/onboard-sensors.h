@@ -68,6 +68,8 @@ typedef struct{
 	float gyro_x_filtered;		// rotational velocity in °/s with lowpass filter
 	float gyro_y_filtered;
 	float gyro_z_filtered;
+	float pitch_angle;
+	float roll_angle;
 	float angle_x_fused;		// angle in °
 	float angle_y_fused;
 	float angle_z_fused;

@@ -31,6 +31,10 @@ static uint8_t gyro_rx[6] = {0};
 
 static uint8_t baro_rx[7] = {0};
 uint64_t baro_last_vs_update_time = 0;
+float R[3][3] = {
+		{1.0f, 0.0f, 0.0f},
+		{0.0f, 1.0f, 0.0f},
+		{0.0f, 0.0f, 1.0f}};
 
 __attribute__((optimize("O0"))) static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t *rxbuffer, uint8_t readLength){
 	reg |= READ_BYTE;
@@ -235,13 +239,9 @@ static void GYRO_CONVERT_DATA(){
 	raw_data.gyro_x_raw = ((int16_t)gyro_rx[1] << 8) | gyro_rx[0];
 	raw_data.gyro_y_raw = ((int16_t)gyro_rx[3] << 8) | gyro_rx[2];
 	raw_data.gyro_z_raw = ((int16_t)gyro_rx[5] << 8) | gyro_rx[4];
-	imu_data.gyro_x = (raw_data.gyro_x_raw / 32767.0) * 2000.0;
-	imu_data.gyro_y = -(raw_data.gyro_y_raw / 32767.0) * 2000.0;
-	imu_data.gyro_z = (raw_data.gyro_z_raw / 32767.0) * 2000.0;
-
-	imu_data.gyro_x_filtered = (1.0f - alpha_values.gyro_alpha) * imu_data.gyro_x_filtered + alpha_values.gyro_alpha * imu_data.gyro_x;
-	imu_data.gyro_y_filtered = (1.0f - alpha_values.gyro_alpha) * imu_data.gyro_y_filtered + alpha_values.gyro_alpha * imu_data.gyro_y;
-	imu_data.gyro_z_filtered = (1.0f - alpha_values.gyro_alpha) * imu_data.gyro_z_filtered + alpha_values.gyro_alpha * imu_data.gyro_z;
+	imu_data.gyro_x = (raw_data.gyro_x_raw / 32767.0) * 2000.0 * (M_PI / 180);
+	imu_data.gyro_y = (raw_data.gyro_y_raw / 32767.0) * 2000.0 * (M_PI / 180);
+	imu_data.gyro_z = (raw_data.gyro_z_raw / 32767.0) * 2000.0 * (M_PI / 180);
 }
 
 static void ACCEL_CONVERT_DATA(uint8_t* accel_rx){
@@ -300,11 +300,29 @@ void BARO_READ(){
 
 void GYRO_INTEGRATE(){
 	uint64_t now = MICROS64();
-	uint64_t delta_t = now - last_integration_us;
+	uint64_t delta_t_us = now - last_integration_us;
 	last_integration_us = now;
-	imu_data.angle_x_fused += imu_data.gyro_x_filtered * (delta_t / 1000000.0);
-	imu_data.angle_y_fused += imu_data.gyro_y_filtered * (delta_t / 1000000.0);
-	imu_data.angle_z_fused += imu_data.gyro_z_filtered * (delta_t / 1000000.0);
+	float delta_t_s = (float)delta_t_us / 1000000.0f;
+
+	float w[3] = {imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z};
+
+	float omega[3][3] = {
+			{1.0f, -w[2] * delta_t_s, w[1] * delta_t_s},
+			{w[2] * delta_t_s, 1.0f, -w[0] * delta_t_s},
+			{-w[1] * delta_t_s, w[0] * delta_t_s, 1.0f}
+	};
+	float R_temp[3][3] = {0};
+	for(int i = 0; i < 3; i++){
+		for(int k = 0; k < 3; k++){
+			for(int j = 0; j < 3; j++){
+				R_temp[i][k] += R[i][j] * omega[j][k];
+			}
+		}
+	}
+	memcpy(R, R_temp, sizeof(R));
+
+	imu_data.pitch_angle = asinf(-R[2][0]) * (180 / M_PI);
+	imu_data.roll_angle = atan2f(R[2][1], R[2][2]) * (180 / M_PI);
 }
 
 void GYRO_FUSION(){
