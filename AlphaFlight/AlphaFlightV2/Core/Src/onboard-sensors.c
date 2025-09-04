@@ -298,6 +298,18 @@ void BARO_READ(){
 	BARO_CALCULATE_HEIGHT();
 }
 
+static void MULTIPLY_CUBE(float delta_r[3][3]){
+	float R_temp[3][3] = {0};
+		for(int i = 0; i < 3; i++){
+			for(int k = 0; k < 3; k++){
+				for(int j = 0; j < 3; j++){
+					R_temp[i][k] += R[i][j] * delta_r[j][k];
+				}
+			}
+		}
+		memcpy(R, R_temp, sizeof(R));
+}
+
 void GYRO_INTEGRATE(){
 	uint64_t now = MICROS64();
 	uint64_t delta_t_us = now - last_integration_us;
@@ -311,25 +323,55 @@ void GYRO_INTEGRATE(){
 			{w[2] * delta_t_s, 1.0f, -w[0] * delta_t_s},
 			{-w[1] * delta_t_s, w[0] * delta_t_s, 1.0f}
 	};
-	float R_temp[3][3] = {0};
-	for(int i = 0; i < 3; i++){
-		for(int k = 0; k < 3; k++){
-			for(int j = 0; j < 3; j++){
-				R_temp[i][k] += R[i][j] * omega[j][k];
-			}
-		}
-	}
-	memcpy(R, R_temp, sizeof(R));
+	MULTIPLY_CUBE(omega);
 
-	imu_data.pitch_angle = asinf(-R[2][0]) * (180 / M_PI);
+	imu_data.pitch_angle = -asinf(-R[2][0]) * (180 / M_PI);
 	imu_data.roll_angle = atan2f(R[2][1], R[2][2]) * (180 / M_PI);
 }
 
+#define fusion_alpha 0.02
 void GYRO_FUSION(){
-	imu_data.angle_x_accel = atan2f(imu_data.accel_y_filtered, imu_data.accel_z_filtered) * 180.0f / M_PI;
-	imu_data.angle_y_accel = -atan2f(-imu_data.accel_x_filtered, sqrtf(imu_data.accel_y_filtered * imu_data.accel_y_filtered + imu_data.accel_z_filtered * imu_data.accel_z_filtered)) * 180.0f / M_PI;
-	imu_data.angle_x_fused -= (imu_data.angle_x_fused - imu_data.angle_x_accel) * 0.005;
-	imu_data.angle_y_fused -= (imu_data.angle_y_fused - imu_data.angle_y_accel) * 0.005;
+	float zb[3] = {R[0][2], R[1][2], R[2][2]};
+	float accel[3] = {imu_data.accel_x, imu_data.accel_y, imu_data.accel_z};
+	float norm = sqrtf(accel[0]*accel[0] + accel[1]*accel[1] + accel[2]*accel[2]);
+	accel[0] /= norm;
+	accel[1] /= norm;
+	accel[2] /= norm;
+
+	float delta[3] = {
+	    zb[2]*accel[1] - zb[1]*accel[2],  // roll
+	    zb[0]*accel[2] - zb[2]*accel[0],  // pitch
+	    0.0f
+	};
+
+	float delta_norm = sqrtf(delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2]);
+	if(delta_norm > 1.0f) delta_norm = 1.0f;
+	float theta = asin(delta_norm);
+
+	if(delta_norm > 1e-6f){
+		delta[0] /= delta_norm;
+		delta[1] /= delta_norm;
+		delta[2] /= delta_norm;
+	}
+	else{
+		delta[0] = delta[1] = delta[2] = 0.0f;
+		theta = 0.0f;
+	}
+
+	theta *= fusion_alpha;
+
+	float c = cosf(theta);
+	float s = sinf(theta);
+	float t = 1.0f - c;
+
+	float delta_x = delta[0], delta_y = delta[1], delta_z = delta[2];
+
+	float omega[3][3] = {
+				{t * delta_x * delta_x + c, t * delta_x * delta_y - s * delta_z, t * delta_x * delta_z + s * delta_y},
+			    {t * delta_x * delta_y + s * delta_z, t * delta_y * delta_y + c, t * delta_y * delta_z - s * delta_x},
+			    {t * delta_x * delta_z - s * delta_y, t * delta_y * delta_z + s * delta_x, t * delta_z * delta_z + c}
+		};
+	MULTIPLY_CUBE(omega);
 }
 
 void BARO_SET_BASE_PRESSURE(){
