@@ -28,7 +28,7 @@ typedef struct __attribute__((packed)){
 
 	uint64_t timestamp;
 
-	float angle_fused_x, angle_fused_y, angle_fused_z;		// onboard-sensors
+	float roll_angle, pitch_angle;		// onboard-sensors
 
 	float baro_altimeter;
 

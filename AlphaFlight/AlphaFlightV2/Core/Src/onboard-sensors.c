@@ -327,6 +327,8 @@ void GYRO_INTEGRATE(){
 
 	imu_data.pitch_angle = -asinf(-R[2][0]) * (180 / M_PI);
 	imu_data.roll_angle = atan2f(R[2][1], R[2][2]) * (180 / M_PI);
+	imu_data.angle_y_fused = imu_data.pitch_angle;
+	imu_data.angle_x_fused = imu_data.roll_angle;
 }
 
 #define fusion_alpha 0.02
