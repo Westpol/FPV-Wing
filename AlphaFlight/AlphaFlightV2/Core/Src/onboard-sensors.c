@@ -376,6 +376,29 @@ void GYRO_FUSION(){
 	MULTIPLY_CUBE(omega);
 }
 
+
+void GYRO_GRAM_SCHMIDT_NORMALIZE(){
+	float x[3] = {R[0][0], R[0][1], R[0][2]};
+	float y[3] = {R[1][0], R[1][1], R[1][2]};
+	float z[3] = {R[2][0], R[2][1], R[2][2]};
+
+
+
+	float norm_x = sqrtf(x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
+	float norm_y = sqrtf(y[0] * y[0] + y[1] * y[1] + y[2] * y[2]);
+	float norm_z = sqrtf(z[0] * z[0] + z[1] * z[1] + z[2] * z[2]);
+	x[0] /= norm_x; x[1] /= norm_x; x[2] /= norm_x;
+	y[0] /= norm_y; y[1] /= norm_y; y[2] /= norm_y;
+	z[0] /= norm_z; z[1] /= norm_z; z[2] /= norm_z;
+
+	for(int i = 0; i < 3; i++){
+		R[0][i] = x[i];
+		R[1][i] = y[i];
+		R[2][i] = z[i];
+	}
+}
+
+
 void BARO_SET_BASE_PRESSURE(){
 	uint8_t counter = 0;
 	while(1){

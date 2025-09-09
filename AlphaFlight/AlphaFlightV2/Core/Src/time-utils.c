@@ -21,13 +21,13 @@ void TIME_UTILS_MICROS_TIM_START(TIM_HandleTypeDef *HTIMx) {
 
 uint64_t MICROS64(void) {
 	if(initialized){
-		uint32_t low   = htim->Instance->CNT;
-		if(low < last_timer_read){		// overflow occured
+		uint32_t timer_low   = htim->Instance->CNT;
+		if(timer_low < last_timer_read){		// overflow occured
 			timer_high += 1;
 		}
-		last_timer_read = low;
+		last_timer_read = timer_low;
 
-		return (((uint64_t)timer_high << 32) | low);
+		return (((uint64_t)timer_high << 32) | timer_low);
 	}
 	return 0;
 }
