@@ -377,24 +377,44 @@ void GYRO_FUSION(){
 }
 
 
+static float dot(const float a[3], const float b[3]) {
+    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+}
+
+
 void GYRO_GRAM_SCHMIDT_NORMALIZE(){
-	float x[3] = {R[0][0], R[0][1], R[0][2]};
-	float y[3] = {R[1][0], R[1][1], R[1][2]};
-	float z[3] = {R[2][0], R[2][1], R[2][2]};
+	float u1[3] = {R[0][0], R[0][1], R[0][2]};
+	float u2[3] = {R[1][0], R[1][1], R[1][2]};
+	float u3[3] = {R[2][0], R[2][1], R[2][2]};
+
+	float v2[3], v3[3];
+
+	// v2 = u2 - proj_u1(u2)
+	float proj21 = dot(u2, u1) / dot(u1, u1);
+	v2[0] = u2[0] - proj21 * u1[0];
+	v2[1] = u2[1] - proj21 * u1[1];
+	v2[2] = u2[2] - proj21 * u1[2];
+
+	// v3 = u3 - proj_u1(u3) - proj_u2(u3)
+	float proj31 = dot(u3, u1) / dot(u1, u1);
+	float proj32 = dot(u3, v2) / dot(v2, v2);
+	v3[0] = u3[0] - proj31 * u1[0] - proj32 * v2[0];
+	v3[1] = u3[1] - proj31 * u1[1] - proj32 * v2[1];
+	v3[2] = u3[2] - proj31 * u1[2] - proj32 * v2[2];
 
 
-
-	float norm_x = sqrtf(x[0] * x[0] + x[1] * x[1] + x[2] * x[2]);
-	float norm_y = sqrtf(y[0] * y[0] + y[1] * y[1] + y[2] * y[2]);
-	float norm_z = sqrtf(z[0] * z[0] + z[1] * z[1] + z[2] * z[2]);
-	x[0] /= norm_x; x[1] /= norm_x; x[2] /= norm_x;
-	y[0] /= norm_y; y[1] /= norm_y; y[2] /= norm_y;
-	z[0] /= norm_z; z[1] /= norm_z; z[2] /= norm_z;
+	// normalize
+	float norm_u1 = sqrtf(u1[0] * u1[0] + u1[1] * u1[1] + u1[2] * u1[2]);
+	float norm_v2 = sqrtf(v2[0] * v2[0] + v2[1] * v2[1] + v2[2] * v2[2]);
+	float norm_v3 = sqrtf(v3[0] * v3[0] + v3[1] * v3[1] + v3[2] * v3[2]);
+	u1[0] /= norm_u1; u1[1] /= norm_u1; u1[2] /= norm_u1;
+	v2[0] /= norm_v2; v2[1] /= norm_v2; v2[2] /= norm_v2;
+	v3[0] /= norm_v3; v3[1] /= norm_v3; v3[2] /= norm_v3;
 
 	for(int i = 0; i < 3; i++){
-		R[0][i] = x[i];
-		R[1][i] = y[i];
-		R[2][i] = z[i];
+		R[0][i] = u1[i];
+		R[1][i] = v2[i];
+		R[2][i] = v3[i];
 	}
 }
 
