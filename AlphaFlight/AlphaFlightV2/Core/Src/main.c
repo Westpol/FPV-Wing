@@ -227,7 +227,7 @@ int main(void)
   SCHEDULER_ADD_TASK(GYRO_INTEGRATE, HZ_TO_DELTA_T_US(1000));	// 1 kHz
   SCHEDULER_ADD_TASK(GYRO_FUSION, HZ_TO_DELTA_T_US(500));	// 500 Hz
   SCHEDULER_ADD_TASK(GYRO_GRAM_SCHMIDT_NORMALIZE ,HZ_TO_DELTA_T_US(1));
-  SCHEDULER_ADD_TASK(ACCEL_READ, HZ_TO_DELTA_T_US(250));		// 250 Hz
+  SCHEDULER_ADD_TASK(ACCEL_READ, HZ_TO_DELTA_T_US(200));		// 250 Hz
   SCHEDULER_ADD_TASK(BARO_READ, HZ_TO_DELTA_T_US(25));		// 25 Hz
   SCHEDULER_ADD_TASK(CRSF_PARSE_BUFFER, HZ_TO_DELTA_T_US(100));	// 100 Hz
   SCHEDULER_ADD_TASK(FC_SANITY_CHECK, HZ_TO_DELTA_T_US(100));		// 100 Hz
@@ -1330,24 +1330,25 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
   __disable_irq();
   while (1)
   {
+	  const int prescaler = 10;
 	  STATUS_LED_GREEN_OFF();
 	  STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
 		  STATUS_LED_BLUE_ON();
-		  BAREBONES_DELAY_MS(200);
+		  BAREBONES_DELAY_MS(200 / prescaler);
 		  STATUS_LED_BLUE_OFF();
-		  BAREBONES_DELAY_MS(500);
+		  BAREBONES_DELAY_MS(500 / prescaler);
 	  }
 
-	  BAREBONES_DELAY_MS(800);
+	  BAREBONES_DELAY_MS(800 / prescaler);
 
 	  for(uint8_t counter = 0; counter < BLINKS; counter++){
 		  STATUS_LED_GREEN_ON();
-		  BAREBONES_DELAY_MS(200);
+		  BAREBONES_DELAY_MS(200 / prescaler);
 		  STATUS_LED_GREEN_OFF();
-		  BAREBONES_DELAY_MS(500);
+		  BAREBONES_DELAY_MS(500 / prescaler);
 	  }
-	  BAREBONES_DELAY_MS(1500);
+	  BAREBONES_DELAY_MS(1500 / prescaler);
   }
   /* USER CODE END Error_Handler_Debug */
 }
@@ -1394,15 +1395,16 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+	  const int prescaler = 10;
 	  STATUS_LED_GREEN_OFF();
 	  STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
 		  STATUS_LED_BLUE_ON();
-		  BAREBONES_DELAY_MS(200);
+		  BAREBONES_DELAY_MS(200 / prescaler);
 		  STATUS_LED_BLUE_OFF();
-		  BAREBONES_DELAY_MS(500);
+		  BAREBONES_DELAY_MS(500 / prescaler);
 	  }
-	  BAREBONES_DELAY_MS(1500);
+	  BAREBONES_DELAY_MS(1500 / prescaler);
   }
   /* USER CODE END Error_Handler_Debug */
 }

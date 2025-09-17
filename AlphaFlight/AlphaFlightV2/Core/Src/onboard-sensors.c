@@ -98,21 +98,26 @@ static int8_t BMI_ACCEL_INIT(){	// dummy read to get the Accelerometer into SPI 
 
 	read_address(accel_cs_port, accel_cs_pin, 0x00, rx_buffer, 2);
 
-	HAL_Delay(1);
+	HAL_Delay(10);
+
+	write_address(accel_cs_port, accel_cs_pin, 0x7E, 0xB6);
+
+	HAL_Delay(10);
 
 	read_address(accel_cs_port, accel_cs_pin, 0x00, rx_buffer, 2);
 
 	if(rx_buffer[1] != 0x1E){
 		return 1;
 	}
-	HAL_Delay(2);
+	HAL_Delay(10);
 
 	// dummy setup here
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_ENABLE_SENSOR_ADDRESS, ACCEL_ENABLE_SENSOR_ON);		// turning on sensor
-	HAL_Delay(2);
+	HAL_Delay(100);
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_CONFIG_ADDRESS, ACCEL_CONFIG_ODR_1600_HZ | ACCEL_CONFIG_OVERSAMPLING_OSR4);		// setting up sampling rate and oversampling
+	HAL_Delay(100);
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_RANGE_ADDRESS, ACCEL_RANGE_6G);		// setting up sampling range
-	HAL_Delay(2);
+	HAL_Delay(100);
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_POWER_MODE_ADDRESS, ACCEL_POWER_MODE_ACTIVE);		// set to normal power mode
 	// need to add real Setup here
 
@@ -177,6 +182,12 @@ int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_P
 	accel_cs_pin = ACCEL_PIN;
 	baro_cs_port = BARO_PORT;
 	baro_cs_pin = BARO_PIN;
+
+	gyro_cs_port->BSRR = (gyro_cs_pin);
+	accel_cs_port->BSRR = (accel_cs_pin);
+	baro_cs_port->BSRR = (baro_cs_pin);
+
+	HAL_Delay(10);
 
 	alpha_values.gyro_cutoff_hertz = 50;
 	alpha_values.accel_cutoff_hertz = 25;
