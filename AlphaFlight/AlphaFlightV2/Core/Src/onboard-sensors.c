@@ -96,21 +96,27 @@ static int8_t BMI_GYRO_INIT_DATA_READY_PIN_ENABLED(){
 static int8_t BMI_ACCEL_INIT(){	// dummy read to get the Accelerometer into SPI mode
 	uint8_t rx_buffer[2] = {0};
 
+	DEBUG_PRINT_VERBOSE("Debug write to set chip to SPI mode");
 	read_address(accel_cs_port, accel_cs_pin, 0x00, rx_buffer, 2);
 
 	HAL_Delay(10);
 
+	DEBUG_PRINT_VERBOSE("Soft Reset");
 	write_address(accel_cs_port, accel_cs_pin, 0x7E, 0xB6);
 
 	HAL_Delay(10);
 
+	DEBUG_PRINT_VERBOSE("Read Chip ID");
 	read_address(accel_cs_port, accel_cs_pin, 0x00, rx_buffer, 2);
+
+
+	DEBUG_PRINT_VERBOSE("Accel ID: %X (should be 0x1E)", rx_buffer[1]);
 
 	if(rx_buffer[1] != 0x1E){
 		return 1;
 	}
 	HAL_Delay(10);
-
+/*
 	// dummy setup here
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_ENABLE_SENSOR_ADDRESS, ACCEL_ENABLE_SENSOR_ON);		// turning on sensor
 	HAL_Delay(100);
@@ -120,7 +126,7 @@ static int8_t BMI_ACCEL_INIT(){	// dummy read to get the Accelerometer into SPI 
 	HAL_Delay(100);
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_POWER_MODE_ADDRESS, ACCEL_POWER_MODE_ACTIVE);		// set to normal power mode
 	// need to add real Setup here
-
+*/
 	return 0;
 }
 
@@ -183,6 +189,7 @@ int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_P
 	baro_cs_port = BARO_PORT;
 	baro_cs_pin = BARO_PIN;
 
+	DEBUG_PRINT_VERBOSE("Setting CS pins high");
 	gyro_cs_port->BSRR = (gyro_cs_pin);
 	accel_cs_port->BSRR = (accel_cs_pin);
 	baro_cs_port->BSRR = (baro_cs_pin);
@@ -196,8 +203,11 @@ int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_P
 	alpha_values.baro_alpha = 0.03;
 
 	int16_t return_code_sum = 0;
+	DEBUG_PRINT_VERBOSE("INIT Accel");
 	return_code_sum += BMI_ACCEL_INIT();
+	DEBUG_PRINT_VERBOSE("INIT Baro");
 	return_code_sum += BMP_BARO_INIT();
+	DEBUG_PRINT_VERBOSE("INIT Gyro");
 	return_code_sum += BMI_GYRO_INIT_DATA_READY_PIN_ENABLED();
 	if(return_code_sum == 0){
 		return 0;

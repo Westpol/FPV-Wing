@@ -178,6 +178,7 @@ int main(void)
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
   progress_counter = 3;
+  HAL_Delay(5000);
 
   LL_SPI_Enable(SPI1);
   uint8_t counter = 0;
