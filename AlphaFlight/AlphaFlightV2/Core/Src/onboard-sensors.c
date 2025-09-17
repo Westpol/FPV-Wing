@@ -28,6 +28,7 @@ static ALPHA_VALUES alpha_values = {0};
 static uint64_t last_integration_us = 0;
 
 static uint8_t gyro_rx[6] = {0};
+static uint8_t accel_rx[7] = {0};
 
 static uint8_t baro_rx[7] = {0};
 uint64_t baro_last_vs_update_time = 0;
@@ -93,37 +94,27 @@ static int8_t BMI_GYRO_INIT_DATA_READY_PIN_ENABLED(){
 	return 0;
 }
 
-static int8_t BMI_ACCEL_INIT(){	// dummy read to get the Accelerometer into SPI mode
+static int8_t BMI_ACCEL_INIT(){
 	uint8_t rx_buffer[2] = {0};
 
-	DEBUG_PRINT_VERBOSE("Debug write to set chip to SPI mode");
 	read_address(accel_cs_port, accel_cs_pin, 0x00, rx_buffer, 2);
 
 	HAL_Delay(10);
 
-	//DEBUG_PRINT_VERBOSE("Soft Reset");
-	//write_address(accel_cs_port, accel_cs_pin, 0x7E, 0xB6);
-
-	HAL_Delay(10);
-
-	DEBUG_PRINT_VERBOSE("Read Chip ID");
 	read_address(accel_cs_port, accel_cs_pin, 0x00, rx_buffer, 2);
-
-
-	DEBUG_PRINT_VERBOSE("Accel ID: %X", rx_buffer[1]);
 
 	if(rx_buffer[1] != 0x1E){
 		return 1;
 	}
-	HAL_Delay(100);
+	HAL_Delay(10);
 
 	// dummy setup here
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_POWER_MODE_ADDRESS, ACCEL_POWER_MODE_ACTIVE);		// set to normal power mode
 	HAL_Delay(100);
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_ENABLE_SENSOR_ADDRESS, ACCEL_ENABLE_SENSOR_ON);		// turning on sensor
-	HAL_Delay(100);
+	HAL_Delay(10);
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_CONFIG_ADDRESS, ACCEL_CONFIG_ODR_1600_HZ | ACCEL_CONFIG_OVERSAMPLING_OSR4);		// setting up sampling rate and oversampling
-	HAL_Delay(100);
+	HAL_Delay(10);
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_RANGE_ADDRESS, ACCEL_RANGE_6G);		// setting up sampling range
 
 	uint8_t status[2] = {0};
@@ -202,7 +193,6 @@ int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_P
 	baro_cs_port = BARO_PORT;
 	baro_cs_pin = BARO_PIN;
 
-	DEBUG_PRINT_VERBOSE("Setting CS pins high");
 	gyro_cs_port->BSRR = (gyro_cs_pin);
 	accel_cs_port->BSRR = (accel_cs_pin);
 	baro_cs_port->BSRR = (baro_cs_pin);
@@ -278,7 +268,7 @@ static void GYRO_CONVERT_DATA(){
 	imu_data.gyro_z = (raw_data.gyro_z_raw / 32767.0) * 2000.0 * (M_PI / 180);
 }
 
-static void ACCEL_CONVERT_DATA(uint8_t* accel_rx){
+static void ACCEL_CONVERT_DATA(){
 	raw_data.accel_x_raw = ((int16_t)accel_rx[2] << 8) | accel_rx[1];
 	raw_data.accel_y_raw = ((int16_t)accel_rx[4] << 8) | accel_rx[3];
 	raw_data.accel_z_raw = ((int16_t)accel_rx[6] << 8) | accel_rx[5];
@@ -321,9 +311,8 @@ void GYRO_READ(){
 }
 
 void ACCEL_READ(){
-	uint8_t accel_rx[7] = {0};
 	read_address(accel_cs_port, accel_cs_pin, 0x12, accel_rx, 7);
-	ACCEL_CONVERT_DATA(&accel_rx[0]);
+	ACCEL_CONVERT_DATA();
 }
 
 void BARO_READ(){

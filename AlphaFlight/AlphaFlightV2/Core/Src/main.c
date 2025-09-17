@@ -183,8 +183,10 @@ int main(void)
   LL_SPI_Enable(SPI1);
   uint8_t counter = 0;
   while(SENSORS_INIT(SPI1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0 || imu_data.accel_x == 0){
-	  HAL_Delay(100);
-	  ACCEL_READ();
+	  for(int i = 0; i < 100; i++){
+		  HAL_Delay(1);
+	  	  ACCEL_READ();
+	  }
 	  if(counter++ > 10){
 
 		  DEBUG_PRINT_VERBOSE("No Correct Accel value after 10 tries");
@@ -242,7 +244,7 @@ int main(void)
   SCHEDULER_ADD_TASK(CRSF_HANDLE_TELEMETRY, HZ_TO_DELTA_T_US(50));	// 5 Hz
   //SCHEDULER_ADD_TASK(FC_PID_PRINT_CURRENT_SERVO_POINTS, 100000);
   #if PRINT_DEBUG_DATA
-  SCHEDULER_ADD_TASK(PRINT_DATA, HZ_TO_DELTA_T_US(2));	// 10 Hz
+  SCHEDULER_ADD_TASK(PRINT_DATA, HZ_TO_DELTA_T_US(10));	// 10 Hz
   #endif
   TIME_UTILS_MICROS_TIM_START(&htim5);
   SCHEDULER_INIT();	// MICROS ONLY WORKS WHEN THIS IS ENABLED
