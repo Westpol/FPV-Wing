@@ -101,8 +101,8 @@ static int8_t BMI_ACCEL_INIT(){	// dummy read to get the Accelerometer into SPI 
 
 	HAL_Delay(10);
 
-	DEBUG_PRINT_VERBOSE("Soft Reset");
-	write_address(accel_cs_port, accel_cs_pin, 0x7E, 0xB6);
+	//DEBUG_PRINT_VERBOSE("Soft Reset");
+	//write_address(accel_cs_port, accel_cs_pin, 0x7E, 0xB6);
 
 	HAL_Delay(10);
 
@@ -110,23 +110,36 @@ static int8_t BMI_ACCEL_INIT(){	// dummy read to get the Accelerometer into SPI 
 	read_address(accel_cs_port, accel_cs_pin, 0x00, rx_buffer, 2);
 
 
-	DEBUG_PRINT_VERBOSE("Accel ID: %X (should be 0x1E)", rx_buffer[1]);
+	DEBUG_PRINT_VERBOSE("Accel ID: %X", rx_buffer[1]);
 
 	if(rx_buffer[1] != 0x1E){
 		return 1;
 	}
-	HAL_Delay(10);
-/*
+	HAL_Delay(100);
+
 	// dummy setup here
+	write_address(accel_cs_port, accel_cs_pin, ACCEL_POWER_MODE_ADDRESS, ACCEL_POWER_MODE_ACTIVE);		// set to normal power mode
+	HAL_Delay(100);
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_ENABLE_SENSOR_ADDRESS, ACCEL_ENABLE_SENSOR_ON);		// turning on sensor
 	HAL_Delay(100);
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_CONFIG_ADDRESS, ACCEL_CONFIG_ODR_1600_HZ | ACCEL_CONFIG_OVERSAMPLING_OSR4);		// setting up sampling rate and oversampling
 	HAL_Delay(100);
 	write_address(accel_cs_port, accel_cs_pin, ACCEL_RANGE_ADDRESS, ACCEL_RANGE_6G);		// setting up sampling range
-	HAL_Delay(100);
-	write_address(accel_cs_port, accel_cs_pin, ACCEL_POWER_MODE_ADDRESS, ACCEL_POWER_MODE_ACTIVE);		// set to normal power mode
+
+	uint8_t status[2] = {0};
+	uint32_t counter = 0;
+	do {
+	    read_address(accel_cs_port, accel_cs_pin, 0x03, status, 2);
+	    if(counter++ > 1000){
+		    read_address(accel_cs_port, accel_cs_pin, 0x02, status, 2);
+	    	DEBUG_PRINT_VERBOSE("Data was not ready");
+	    	DEBUG_PRINT_VERBOSE("Error Register: %X", status[1]);
+	    	return 1;
+	    }
+	} while(!(status[1] & 0x80));
+
 	// need to add real Setup here
-*/
+
 	return 0;
 }
 
