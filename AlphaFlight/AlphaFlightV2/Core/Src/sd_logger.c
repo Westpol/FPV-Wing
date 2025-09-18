@@ -149,10 +149,7 @@ static uint8_t WRITE_BUFFER_DMA(uint32_t start_block){
     // Clear D-Cache for DMA consistency
     SCB_CleanDCache_by_Addr((uint32_t*)((current_buffer == 0) ? log_buffer_1 : log_buffer_2), 2048);
 
-    HAL_StatusTypeDef status = HAL_SD_WriteBlocks_DMA(&hsd1,
-        (current_buffer == 0) ? log_buffer_1 : log_buffer_2,
-        start_block,
-        4);
+    HAL_StatusTypeDef status = HAL_SD_WriteBlocks_DMA(&hsd1, (current_buffer == 0) ? log_buffer_1 : log_buffer_2, start_block, 4);
 
     if (status != HAL_OK) {
         return 3; // Failed
