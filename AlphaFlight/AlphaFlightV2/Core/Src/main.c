@@ -125,6 +125,7 @@ extern GPS_DATA gps_data;
 extern IMU_Data imu_data;
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 extern bool arm_status;
+extern float q[4];
 /* USER CODE END 0 */
 
 /**
@@ -178,7 +179,6 @@ int main(void)
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
   progress_counter = 3;
-  HAL_Delay(5000);
 
   LL_SPI_Enable(SPI1);
   uint8_t counter = 0;
@@ -230,9 +230,8 @@ int main(void)
   //SCHEDULER_ADD_TASK(SCHEDULER_CHECK_EXECUTION_DELAY, 40000);		// 25 Hz
   SCHEDULER_ADD_TASK(GYRO_READ, HZ_TO_DELTA_T_US(1000));		// 1 kHz
   SCHEDULER_ADD_TASK(GYRO_INTEGRATE, HZ_TO_DELTA_T_US(1000));	// 1 kHz
-  SCHEDULER_ADD_TASK(GYRO_FUSION, HZ_TO_DELTA_T_US(500));	// 500 Hz
-  SCHEDULER_ADD_TASK(GYRO_GRAM_SCHMIDT_NORMALIZE ,HZ_TO_DELTA_T_US(1));
   SCHEDULER_ADD_TASK(ACCEL_READ, HZ_TO_DELTA_T_US(200));		// 250 Hz
+  SCHEDULER_ADD_TASK(GYRO_FUSION, HZ_TO_DELTA_T_US(200));	// 500 Hz
   SCHEDULER_ADD_TASK(BARO_READ, HZ_TO_DELTA_T_US(25));		// 25 Hz
   SCHEDULER_ADD_TASK(CRSF_PARSE_BUFFER, HZ_TO_DELTA_T_US(100));	// 100 Hz
   SCHEDULER_ADD_TASK(FC_SANITY_CHECK, HZ_TO_DELTA_T_US(100));		// 100 Hz
@@ -1310,6 +1309,8 @@ static void PRINT_DATA(){
 	//USB_PRINTLN("Angle Gyro X: %f  |  Setpoint Angle X: %f  |  Throttle: %f  |  CRSF Pitch: %f  |  CRSF Roll: %f", imu_data.angle_y_fused, fly_by_wire_setpoints.pitch_angle, crsf_data.channel_norm[CRSF_CHANNEL_THROTTLE], crsf_data.channel_norm[CRSF_CHANNEL_PITCH], crsf_data.channel_norm[CRSF_CHANNEL_ROLL]);
 	//USB_PRINTLN("lat: %f  |  lon: %f  |  altitude: %f  |  gspeed: %f  |  heading: %f  |  num sats: %d  |  vbat: %f  |  vbat raw: %d  |  Accel X: %f", gps_data.lat, gps_data.lon, gps_data.altitude, gps_data.gspeed, gps_data.heading, gps_data.numSV, imu_data.vbat, imu_data.vbat_raw, imu_data.accel_x);	// GPS
 	USB_PRINTLN("Pitch angle: %f  |  Roll angle: %f  |  Accel: %f  |  Time: %d", imu_data.pitch_angle, imu_data.roll_angle, imu_data.accel_x, MICROS64());
+	//USB_PRINTLN("w:%f, x:%f, y:%f, z:%f, y-axis directly integrated:%f", q[0], q[1], q[2], q[3], imu_data.pitch_angle);
+	//USB_PRINTLN("pitch:%f,roll:%f", imu_data.pitch_angle, imu_data.roll_angle);
 }
 #endif
 

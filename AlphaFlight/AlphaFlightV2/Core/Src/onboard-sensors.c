@@ -32,10 +32,7 @@ static uint8_t accel_rx[7] = {0};
 
 static uint8_t baro_rx[7] = {0};
 uint64_t baro_last_vs_update_time = 0;
-float R[3][3] = {
-		{1.0f, 0.0f, 0.0f},
-		{0.0f, 1.0f, 0.0f},
-		{0.0f, 0.0f, 1.0f}};
+float q[4] = {1, 0, 0, 0};
 
 __attribute__((optimize("O0"))) static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t *rxbuffer, uint8_t readLength){
 	reg |= READ_BYTE;
@@ -321,124 +318,85 @@ void BARO_READ(){
 	BARO_CALCULATE_HEIGHT();
 }
 
-static void MULTIPLY_CUBE(float delta_r[3][3]){
-	float R_temp[3][3] = {0};
-		for(int i = 0; i < 3; i++){
-			for(int k = 0; k < 3; k++){
-				for(int j = 0; j < 3; j++){
-					R_temp[i][k] += R[i][j] * delta_r[j][k];
-				}
-			}
-		}
-		memcpy(R, R_temp, sizeof(R));
-}
-
 void GYRO_INTEGRATE(){
 	uint64_t now = MICROS64();
 	uint64_t delta_t_us = now - last_integration_us;
 	last_integration_us = now;
 	float delta_t_s = (float)delta_t_us / 1000000.0f;
 
-	float w[3] = {imu_data.gyro_x, imu_data.gyro_y, imu_data.gyro_z};
+	float wx = imu_data.gyro_x * 0.5f * delta_t_s;
+	float wy = imu_data.gyro_y * 0.5f * delta_t_s;
+	float wz = imu_data.gyro_z * 0.5f * delta_t_s;
 
-	float omega[3][3] = {
-			{1.0f, -w[2] * delta_t_s, w[1] * delta_t_s},
-			{w[2] * delta_t_s, 1.0f, -w[0] * delta_t_s},
-			{-w[1] * delta_t_s, w[0] * delta_t_s, 1.0f}
-	};
-	MULTIPLY_CUBE(omega);
+	float w = q[0];
+	float x = q[1];
+	float y = q[2];
+	float z = q[3];
 
-	imu_data.pitch_angle = -asinf(-R[2][0]) * (180 / M_PI);
-	imu_data.roll_angle = atan2f(R[2][1], R[2][2]) * (180 / M_PI);
+    q[0] += -x*wx - y*wy - z*wz;
+    q[1] +=  w*wx + y*wz - z*wy;
+    q[2] +=  w*wy - x*wz + z*wx;
+    q[3] +=  w*wz + x*wy - y*wx;
+
+    float norm = sqrtf(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
+    q[0] /= norm;
+    q[1] /= norm;
+    q[2] /= norm;
+    q[3] /= norm;
+
+	imu_data.pitch_angle = -asin(2*(q[0]*q[2] - q[3]*q[1])) * 180 / M_PI;
+	imu_data.roll_angle = atan2(2*(q[0]*q[1] + q[2]*q[3]), 1 - 2*(q[1]*q[1] + q[2]*q[2])) * 180 / M_PI;
 	imu_data.angle_y_fused = imu_data.pitch_angle;
 	imu_data.angle_x_fused = imu_data.roll_angle;
 }
 
-#define fusion_alpha 0.02
+#define correction_angle 0.005
 void GYRO_FUSION(){
-	float zb[3] = {R[0][2], R[1][2], R[2][2]};
-	float accel[3] = {imu_data.accel_x, imu_data.accel_y, imu_data.accel_z};
-	float norm = sqrtf(accel[0]*accel[0] + accel[1]*accel[1] + accel[2]*accel[2]);
-	accel[0] /= norm;
-	accel[1] /= norm;
-	accel[2] /= norm;
+	float ax = imu_data.accel_x;
+	float ay = imu_data.accel_y;
+	float az = imu_data.accel_z;
+	float norm = sqrtf(ax*ax + ay*ay + az*az);
+	ax /= norm; ay /= norm; az /= norm;
 
-	float delta[3] = {
-	    zb[2]*accel[1] - zb[1]*accel[2],  // roll
-	    zb[0]*accel[2] - zb[2]*accel[0],  // pitch
-	    0.0f
-	};
+	float vx = 2*(q[1]*q[3] - q[0]*q[2]);
+	float vy = 2*(q[0]*q[1] + q[2]*q[3]);
+	float vz = q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3];
 
-	float delta_norm = sqrtf(delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2]);
-	if(delta_norm > 1.0f) delta_norm = 1.0f;
-	float theta = asin(delta_norm);
+	float ex = (ay*vz - az*vy);
+	float ey = (az*vx - ax*vz);
+	float ez = (ax*vy - ay*vx);
 
-	if(delta_norm > 1e-6f){
-		delta[0] /= delta_norm;
-		delta[1] /= delta_norm;
-		delta[2] /= delta_norm;
-	}
-	else{
-		delta[0] = delta[1] = delta[2] = 0.0f;
-		theta = 0.0f;
+	float err_norm = sqrtf(ex*ex + ey*ey + ez*ez);
+	if(err_norm > 1e-6f){  // avoid division by zero
+	    ex /= err_norm;
+	    ey /= err_norm;
+	    ez /= err_norm;
 	}
 
-	theta *= fusion_alpha;
+	float angle = correction_angle;         // tiny rotation
+	float half_angle = angle * 0.5f;
 
-	float c = cosf(theta);
-	float s = sinf(theta);
-	float t = 1.0f - c;
+	float qs = cosf(half_angle);
+	float qx = ex * sinf(half_angle);
+	float qy = ey * sinf(half_angle);
+	float qz = ez * sinf(half_angle);
 
-	float delta_x = delta[0], delta_y = delta[1], delta_z = delta[2];
+	float w = q[0];
+	float x = q[1];
+	float y = q[2];
+	float z = q[3];
 
-	float omega[3][3] = {
-				{t * delta_x * delta_x + c, t * delta_x * delta_y - s * delta_z, t * delta_x * delta_z + s * delta_y},
-			    {t * delta_x * delta_y + s * delta_z, t * delta_y * delta_y + c, t * delta_y * delta_z - s * delta_x},
-			    {t * delta_x * delta_z - s * delta_y, t * delta_y * delta_z + s * delta_x, t * delta_z * delta_z + c}
-		};
-	MULTIPLY_CUBE(omega);
-}
+	q[0] = qs*w - qx*x - qy*y - qz*z;  // new w
+	q[1] = qs*x + qx*w + qy*z - qz*y;  // new x
+	q[2] = qs*y - qx*z + qy*w + qz*x;  // new y
+	q[3] = qs*z + qx*y - qy*x + qz*w;  // new z
 
+	float norm_q = sqrtf(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
+	q[0] /= norm_q;
+	q[1] /= norm_q;
+	q[2] /= norm_q;
+	q[3] /= norm_q;
 
-static float dot(const float a[3], const float b[3]) {
-    return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
-}
-
-
-void GYRO_GRAM_SCHMIDT_NORMALIZE(){
-	float u1[3] = {R[0][0], R[0][1], R[0][2]};
-	float u2[3] = {R[1][0], R[1][1], R[1][2]};
-	float u3[3] = {R[2][0], R[2][1], R[2][2]};
-
-	float v2[3], v3[3];
-
-	// v2 = u2 - proj_u1(u2)
-	float proj21 = dot(u2, u1) / dot(u1, u1);
-	v2[0] = u2[0] - proj21 * u1[0];
-	v2[1] = u2[1] - proj21 * u1[1];
-	v2[2] = u2[2] - proj21 * u1[2];
-
-	// v3 = u3 - proj_u1(u3) - proj_u2(u3)
-	float proj31 = dot(u3, u1) / dot(u1, u1);
-	float proj32 = dot(u3, v2) / dot(v2, v2);
-	v3[0] = u3[0] - proj31 * u1[0] - proj32 * v2[0];
-	v3[1] = u3[1] - proj31 * u1[1] - proj32 * v2[1];
-	v3[2] = u3[2] - proj31 * u1[2] - proj32 * v2[2];
-
-
-	// normalize
-	float norm_u1 = sqrtf(u1[0] * u1[0] + u1[1] * u1[1] + u1[2] * u1[2]);
-	float norm_v2 = sqrtf(v2[0] * v2[0] + v2[1] * v2[1] + v2[2] * v2[2]);
-	float norm_v3 = sqrtf(v3[0] * v3[0] + v3[1] * v3[1] + v3[2] * v3[2]);
-	u1[0] /= norm_u1; u1[1] /= norm_u1; u1[2] /= norm_u1;
-	v2[0] /= norm_v2; v2[1] /= norm_v2; v2[2] /= norm_v2;
-	v3[0] /= norm_v3; v3[1] /= norm_v3; v3[2] /= norm_v3;
-
-	for(int i = 0; i < 3; i++){
-		R[0][i] = u1[i];
-		R[1][i] = v2[i];
-		R[2][i] = v3[i];
-	}
 }
 
 
