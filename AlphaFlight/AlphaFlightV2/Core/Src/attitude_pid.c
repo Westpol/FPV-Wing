@@ -15,11 +15,14 @@
 #include "onboard-sensors.h"
 #include "crossfire.h"
 #include "flight_state.h"
+#include <math.h>
 
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 static CURRENT_SERVO_POINTS current_servo_points;
 extern CRSF_DATA crsf_data;
 extern IMU_Data imu_data;
+extern float q[4];
+float q_target[4] = {1.0f, 0.0f, 0.0f, 0.0f};
 
 FLY_BY_WIRE_PID_VALUES attitude_pid = {0};
 static FLY_BY_WIRE_PID fbw_pid_settings = {0};
@@ -33,8 +36,8 @@ const float lowpass_alpha_y = 0.2;
 static void FC_PID_MIXER(float pitchDeflection, float rollDeflection, float throttle){
 	// pitch and roll should be -1.0f...1.0f, throttle 0.0f...1.0f
 
-	float servoLeft = rollDeflection + pitchDeflection;
-	float servoRight = rollDeflection - pitchDeflection;
+	float servoLeft = rollDeflection - pitchDeflection;
+	float servoRight = rollDeflection + pitchDeflection;
 	servoLeft = UTIL_MIN_F(UTIL_MAX_F(servoLeft, 1.0f), -1.0f);
 	servoRight = UTIL_MIN_F(UTIL_MAX_F(servoRight, 1.0f), -1.0f);
 	current_servo_points.servo_left = servoLeft * 500 + 1500;
@@ -74,10 +77,39 @@ void FC_PID_DIRECT_CONTROL(){
 void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float dt_seconds = dt / 1000000.0;
 	if(dt_seconds == 0.0f) return;
-	angle_x_lowpass = imu_data.angle_x_fused * lowpass_alpha_x + angle_x_lowpass * (1 - lowpass_alpha_x);
-	angle_y_lowpass = imu_data.angle_y_fused * lowpass_alpha_y + angle_y_lowpass * (1 - lowpass_alpha_y);
-	attitude_pid.pitch_error = fly_by_wire_setpoints.pitch_angle - angle_y_lowpass;
-	attitude_pid.roll_error = fly_by_wire_setpoints.roll_angle - angle_x_lowpass;
+
+	float pitch_rad = fly_by_wire_setpoints.pitch_angle * M_PI / 180.0f;
+	float roll_rad  = fly_by_wire_setpoints.roll_angle  * M_PI / 180.0f;
+
+	float half_pitch = pitch_rad * 0.5f;
+	float half_roll  = roll_rad  * 0.5f;
+
+	// Assuming yaw = 0 for simplicity
+	q_target[0] = cos(half_pitch)*cos(half_roll);
+	q_target[1] = sin(half_roll);
+	q_target[2] = sin(half_pitch);
+	q_target[3] = 0.0f;
+
+	float qc[4] = {q[0], -q[1], -q[2], -q[3]}; // conjugate of current
+
+	float w_err = q_target[0]*qc[0] - q_target[1]*qc[1] - q_target[2]*qc[2] - q_target[3]*qc[3];
+	float x_err = q_target[0]*qc[1] + q_target[1]*qc[0] + q_target[2]*qc[3] - q_target[3]*qc[2];
+	float y_err = q_target[0]*qc[2] - q_target[1]*qc[3] + q_target[2]*qc[0] + q_target[3]*qc[1];
+	float z_err = q_target[0]*qc[3] + q_target[1]*qc[2] - q_target[2]*qc[1] + q_target[3]*qc[0];
+
+	if (w_err < 0.0f) {
+	    w_err = -w_err;
+	    x_err = -x_err;
+	    y_err = -y_err;
+	    z_err = -z_err;
+	}
+
+	float angle_error_x = x_err * 2.0f; // roll
+	float angle_error_y = y_err * 2.0f; // pitch
+	angle_error_x = UTIL_MIN_F(UTIL_MAX_F(angle_error_x, M_PI), -M_PI);
+	angle_error_y = UTIL_MIN_F(UTIL_MAX_F(angle_error_y, M_PI), -M_PI);
+
+
 	//attitude_pid.pitch_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.pitch_error_accumulated + (attitude_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -0.15), 0.15);
 	//attitude_pid.roll_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.roll_error_accumulated + (attitude_pid.roll_error * fbw_pid_settings.roll_i * dt), -0.15), 0.15);
 	attitude_pid.pitch_pid_correction = ((attitude_pid.pitch_error * fbw_pid_settings.pitch_p) + attitude_pid.pitch_error_accumulated + (((attitude_pid.pitch_error - attitude_pid.pitch_error_last) / dt_seconds) * fbw_pid_settings.pitch_d)) * fbw_pid_settings.pitch_gain;
