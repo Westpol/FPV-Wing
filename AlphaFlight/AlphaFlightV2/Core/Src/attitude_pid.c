@@ -25,7 +25,7 @@ extern float q[4];
 float q_target[4] = {1.0f, 0.0f, 0.0f, 0.0f};
 
 FLY_BY_WIRE_PID_VALUES attitude_pid = {0};
-static FLY_BY_WIRE_PID fbw_pid_settings = {0};
+FLY_BY_WIRE_PID fbw_pid_settings = {0};
 
 float angle_x_lowpass = 0;
 float angle_y_lowpass = 0;
@@ -55,12 +55,12 @@ static void FC_PID_MIXER(float pitchDeflection, float rollDeflection, float thro
 }
 
 void FC_PID_INIT(){
-	fbw_pid_settings.pitch_d = 10.0;
-	fbw_pid_settings.pitch_p = 10.0;
+	fbw_pid_settings.pitch_d = 20.0;
+	fbw_pid_settings.pitch_p = 20.0;
 	fbw_pid_settings.pitch_i = 0.001;
 	fbw_pid_settings.pitch_gain = 1.0;
-	fbw_pid_settings.roll_d = 10.0;
-	fbw_pid_settings.roll_p = 10.0;
+	fbw_pid_settings.roll_d = 20.0;
+	fbw_pid_settings.roll_p = 20.0;
 	fbw_pid_settings.roll_i = 0.001;
 	fbw_pid_settings.roll_gain = 1.0;
 }
@@ -106,9 +106,12 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 
 	float angle_error_x = x_err * 2.0f; // roll
 	float angle_error_y = y_err * 2.0f; // pitch
+
 	angle_error_x = UTIL_MIN_F(UTIL_MAX_F(angle_error_x, M_PI), -M_PI);
 	angle_error_y = UTIL_MIN_F(UTIL_MAX_F(angle_error_y, M_PI), -M_PI);
 
+	attitude_pid.pitch_error = angle_error_y;
+	attitude_pid.roll_error = angle_error_x;
 
 	//attitude_pid.pitch_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.pitch_error_accumulated + (attitude_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -0.15), 0.15);
 	//attitude_pid.roll_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.roll_error_accumulated + (attitude_pid.roll_error * fbw_pid_settings.roll_i * dt), -0.15), 0.15);
