@@ -454,13 +454,13 @@ static uint8_t USBD_CDC_Setup(USBD_HandleTypeDef *pdev,
                                                                            (uint8_t *)hcdc->data,
                                                                            req->wLength);
 
-          len = MIN_F(CDC_REQ_MAX_DATA_SIZE, req->wLength);
+          len = MIN(CDC_REQ_MAX_DATA_SIZE, req->wLength);
           (void)USBD_CtlSendData(pdev, (uint8_t *)hcdc->data, len);
         }
         else
         {
           hcdc->CmdOpCode = req->bRequest;
-          hcdc->CmdLength = (uint8_t)MIN_F(req->wLength, USB_MAX_EP0_SIZE);
+          hcdc->CmdLength = (uint8_t)MIN(req->wLength, USB_MAX_EP0_SIZE);
 
           (void)USBD_CtlPrepareRx(pdev, (uint8_t *)hcdc->data, hcdc->CmdLength);
         }

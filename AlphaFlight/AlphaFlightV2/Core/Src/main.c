@@ -1120,12 +1120,6 @@ static void MX_GPIO_Init(void)
   LL_GPIO_ResetOutputPin(SERVO4_GPIO_Port, SERVO4_Pin);
 
   /**/
-  LL_GPIO_ResetOutputPin(SERVO7_GPIO_Port, SERVO7_Pin);
-
-  /**/
-  LL_GPIO_ResetOutputPin(SEVO5_GPIO_Port, SEVO5_Pin);
-
-  /**/
   LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTC, LL_SYSCFG_EXTI_LINE13);
 
   /**/
@@ -1229,22 +1223,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(SERVO4_GPIO_Port, &GPIO_InitStruct);
-
-  /**/
-  GPIO_InitStruct.Pin = SERVO7_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(SERVO7_GPIO_Port, &GPIO_InitStruct);
-
-  /**/
-  GPIO_InitStruct.Pin = SEVO5_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(SEVO5_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = CS_EXT_3_Pin;
@@ -1411,6 +1389,15 @@ void Error_Handler(void)
 		  STATUS_LED_BLUE_ON();
 		  BAREBONES_DELAY_MS(200 / prescaler);
 		  STATUS_LED_BLUE_OFF();
+		  BAREBONES_DELAY_MS(500 / prescaler);
+	  }
+
+	  BAREBONES_DELAY_MS(800 / prescaler);
+
+	  for(uint8_t counter = 0; counter < BLINKS; counter++){
+		  STATUS_LED_GREEN_ON();
+		  BAREBONES_DELAY_MS(200 / prescaler);
+		  STATUS_LED_GREEN_OFF();
 		  BAREBONES_DELAY_MS(500 / prescaler);
 	  }
 	  BAREBONES_DELAY_MS(1500 / prescaler);

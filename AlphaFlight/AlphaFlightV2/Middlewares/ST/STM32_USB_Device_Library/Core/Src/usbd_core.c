@@ -600,7 +600,7 @@ USBD_StatusTypeDef USBD_LL_DataOutStage(USBD_HandleTypeDef *pdev,
       {
         pep->rem_length -= pep->maxpacket;
 
-        (void)USBD_CtlContinueRx(pdev, pdata, MIN_F(pep->rem_length, pep->maxpacket));
+        (void)USBD_CtlContinueRx(pdev, pdata, MIN(pep->rem_length, pep->maxpacket));
       }
       else
       {

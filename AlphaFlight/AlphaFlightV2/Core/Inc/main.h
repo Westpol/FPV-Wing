@@ -100,10 +100,6 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS);
 #define SERVO4_GPIO_Port GPIOB
 #define MOTOR1_Pin LL_GPIO_PIN_8
 #define MOTOR1_GPIO_Port GPIOA
-#define SERVO7_Pin LL_GPIO_PIN_13
-#define SERVO7_GPIO_Port GPIOA
-#define SEVO5_Pin LL_GPIO_PIN_14
-#define SEVO5_GPIO_Port GPIOA
 #define SERVO6_Pin LL_GPIO_PIN_15
 #define SERVO6_GPIO_Port GPIOA
 #define CS_EXT_3_Pin LL_GPIO_PIN_3
