@@ -1393,14 +1393,6 @@ void Error_Handler(void)
 	  }
 
 	  BAREBONES_DELAY_MS(800 / prescaler);
-
-	  for(uint8_t counter = 0; counter < BLINKS; counter++){
-		  STATUS_LED_GREEN_ON();
-		  BAREBONES_DELAY_MS(200 / prescaler);
-		  STATUS_LED_GREEN_OFF();
-		  BAREBONES_DELAY_MS(500 / prescaler);
-	  }
-	  BAREBONES_DELAY_MS(1500 / prescaler);
   }
   /* USER CODE END Error_Handler_Debug */
 }

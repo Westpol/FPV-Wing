@@ -89,6 +89,8 @@ typedef struct{
 	float vertical_speed_cm_s;
 	float vbat;
 	uint32_t vbat_raw;
+	float q_angular_speed[4];
+	float q_angle[4];
 }IMU_Data;
 
 typedef struct{
