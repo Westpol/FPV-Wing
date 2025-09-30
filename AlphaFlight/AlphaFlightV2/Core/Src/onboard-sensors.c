@@ -260,9 +260,16 @@ static void GYRO_CONVERT_DATA(){
 	raw_data.gyro_x_raw = ((int16_t)gyro_rx[1] << 8) | gyro_rx[0];
 	raw_data.gyro_y_raw = ((int16_t)gyro_rx[3] << 8) | gyro_rx[2];
 	raw_data.gyro_z_raw = ((int16_t)gyro_rx[5] << 8) | gyro_rx[4];
-	imu_data.gyro_x = (raw_data.gyro_x_raw / 32767.0) * 2000.0 * (M_PI / 180);
-	imu_data.gyro_y = (raw_data.gyro_y_raw / 32767.0) * 2000.0 * (M_PI / 180);
-	imu_data.gyro_z = (raw_data.gyro_z_raw / 32767.0) * 2000.0 * (M_PI / 180);
+
+	const float scale = (2000.0f / 32767.0f) * (M_PI / 180.0f);
+
+	float gx_chip = (float)raw_data.gyro_x_raw * scale;
+	float gy_chip = (float)raw_data.gyro_y_raw * scale;
+	float gz_chip = (float)raw_data.gyro_z_raw * scale;
+
+	imu_data.gyro_x = gx_chip;
+	imu_data.gyro_y = -gy_chip;
+	imu_data.gyro_z = gz_chip;
 }
 
 static void ACCEL_CONVERT_DATA(){
@@ -350,7 +357,10 @@ void GYRO_INTEGRATE(){
 	imu_data.angle_x_fused = imu_data.roll_angle;
 }
 
-#define correction_angle 0.005
+
+#define FUSION_RATE_HZ 200.0f
+#define MAX_DEG_PER_SEC 1.0f
+const float correction_angle = (MAX_DEG_PER_SEC * (M_PI/180.0f)) / FUSION_RATE_HZ; // ≈ 8.7266e-5
 void GYRO_FUSION(){
 	float ax = imu_data.accel_x;
 	float ay = imu_data.accel_y;

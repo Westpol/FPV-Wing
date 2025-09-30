@@ -36,8 +36,8 @@ const float lowpass_alpha_y = 0.2;
 static void FC_PID_MIXER(float pitchDeflection, float rollDeflection, float throttle){
 	// pitch and roll should be -1.0f...1.0f, throttle 0.0f...1.0f
 
-	float servoLeft = rollDeflection - pitchDeflection;
-	float servoRight = rollDeflection + pitchDeflection;
+	float servoLeft = rollDeflection + pitchDeflection;
+	float servoRight = rollDeflection - pitchDeflection;
 	servoLeft = UTIL_MIN_F(UTIL_MAX_F(servoLeft, 1.0f), -1.0f);
 	servoRight = UTIL_MIN_F(UTIL_MAX_F(servoRight, 1.0f), -1.0f);
 	current_servo_points.servo_left = servoLeft * 500 + 1500;
