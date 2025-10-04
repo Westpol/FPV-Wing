@@ -276,7 +276,7 @@ static void ACCEL_CONVERT_DATA(){
 	raw_data.accel_x_raw = ((int16_t)accel_rx[2] << 8) | accel_rx[1];
 	raw_data.accel_y_raw = ((int16_t)accel_rx[4] << 8) | accel_rx[3];
 	raw_data.accel_z_raw = ((int16_t)accel_rx[6] << 8) | accel_rx[5];
-	imu_data.accel_x = (float)raw_data.accel_x_raw / 32768 * 1000 * 4 * 1.5;
+	imu_data.accel_x = -(float)raw_data.accel_x_raw / 32768 * 1000 * 4 * 1.5;
 	imu_data.accel_y = (float)raw_data.accel_y_raw / 32768 * 1000 * 4 * 1.5;
 	imu_data.accel_z = (float)raw_data.accel_z_raw / 32768 * 1000 * 4 * 1.5;
 
@@ -351,7 +351,7 @@ void GYRO_INTEGRATE(){
     q[2] /= norm;
     q[3] /= norm;
 
-	imu_data.pitch_angle = -asin(2*(q[0]*q[2] - q[3]*q[1])) * 180 / M_PI;
+	imu_data.pitch_angle = asin(2*(q[0]*q[2] - q[3]*q[1])) * 180 / M_PI;
 	imu_data.roll_angle = atan2(2*(q[0]*q[1] + q[2]*q[3]), 1 - 2*(q[1]*q[1] + q[2]*q[2])) * 180 / M_PI;
 	imu_data.angle_y_fused = imu_data.pitch_angle;
 	imu_data.angle_x_fused = imu_data.roll_angle;
