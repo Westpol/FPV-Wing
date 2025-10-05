@@ -120,19 +120,6 @@ void SD_LOGGER_LOOP_CALL();
 
 void SD_LOGGER_SETUP_CARD();
 
-#if DEBUG_ENABLED
-#define LOG_FAIL_WITH_ERROR(error_code)\
-	do{\
-		log_mode = LOG_TYPE_DISABLE_LOGGING;\
-		ERROR_HANDLER_BLINKS(error_code);\
-		return;\
-	} while(0)
-#else
-#define LOG_FAIL_WITH_ERROR(error_code)\
-	do{\
-		log_mode = LOG_TYPE_DISABLE_LOGGING;\
-		return;\
-	} while(0)
-#endif
+
 
 #endif /* INC_SD_LOGGER_H_ */

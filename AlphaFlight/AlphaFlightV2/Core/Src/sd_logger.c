@@ -61,6 +61,17 @@ void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd) {
     dma_busy = false;
 }
 
+static void LOG_FAIL_WITH_ERROR(uint8_t error_code){
+#if DEBUG_ENDABLED
+	log_mode = LOG_TYPE_DISABLE_LOGGING;
+	ERROR_HANDLER_BLINKS(error_code);
+	return;
+#else
+	log_mode = LOG_TYPE_DISABLE_LOGGING;
+	return;
+#endif
+}
+
 static uint32_t CALCULATE_CRC32_HW(const void *data, size_t length) {
     // STM32 CRC peripheral processes 32-bit words, so we need to handle padding
     size_t aligned_length = length & ~0x3;  // Number of full 32-bit words
