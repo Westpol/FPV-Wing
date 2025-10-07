@@ -30,6 +30,7 @@
 #include "flight_control.h"
 #include "m10-gps.h"
 #include "flight_state.h"
+#include "sd.h"
 
 static bool last_arm_status = false;
 
@@ -49,17 +50,8 @@ static uint32_t last_log_block;
 static SD_SUPERBLOCK sd_superblock = {0};
 static SD_FILE_METADATA_BLOCK sd_file_metadata_block = {0};
 static uint8_t raw_block_data[BLOCK_SIZE];
-extern SD_HandleTypeDef hsd1;
-extern CRC_HandleTypeDef hcrc;
 extern GPS_DATA gps_data;
 
-static volatile bool dma_busy = false;
-
-
-// DMA complete callback
-void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd) {
-    dma_busy = false;
-}
 
 static void LOG_FAIL_WITH_ERROR(uint8_t error_code){
 #if DEBUG_ENDABLED
@@ -72,101 +64,14 @@ static void LOG_FAIL_WITH_ERROR(uint8_t error_code){
 #endif
 }
 
-static uint32_t CALCULATE_CRC32_HW(const void *data, size_t length) {
-    // STM32 CRC peripheral processes 32-bit words, so we need to handle padding
-    size_t aligned_length = length & ~0x3;  // Number of full 32-bit words
-    size_t remaining_bytes = length & 0x3;
-
-    // Reset CRC calculator
-    HAL_CRC_Init(&hcrc);
-    __HAL_CRC_DR_RESET(&hcrc);
-
-    uint32_t crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)data, aligned_length / 4);
-
-    // Handle remaining bytes manually if not aligned
-    if (remaining_bytes > 0) {
-        uint8_t tail[4] = {0};
-        memcpy(tail, (uint8_t*)data + aligned_length, remaining_bytes);
-        crc = HAL_CRC_Accumulate(&hcrc, (uint32_t*)tail, 1);
-    }
-
-    return crc;
-}
-
-static inline void VERIFY_CRC32(const void* data, size_t size, uint32_t expected_crc){
-	uint32_t calculated_crc = CALCULATE_CRC32_HW(data, size);
-	if(calculated_crc != expected_crc){
-		DEBUG_PRINT_VERBOSE("Calculated CRC: %08X\nExpected CRC: %08X", calculated_crc, expected_crc);
-		LOG_FAIL_WITH_ERROR(ERROR_CRC_MISMATCH);
-	}
-}
-
-static void READ_BLOCK(uint8_t* data_storage, uint32_t block){
-
-	uint8_t read_buffer[BLOCK_SIZE] = {0};
-
-	uint32_t start = HAL_GetTick();
-	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){
-		if (HAL_GetTick() - start > TIMEOUT_MS) {
-			LOG_FAIL_WITH_ERROR(ERROR_TIMEOUT); // Timeout
-		}
-	}
-	if(HAL_SD_ReadBlocks(&hsd1, read_buffer, block, 1, TIMEOUT_MS) != HAL_OK){
-		LOG_FAIL_WITH_ERROR(ERROR_WRITE); // Write failed
-	}
-
-	uint32_t block_crc32 = ((uint32_t)read_buffer[511] << 24) | ((uint32_t)read_buffer[510] << 16) | ((uint32_t)read_buffer[509] << 8)  | ((uint32_t)read_buffer[508]);
-	VERIFY_CRC32(read_buffer, BLOCK_SIZE - CRC32_BYTE_SIZE, block_crc32);
-	memcpy(data_storage, read_buffer, BLOCK_SIZE);
-
-}
-
-static void WRITE_BLOCK(uint8_t* data_array, uint32_t data_length_bytes, uint32_t block){
-
-	if (data_length_bytes > BLOCK_SIZE - CRC32_BYTE_SIZE) {
-		LOG_FAIL_WITH_ERROR(ERROR_BLOCK_LIMIT_REACHED); // Too much data
-	}
-
-	uint8_t single_write_buffer[BLOCK_SIZE] = {0};
-	memcpy(single_write_buffer, data_array, data_length_bytes);
-	uint32_t crc32 = CALCULATE_CRC32_HW(single_write_buffer, BLOCK_SIZE - CRC32_BYTE_SIZE);
-	single_write_buffer[508] = (crc32 >> 0);
-	single_write_buffer[509] = (crc32 >> 8);
-	single_write_buffer[510] = (crc32 >> 16);
-	single_write_buffer[511] = (crc32 >> 24);
-
-	uint32_t start = HAL_GetTick();
-	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){
-		if (HAL_GetTick() - start > TIMEOUT_MS) {
-			LOG_FAIL_WITH_ERROR(ERROR_TIMEOUT); // Timeout
-		}
-	}
-	if(HAL_SD_WriteBlocks(&hsd1, single_write_buffer, block, 1, TIMEOUT_MS) != HAL_OK){
-		LOG_FAIL_WITH_ERROR(ERROR_WRITE); // Write failed
-	}
-}
-
 static uint8_t WRITE_BUFFER_DMA(uint32_t start_block){
-    if (dma_busy) {
-        // DMA still writing, defer
-        return 1; // Deferred
-    }
-
-    if (HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER) {
-        // Card not ready, defer
-        return 2; // Deferred
-    }
 
     // Clear D-Cache for DMA consistency
     SCB_CleanDCache_by_Addr((uint32_t*)((current_buffer == 0) ? log_buffer_1 : log_buffer_2), 2048);
 
-    HAL_StatusTypeDef status = HAL_SD_WriteBlocks_DMA(&hsd1, (current_buffer == 0) ? log_buffer_1 : log_buffer_2, start_block, 4);
-
-    if (status != HAL_OK) {
-        return 3; // Failed
+    if(SD_WRITE_DMA((current_buffer == 0) ? log_buffer_1 : log_buffer_2, start_block, 4) != SD_DMA_TRANSMISSION_STARTED){
+    	return -1;
     }
-
-    dma_busy = true;
     return 0; // Success
 }
 
@@ -187,7 +92,7 @@ static uint8_t FLIGHT_NUM_TO_INDEX(uint32_t relative_flight_num){
 }
 
 static void READ_LATEST_FLIGHT(){
-	READ_BLOCK(raw_block_data, SUPERBLOCK_BLOCK);
+	SD_READ_BLOCK(raw_block_data, SUPERBLOCK_BLOCK);
 	memcpy(&sd_superblock, &raw_block_data, sizeof(sd_superblock));
 	if(sd_superblock.magic != SUPERBLOCK_MAGIC){
 		LOG_FAIL_WITH_ERROR(ERROR_WRONG_MAGIC);
@@ -200,7 +105,7 @@ static void READ_LATEST_FLIGHT(){
 	log_mode = sd_superblock.log_mode_flag;
 
 	if(sd_superblock.relative_flight_num == 0){		// hard fix bug on first flight because system is built on an existing flight before
-		READ_BLOCK(raw_block_data, LOG_METADATA_BLOCK_START);
+		SD_READ_BLOCK(raw_block_data, LOG_METADATA_BLOCK_START);
 		memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
 		if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC){
 			LOG_FAIL_WITH_ERROR(ERROR_WRONG_MAGIC);
@@ -212,7 +117,7 @@ static void READ_LATEST_FLIGHT(){
 		return;
 	}
 
-	READ_BLOCK(raw_block_data, latest_metadata_block);
+	SD_READ_BLOCK(raw_block_data, latest_metadata_block);
 	memcpy(&sd_file_metadata_block, &raw_block_data, sizeof(sd_file_metadata_block));
 	if(sd_file_metadata_block.magic != LOG_METADATA_BLOCK_MAGIC){
 		LOG_FAIL_WITH_ERROR(ERROR_WRONG_MAGIC);
@@ -285,8 +190,8 @@ void SD_LOGGER_LOOP_CALL(){
 
 		DEBUG_PRINT_VERBOSE("Current: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].start_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].end_block);
 
-		WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
-		WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
+		SD_WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
+		SD_WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
 
 		STATUS_LED_GREEN_ON();
 		memset(log_buffer_1, 0, sizeof(log_buffer_1));
@@ -346,8 +251,8 @@ void SD_LOGGER_LOOP_CALL(){
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].end_block = last_log_block;
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].log_finished = 1;
 
-		WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
-		WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
+		SD_WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
+		SD_WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
 		last_arm_status = false;
 		STATUS_LED_GREEN_OFF();
 		return;
@@ -394,7 +299,7 @@ void SD_LOGGER_SETUP_CARD(){
 
 	sd_file_metadata_block_config.magic = LOG_METADATA_BLOCK_MAGIC;
 
-	WRITE_BLOCK((uint8_t *)&sd_superblock_config, sizeof(sd_superblock_config), SUPERBLOCK_BLOCK);
+	SD_WRITE_BLOCK((uint8_t *)&sd_superblock_config, sizeof(sd_superblock_config), SUPERBLOCK_BLOCK);
 
-	WRITE_BLOCK((uint8_t *)&sd_file_metadata_block_config, sizeof(sd_file_metadata_block_config), LOG_METADATA_BLOCK_START);
+	SD_WRITE_BLOCK((uint8_t *)&sd_file_metadata_block_config, sizeof(sd_file_metadata_block_config), LOG_METADATA_BLOCK_START);
 }
