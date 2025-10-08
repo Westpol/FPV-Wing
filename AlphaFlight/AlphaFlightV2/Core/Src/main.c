@@ -38,6 +38,7 @@
 #include "utils.h"
 #include "flight_state.h"
 #include "usage_stats.h"
+#include "load_config.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -220,6 +221,8 @@ int main(void)
   progress_counter = 7;
 
   GPS_INIT(&huart4, &hdma_uart4_rx);
+
+  print_block_blocking(99);
 
   progress_counter = 8;
 

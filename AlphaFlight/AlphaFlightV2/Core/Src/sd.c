@@ -37,7 +37,6 @@ uint32_t CALCULATE_CRC32_HW(const void *data, size_t length) {
 
     // Reset CRC calculator
     HAL_CRC_Init(&hcrc);
-    __HAL_CRC_DR_RESET(&hcrc);
 
     uint32_t crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)data, aligned_length / 4);
 
