@@ -325,7 +325,77 @@ void BARO_READ(){
 	BARO_CALCULATE_HEIGHT();
 }
 
-void GYRO_INTEGRATE(){
+
+void GYRO_INTEGRATE_EXACT() {
+    uint64_t now = MICROS64();
+    uint64_t delta_t_us = now - last_integration_us;
+    last_integration_us = now;
+    float delta_t_s = (float)delta_t_us / 1000000.0f;
+
+    // Angular velocity (rad/s)
+    float wx = imu_data.gyro_x;
+    float wy = imu_data.gyro_y;
+    float wz = imu_data.gyro_z;
+
+    // Compute angular speed magnitude
+    float omega_mag = sqrtf(wx*wx + wy*wy + wz*wz);
+
+    // If very small angular speed, fall back to linear approximation to avoid NaN
+    float sin_term, cos_term;
+    if (omega_mag > 1e-6f) {
+        float half_theta = 0.5f * omega_mag * delta_t_s;
+        sin_term = sinf(half_theta);
+        cos_term = cosf(half_theta);
+        wx = wx / omega_mag * sin_term;
+        wy = wy / omega_mag * sin_term;
+        wz = wz / omega_mag * sin_term;
+    } else {
+        // small-angle approximation
+        sin_term = 0.5f * delta_t_s;
+        cos_term = 1.0f;
+        wx *= sin_term;
+        wy *= sin_term;
+        wz *= sin_term;
+    }
+
+    float w = q[0];
+    float x = q[1];
+    float y = q[2];
+    float z = q[3];
+
+    // Quaternion multiplication Δq ⊗ q
+    float dq_w = cos_term;
+    float dq_x = wx;
+    float dq_y = wy;
+    float dq_z = wz;
+
+    float new_w = dq_w*w - dq_x*x - dq_y*y - dq_z*z;
+    float new_x = dq_w*x + dq_x*w + dq_y*z - dq_z*y;
+    float new_y = dq_w*y - dq_x*z + dq_y*w + dq_z*x;
+    float new_z = dq_w*z + dq_x*y - dq_y*x + dq_z*w;
+
+    q[0] = new_w;
+    q[1] = new_x;
+    q[2] = new_y;
+    q[3] = new_z;
+
+    // Normalize quaternion
+    float norm = sqrtf(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
+    q[0] /= norm;
+    q[1] /= norm;
+    q[2] /= norm;
+    q[3] /= norm;
+
+    // Convert to Euler angles
+    imu_data.pitch_angle = asinf(2*(q[0]*q[2] - q[3]*q[1])) * 180.0f / M_PI;
+    imu_data.roll_angle = atan2f(2*(q[0]*q[1] + q[2]*q[3]),
+                                 1 - 2*(q[1]*q[1] + q[2]*q[2])) * 180.0f / M_PI;
+    imu_data.angle_y_fused = imu_data.pitch_angle;
+    imu_data.angle_x_fused = imu_data.roll_angle;
+}
+
+
+void GYRO_INTEGRATE(){// DEPRECATED
 	uint64_t now = MICROS64();
 	uint64_t delta_t_us = now - last_integration_us;
 	last_integration_us = now;

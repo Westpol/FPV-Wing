@@ -53,8 +53,8 @@ extern "C" {
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 #define VERBOSE_SERIAL 0
-#define DEBUG_ENABLED 0
-#define PRINT_DEBUG_DATA 0
+#define DEBUG_ENABLED 1
+#define PRINT_DEBUG_DATA 1
 
 #if VERBOSE_SERIAL && DEBUG_ENABLED
 #define DEBUG_PRINT_VERBOSE(...) USB_PRINTLN_BLOCKING(__VA_ARGS__)

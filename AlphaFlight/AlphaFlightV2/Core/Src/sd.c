@@ -30,25 +30,35 @@ void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd) {
 }
 
 
-uint32_t CALCULATE_CRC32_HW(const void *data, size_t length) {
-    // STM32 CRC peripheral processes 32-bit words, so we need to handle padding
-    size_t aligned_length = length & ~0x3;  // Number of full 32-bit words
-    size_t remaining_bytes = length & 0x3;
+uint32_t CALCULATE_CRC32_HW(const void *data, size_t length)
+{
+    const uint8_t *bytes = (const uint8_t *)data;
+    uint32_t word;
+    uint32_t crc;
 
-    // Reset CRC calculator
-    HAL_CRC_Init(&hcrc);
+    __HAL_CRC_DR_RESET(&hcrc);
 
-    uint32_t crc = HAL_CRC_Calculate(&hcrc, (uint32_t*)data, aligned_length / 4);
-
-    // Handle remaining bytes manually if not aligned
-    if (remaining_bytes > 0) {
-        uint8_t tail[4] = {0};
-        memcpy(tail, (uint8_t*)data + aligned_length, remaining_bytes);
-        crc = HAL_CRC_Accumulate(&hcrc, (uint32_t*)tail, 1);
+    // process all full words
+    while (length >= 4) {
+        memcpy(&word, bytes, 4);
+        hcrc.Instance->DR = __REV(word); // swap bytes, not bits
+        bytes += 4;
+        length -= 4;
     }
 
-    return crc;
+    // process remaining bytes (if any)
+    if (length > 0) {
+        word = 0;
+        memcpy(&word, bytes, length);
+        hcrc.Instance->DR = __REV(word); // zero-padded, byte-swapped
+    }
+
+    crc = hcrc.Instance->DR;
+    return __RBIT(crc) ^ 0xFFFFFFFF;
 }
+
+
+
 
 void VERIFY_CRC32(const void* data, size_t size, uint32_t expected_crc){
 	uint32_t calculated_crc = CALCULATE_CRC32_HW(data, size);

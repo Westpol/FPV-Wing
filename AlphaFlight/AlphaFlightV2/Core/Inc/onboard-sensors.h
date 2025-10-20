@@ -111,6 +111,7 @@ void GYRO_READ(void);
 void ACCEL_READ(void);
 void BARO_READ(void);
 void GYRO_INTEGRATE(void);
+void GYRO_INTEGRATE_EXACT(void);
 void GYRO_FUSION(void);
 void BARO_SET_BASE_PRESSURE();
 void BATTERY_UPDATE(void);
