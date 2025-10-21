@@ -78,40 +78,57 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float dt_seconds = dt / 1000000.0;
 	if(dt_seconds == 0.0f) return;
 
-	float pitch_rad = fly_by_wire_setpoints.pitch_angle * M_PI / 180.0f;
+	float pitch_rad = -fly_by_wire_setpoints.pitch_angle * M_PI / 180.0f;
 	float roll_rad  = fly_by_wire_setpoints.roll_angle  * M_PI / 180.0f;
 
 	float half_pitch = pitch_rad * 0.5f;
 	float half_roll  = roll_rad  * 0.5f;
 
 	// Assuming yaw = 0 for simplicity
-	q_target[0] = cos(half_pitch)*cos(half_roll);
-	q_target[1] = sin(half_roll);
-	q_target[2] = sin(half_pitch);
-	q_target[3] = 0.0f;
+	float cp = cosf(half_pitch);
+	float sp = sinf(half_pitch);
+	float cr = cosf(half_roll);
+	float sr = sinf(half_roll);
+
+	// q = q_pitch * q_roll  (Z-Y-X sequence, yaw=0)
+	q_target[0] = cp * cr;        // w
+	q_target[1] = cp * sr;        // x
+	q_target[2] = sp * cr;        // y
+	q_target[3] = -sp * sr;       // z
+
+	// optional: normalize to avoid drift
+	float norm_q_target = sqrtf(q_target[0]*q_target[0] + q_target[1]*q_target[1]
+	                  + q_target[2]*q_target[2] + q_target[3]*q_target[3]);
+	if (norm_q_target > 0.0f) {
+	    q_target[0] /= norm_q_target;
+	    q_target[1] /= norm_q_target;
+	    q_target[2] /= norm_q_target;
+	    q_target[3] /= norm_q_target;
+	}
 
 	float qc[4] = {q[0], -q[1], -q[2], -q[3]}; // conjugate of current
 
-	float w_err = q_target[0]*qc[0] - q_target[1]*qc[1] - q_target[2]*qc[2] - q_target[3]*qc[3];
-	float x_err = q_target[0]*qc[1] + q_target[1]*qc[0] + q_target[2]*qc[3] - q_target[3]*qc[2];
-	float y_err = q_target[0]*qc[2] - q_target[1]*qc[3] + q_target[2]*qc[0] + q_target[3]*qc[1];
-	float z_err = q_target[0]*qc[3] + q_target[1]*qc[2] - q_target[2]*qc[1] + q_target[3]*qc[0];
+	float q_err[4] = {0};
 
-	if (w_err < 0.0f) {
-	    w_err = -w_err;
-	    x_err = -x_err;
-	    y_err = -y_err;
-	    z_err = -z_err;
+	q_err[0] = q_target[0]*qc[0] - q_target[1]*qc[1] - q_target[2]*qc[2] - q_target[3]*qc[3];
+	q_err[1] = q_target[0]*qc[1] + q_target[1]*qc[0] + q_target[2]*qc[3] - q_target[3]*qc[2];
+	q_err[2] = q_target[0]*qc[2] - q_target[1]*qc[3] + q_target[2]*qc[0] + q_target[3]*qc[1];
+	q_err[3] = q_target[0]*qc[3] + q_target[1]*qc[2] - q_target[2]*qc[1] + q_target[3]*qc[0];
+
+	float norm_q_err = sqrtf(q_err[0]*q_err[0] + q_err[1]*q_err[1] + q_err[2]*q_err[2] + q_err[3]*q_err[3]);
+
+	if(norm_q_err > 0.0f){
+		q_err[0] /= norm_q_err;
+		q_err[1] /= norm_q_err;
+		q_err[2] /= norm_q_err;
+		q_err[3] /= norm_q_err;
 	}
 
-	float angle_error_x = x_err * 2.0f; // roll
-	float angle_error_y = y_err * 2.0f; // pitch
+	float roll_error  = 2.0f * q_err[1];  // rotation about body X
+	float pitch_error = 2.0f * q_err[2];  // rotation about body Y
 
-	angle_error_x = UTIL_MIN_F(UTIL_MAX_F(angle_error_x, M_PI), -M_PI);
-	angle_error_y = UTIL_MIN_F(UTIL_MAX_F(angle_error_y, M_PI), -M_PI);
-
-	attitude_pid.pitch_error = angle_error_y;
-	attitude_pid.roll_error = angle_error_x;
+	attitude_pid.pitch_error = pitch_error;
+	attitude_pid.roll_error = roll_error;
 
 	//attitude_pid.pitch_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.pitch_error_accumulated + (attitude_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -0.15), 0.15);
 	//attitude_pid.roll_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.roll_error_accumulated + (attitude_pid.roll_error * fbw_pid_settings.roll_i * dt), -0.15), 0.15);

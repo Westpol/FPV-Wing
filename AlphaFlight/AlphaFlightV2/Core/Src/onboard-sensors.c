@@ -388,8 +388,7 @@ void GYRO_INTEGRATE_EXACT() {
 
     // Convert to Euler angles
     imu_data.pitch_angle = asinf(2*(q[0]*q[2] - q[3]*q[1])) * 180.0f / M_PI;
-    imu_data.roll_angle = atan2f(2*(q[0]*q[1] + q[2]*q[3]),
-                                 1 - 2*(q[1]*q[1] + q[2]*q[2])) * 180.0f / M_PI;
+    imu_data.roll_angle = atan2f(2*(q[0]*q[1] + q[2]*q[3]), 1 - 2*(q[1]*q[1] + q[2]*q[2])) * 180.0f / M_PI;
     imu_data.angle_y_fused = imu_data.pitch_angle;
     imu_data.angle_x_fused = imu_data.roll_angle;
 }
