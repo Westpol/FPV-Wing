@@ -395,39 +395,6 @@ void GYRO_INTEGRATE_EXACT() {
 }
 
 
-void GYRO_INTEGRATE(){// DEPRECATED
-	uint64_t now = MICROS64();
-	uint64_t delta_t_us = now - last_integration_us;
-	last_integration_us = now;
-	float delta_t_s = (float)delta_t_us / 1000000.0f;
-
-	float wx = imu_data.gyro_x * 0.5f * delta_t_s;
-	float wy = imu_data.gyro_y * 0.5f * delta_t_s;
-	float wz = imu_data.gyro_z * 0.5f * delta_t_s;
-
-	float w = q[0];
-	float x = q[1];
-	float y = q[2];
-	float z = q[3];
-
-    q[0] += -x*wx - y*wy - z*wz;
-    q[1] +=  w*wx + y*wz - z*wy;
-    q[2] +=  w*wy - x*wz + z*wx;
-    q[3] +=  w*wz + x*wy - y*wx;
-
-    float norm = sqrtf(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
-    q[0] /= norm;
-    q[1] /= norm;
-    q[2] /= norm;
-    q[3] /= norm;
-
-	imu_data.pitch_angle = asin(2*(q[0]*q[2] - q[3]*q[1])) * 180 / M_PI;
-	imu_data.roll_angle = atan2(2*(q[0]*q[1] + q[2]*q[3]), 1 - 2*(q[1]*q[1] + q[2]*q[2])) * 180 / M_PI;
-	imu_data.angle_y_fused = imu_data.pitch_angle;
-	imu_data.angle_x_fused = imu_data.roll_angle;
-}
-
-
 #define FUSION_RATE_HZ 200.0f
 #define MAX_DEG_PER_SEC 1.0f
 const float correction_angle = (MAX_DEG_PER_SEC * (M_PI/180.0f)) / FUSION_RATE_HZ; // ≈ 8.7266e-5
