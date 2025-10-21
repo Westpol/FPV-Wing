@@ -184,6 +184,10 @@ int main(void)
   /* USER CODE BEGIN 2 */
   progress_counter = 3;
 
+
+  LOAD_CONFIG_INIT();
+
+
   LL_SPI_Enable(SPI1);
   uint8_t counter = 0;
   while(SENSORS_INIT(SPI1, GPIOB, GPIO_PIN_0, GPIOB, GPIO_PIN_1, GPIOC, GPIO_PIN_4) > 0 || imu_data.accel_x == 0){

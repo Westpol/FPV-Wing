@@ -22,7 +22,6 @@ static CURRENT_SERVO_POINTS current_servo_points;
 extern CRSF_DATA crsf_data;
 extern IMU_Data imu_data;
 extern float q[4];
-float q_target[4] = {1.0f, 0.0f, 0.0f, 0.0f};
 
 FLY_BY_WIRE_PID_VALUES attitude_pid = {0};
 FLY_BY_WIRE_PID fbw_pid_settings = {0};
@@ -91,6 +90,8 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float sr = sinf(half_roll);
 
 	// q = q_pitch * q_roll  (Z-Y-X sequence, yaw=0)
+	float q_target[4];
+
 	q_target[0] = cp * cr;        // w
 	q_target[1] = cp * sr;        // x
 	q_target[2] = sp * cr;        // y

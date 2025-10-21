@@ -106,7 +106,6 @@ typedef struct __attribute__((__packed__)) {
     uint8_t  mission_status_flags;    // Bitfield for current mission state
     uint8_t  mission_config_version;  // To version mission file format
     uint8_t  default_log_profile_id;  // Which logging config to use if none specified
-    uint8_t  log_mode_flag;          // Flags for aggressive/debug/normal logging
 } SD_SUPERBLOCK;
 
 _Static_assert(sizeof(SD_SUPERBLOCK) <= 508, "Superblock struct too large for SD block!");

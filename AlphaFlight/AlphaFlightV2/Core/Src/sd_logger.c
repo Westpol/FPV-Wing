@@ -31,6 +31,7 @@
 #include "m10-gps.h"
 #include "flight_state.h"
 #include "sd.h"
+#include "load_config.h"
 
 static bool last_arm_status = false;
 
@@ -50,7 +51,9 @@ static uint32_t last_log_block;
 static SD_SUPERBLOCK sd_superblock = {0};
 static SD_FILE_METADATA_BLOCK sd_file_metadata_block = {0};
 static uint8_t raw_block_data[BLOCK_SIZE];
+
 extern GPS_DATA gps_data;
+extern SD_LOGGER_CONFIG_DATA sd_logger_config_data;
 
 
 static void LOG_FAIL_WITH_ERROR(uint8_t error_code){
@@ -102,7 +105,7 @@ static void READ_LATEST_FLIGHT(){
 
 	latest_metadata_block = FLIGHT_NUM_TO_BLOCK(sd_superblock.relative_flight_num - 1);
 	latest_metadata_index = FLIGHT_NUM_TO_INDEX(sd_superblock.relative_flight_num - 1);
-	log_mode = sd_superblock.log_mode_flag;
+	log_mode = sd_logger_config_data.log_mode;
 
 	if(sd_superblock.relative_flight_num == 0){		// hard fix bug on first flight because system is built on an existing flight before
 		SD_READ_BLOCK(raw_block_data, LOG_METADATA_BLOCK_START);
@@ -162,7 +165,7 @@ uint32_t SD_LOGGER_INIT(){
 	// check init
 
 
-	//SD_LOGGER_SETUP_CARD();
+	SD_LOGGER_SETUP_CARD();
 	READ_LATEST_FLIGHT();
 
 	return LOGGING_PACKER_INTERVAL_MICROSECONDS(log_mode);
@@ -283,7 +286,6 @@ void SD_LOGGER_SETUP_CARD(){
 	sd_superblock_config.latest_mission_metadata_block = MISSION_METADATA_BLOCK_START;
 
 	sd_superblock_config.active_mission_id = 0;		// standard mission with no waypoints, etc.
-	sd_superblock_config.log_mode_flag = LOG_TYPE_T1V0_GENERAL;
 
 	SD_FILE_METADATA_CHUNK temporary_dummy = {0};
 	temporary_dummy.magic = LOG_METADATA_MAGIC;
