@@ -61,11 +61,6 @@ void CONFIG_READ_CONFIG(){
 	SD_READ_BLOCK(block_data, CONFIG_START_BLOCK);
 
 	memcpy(&config_header, &block_data[0], sizeof(config_header));
-	USB_PRINTLN_BLOCKING("%08X", config_header.magic_start);
-	USB_PRINTLN_BLOCKING("%08X", magic);
-	USB_PRINTLN_BLOCKING("%08X", config_header.magic_end);
-	USB_PRINTLN_BLOCKING("%08X", ~magic);
-	USB_PRINTLN_BLOCKING("%d", !(config_header.magic_start == magic && config_header.magic_end == ~magic));
 	if(!(config_header.magic_start == magic && config_header.magic_end == ~magic)) ERROR_HANDLER_BLINKS(2);
 	magic = next_magic(magic);
 	if(config_header.block_num_next_datastruct != block){
