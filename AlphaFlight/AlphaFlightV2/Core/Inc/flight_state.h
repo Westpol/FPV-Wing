@@ -17,6 +17,10 @@ typedef struct {
 
 typedef struct {
     uint8_t value;
+} flight_magic_usb_override;
+
+typedef struct {
+    uint8_t value;
 } flight_magic_rxloss_t;
 
 typedef enum{
@@ -26,13 +30,17 @@ typedef enum{
 }FLIGHT_STATE_ARMING;
 
 #define FLIGHT_STATE_ARM_CHANGE_MAGIC 0xA5
+#define FLIGHT_STATE_ARM_USB_OVERRIDE_MAGIC 0x59
 #define FLIGHT_STATE_RXLOSS_CHANGE_MAGIC 0xF5
 
 #define FLIGHT_STATE_ARM_CHANGE_KEY   ((flight_magic_arm_t){ .value = FLIGHT_STATE_ARM_CHANGE_MAGIC })
+#define FLIGHT_STATE_USB_OVERRIDE_KEY   ((flight_magic_usb_override){ .value = FLIGHT_STATE_ARM_USB_OVERRIDE_MAGIC })
 #define FLIGHT_STATE_RXLOSS_CHANGE_KEY   ((flight_magic_rxloss_t){ .value = FLIGHT_STATE_RXLOSS_CHANGE_MAGIC })
 
 void FLIGHT_STATE_ARM(flight_magic_arm_t KEY);
 void FLIGHT_STATE_DISARM(flight_magic_arm_t KEY);
+void FLIGHT_STATE_USB_ENABLE_OVERRIDE(flight_magic_usb_override KEY);
+void FLIGHT_STATE_USB_DISABLE_OVERRIDE(flight_magic_usb_override KEY);
 bool FLIGHT_STATE_IS_ARMED(void);
 
 void FLIGHT_STATE_RX_VALID(flight_magic_rxloss_t KEY);

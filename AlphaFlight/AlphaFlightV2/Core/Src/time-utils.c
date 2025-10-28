@@ -19,6 +19,10 @@ void TIME_UTILS_MICROS_TIM_START(TIM_HandleTypeDef *HTIMx) {
 	initialized = true;
 }
 
+TIM_HandleTypeDef* TIME_UTILS_GET_TIMER(){
+	return htim;
+}
+
 uint64_t MICROS64(void) {
 	if(initialized){
 		uint32_t timer_low   = htim->Instance->CNT;

@@ -15,14 +15,24 @@ static const uint8_t *flight_state_messages[3] = {(const uint8_t*)"Disarmed", (c
 
 static struct {
     uint8_t armed;
+    uint8_t usb_override;
     uint8_t rxloss;
-} flight_state = {.armed = 0, .rxloss = FLIGHT_STATE_RXLOSS_MAGIC};
+} flight_state = {.armed = 0, .usb_override = 0, .rxloss = FLIGHT_STATE_RXLOSS_MAGIC};
 
 static void RECOVER_ARM_STATUS(){
 	if(flight_state.armed == 0 || flight_state.armed == FLIGHT_STATE_ARM_MAGIC){
 		return;
 	}
 	flight_state.armed = 0;
+}
+
+void FLIGHT_STATE_USB_ENABLE_OVERRIDE(flight_magic_usb_override KEY){
+	if(KEY.value != FLIGHT_STATE_ARM_USB_OVERRIDE_MAGIC) return;
+	flight_state.usb_override = FLIGHT_STATE_ARM_USB_OVERRIDE_MAGIC;
+}
+void FLIGHT_STATE_USB_DISABLE_OVERRIDE(flight_magic_usb_override KEY){
+	if(KEY.value != FLIGHT_STATE_ARM_USB_OVERRIDE_MAGIC) return;
+	flight_state.usb_override = 0;
 }
 
 void FLIGHT_STATE_ARM(flight_magic_arm_t KEY){
@@ -36,6 +46,8 @@ void FLIGHT_STATE_DISARM(flight_magic_arm_t KEY){
 }
 
 bool FLIGHT_STATE_IS_ARMED(void){
+	if(flight_state.usb_override == FLIGHT_STATE_ARM_USB_OVERRIDE_MAGIC) return 0;
+
 	if(flight_state.armed == FLIGHT_STATE_ARM_MAGIC) return 1;
 	if(flight_state.armed == 0) return 0;
 	RECOVER_ARM_STATUS();

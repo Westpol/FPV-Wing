@@ -40,6 +40,7 @@
 #include "usage_stats.h"
 #include "load_config.h"
 #include "qmc5883.h"
+#include "usb_manager.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -261,6 +262,9 @@ int main(void)
   SCHEDULER_ADD_TASK(PRINT_DATA, HZ_TO_DELTA_T_US(10));	// 10 Hz
   #endif
   TIME_UTILS_MICROS_TIM_START(&htim5);
+
+  USB_INIT();
+
   SCHEDULER_INIT();	// MICROS ONLY WORKS WHEN THIS IS ENABLED
 
 	progress_counter = 12;

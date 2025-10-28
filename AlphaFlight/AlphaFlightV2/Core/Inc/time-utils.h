@@ -14,5 +14,6 @@
 void TIME_UTILS_MICROS_TIM_START(TIM_HandleTypeDef *HTIMx);
 
 uint64_t MICROS64();
+TIM_HandleTypeDef* TIME_UTILS_GET_TIMER();
 
 #endif /* INC_TIME_UTILS_H_ */
