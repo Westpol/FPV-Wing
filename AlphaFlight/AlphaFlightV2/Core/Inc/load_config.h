@@ -46,6 +46,18 @@ typedef struct __attribute((packed)){
 	uint32_t magic_end;
 }SD_LOGGER_CONFIG_DATA;
 
+typedef struct __attribute((packed)){
+	uint32_t magic_start;
+	uint16_t index_next_datastruct;
+	uint32_t block_num_next_datastruct;
+	uint8_t throttle;
+	uint8_t roll;
+	uint8_t pitch;
+	uint8_t arm_switch;
+	uint8_t mode_switch;
+	uint32_t magic_end;
+}CRSF_CHANNELS_CONFIG_DATA;
+
 void print_block_blocking(uint32_t block);
 void LOAD_CONFIG_INIT();
 void CONFIG_WRITE_STANDARD_CONFIG();

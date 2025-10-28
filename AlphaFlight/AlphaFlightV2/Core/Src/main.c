@@ -39,6 +39,7 @@
 #include "flight_state.h"
 #include "usage_stats.h"
 #include "load_config.h"
+#include "qmc5883.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -235,6 +236,10 @@ int main(void)
   uint32_t sd_logger_loop_time_delta = SD_LOGGER_INIT();
 
   progress_counter = 10;
+
+  MAGNETOMETER_INIT();
+
+  progress_counter = 11;
   //SCHEDULER_ADD_TASK(SCHEDULER_CHECK_EXECUTION_DELAY, 40000);		// 25 Hz
   SCHEDULER_ADD_TASK(USAGE_STAT_START_OF_SCHEDULER_CALL, HZ_TO_DELTA_T_US(1000));
   SCHEDULER_ADD_TASK(GYRO_READ, HZ_TO_DELTA_T_US(1000));		// 1 kHz
@@ -258,7 +263,7 @@ int main(void)
   TIME_UTILS_MICROS_TIM_START(&htim5);
   SCHEDULER_INIT();	// MICROS ONLY WORKS WHEN THIS IS ENABLED
 
-	progress_counter = 11;
+	progress_counter = 12;
   /* USER CODE END 2 */
 
   /* Infinite loop */

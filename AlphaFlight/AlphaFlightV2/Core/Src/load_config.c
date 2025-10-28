@@ -22,6 +22,7 @@
 
 SD_LOGGER_CONFIG_DATA sd_logger_config_data;
 CONFIG_HEADER config_header;
+CRSF_CHANNELS_CONFIG_DATA crsf_channels_config_header;
 
 uint8_t CONFIG_READ = 0;
 
@@ -117,6 +118,19 @@ static void CONFIG_SET_STANDARD_VALUES(){
 	sd_logger_config_data.index_next_datastruct = block_index_pos;
 	sd_logger_config_data.block_num_next_datastruct = block;
 
+
+	crsf_channels_config_header.magic_start = magic;
+	crsf_channels_config_header.magic_end = ~magic;
+	magic = next_magic(magic);
+	crsf_channels_config_header.throttle = 0;
+	crsf_channels_config_header.roll = 1;
+	crsf_channels_config_header.pitch = 2;
+	crsf_channels_config_header.arm_switch = 11;
+	crsf_channels_config_header.mode_switch = 5;
+
+	INCREASE_INDEX_NEXT_STRUCT(sizeof(sd_logger_config_data), 0, &block_index_pos, &block);
+	crsf_channels_config_header.index_next_datastruct = block_index_pos;
+	crsf_channels_config_header.block_num_next_datastruct = block;
 
 }
 

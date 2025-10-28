@@ -18,13 +18,13 @@
 #define CRSF_BUFFER_SIZE ROUND_UP_32(CRSF_BUFFER_RAW_SIZE)
 #define MAX_PARSE_ITERATIONS 32  // Don't loop forever on garbage
 
-typedef enum{
-	CRSF_CHANNEL_THROTTLE = 0,
-	CRSF_CHANNEL_PITCH = 1,
-	CRSF_CHANNEL_ROLL = 2,
-	CRSF_CHANNEL_ARM_SWITCH = 11,
-	CRSF_CHANNEL_MODE_SWITCH = 5,
-}CRSF_CHANNEL_INDEX;
+typedef struct{
+	uint8_t throttle;
+	uint8_t pitch;
+	uint8_t roll;
+	uint8_t arm_switch;
+	uint8_t mode_switch;
+}CRSF_CHANNEL;
 
 typedef struct{
 	uint64_t parser_position;

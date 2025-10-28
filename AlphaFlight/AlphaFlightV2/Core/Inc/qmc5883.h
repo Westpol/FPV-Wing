@@ -8,6 +8,7 @@
 #ifndef INC_QMC5883_H_
 #define INC_QMC5883_H_
 
-
+void MAGNETOMETER_INIT();
+void MAGNETOMETER_READ_BLOCKING();
 
 #endif /* INC_QMC5883_H_ */

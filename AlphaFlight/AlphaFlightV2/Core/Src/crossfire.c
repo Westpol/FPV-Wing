@@ -15,6 +15,7 @@
 #include "onboard-sensors.h"
 #include <math.h>
 #include <stdlib.h>
+#include "load_config.h"
 
 static UART_HandleTypeDef *crsf_uart;
 static DMA_HandleTypeDef *crsf_dma;
@@ -29,6 +30,9 @@ extern GPS_DATA gps_data;
 extern IMU_Data imu_data;
 
 static uint8_t crsf_circle_counter = 0;
+
+CRSF_CHANNEL crsf_channel = {0};
+extern CRSF_CHANNELS_CONFIG_DATA crsf_channels_config_header;
 
 static uint8_t crc8tab[256] = {
 	    0x00, 0xD5, 0x7F, 0xAA, 0xFE, 0x2B, 0x81, 0x54, 0x29, 0xFC, 0x56, 0x83, 0xD7, 0x02, 0xA8, 0x7D,
@@ -130,6 +134,14 @@ void CRSF_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx){
 	if(HAL_UART_Receive_DMA(crsf_uart, dma_buffer, CRSF_BUFFER_SIZE) != HAL_OK){
 		ERROR_HANDLER_BLINKS(1);
 	}
+	if(!CONFIG_WAS_READ()){
+		ERROR_HANDLER_BLINKS(2);
+	}
+	crsf_channel.throttle = crsf_channels_config_header.throttle;
+	crsf_channel.roll = crsf_channels_config_header.roll;
+	crsf_channel.pitch = crsf_channels_config_header.pitch;
+	crsf_channel.arm_switch = crsf_channels_config_header.arm_switch;
+	crsf_channel.mode_switch = crsf_channels_config_header.mode_switch;
 }
 
 void CRSF_HANDLE_TELEMETRY(){
