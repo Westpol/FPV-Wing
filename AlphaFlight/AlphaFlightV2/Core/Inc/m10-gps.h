@@ -86,4 +86,6 @@ void GPS_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx);
 void GPS_PARSE_BUFFER(void);
 void GPS_OVERFLOW_INCREMENT(void);
 
+extern GPS_DATA gps_data;
+
 #endif /* INC_M10_GPS_H_ */

@@ -24,7 +24,6 @@
 extern IMU_Data imu_data;
 extern CRSF_DATA crsf_data;
 extern GPS_NAV_PVT gps_nav_pvt;
-extern GPS_DATA gps_data;
 extern FLY_BY_WIRE_PID_VALUES attitude_pid;
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 

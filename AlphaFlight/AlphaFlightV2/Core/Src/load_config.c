@@ -19,6 +19,7 @@
 #include "sd_logger.h"
 #include "debug.h"
 #include "main.h"
+#include "config_data.h"
 
 SD_LOGGER_CONFIG_DATA sd_logger_config_data;
 CONFIG_HEADER config_header;
@@ -55,6 +56,16 @@ uint8_t CONFIG_WAS_READ(){
 	return CONFIG_READ;
 }
 
+static void CONFIG_WRITE_READ_DATA(){
+	CONFIG_DATA_SD_LOGGER_SETUP.log_mode = sd_logger_config_data.log_mode;
+
+	CONFIG_DATA_CRSF_CHANNELS.throttle = crsf_channels_config_header.throttle;
+	CONFIG_DATA_CRSF_CHANNELS.roll = crsf_channels_config_header.roll;
+	CONFIG_DATA_CRSF_CHANNELS.pitch = crsf_channels_config_header.pitch;
+	CONFIG_DATA_CRSF_CHANNELS.arm_switch = crsf_channels_config_header.arm_switch;
+	CONFIG_DATA_CRSF_CHANNELS.mode_switch = crsf_channels_config_header.mode_switch;
+}
+
 void CONFIG_READ_CONFIG(){
 	uint8_t block_data[512];
 	uint32_t magic = START_MAGIC;
@@ -76,6 +87,16 @@ void CONFIG_READ_CONFIG(){
 		SD_READ_BLOCK(block_data, sd_logger_config_data.block_num_next_datastruct);
 		block = sd_logger_config_data.block_num_next_datastruct;
 	}
+
+	memcpy(&crsf_channels_config_header, &block_data[sd_logger_config_data.index_next_datastruct], sizeof(crsf_channels_config_header));
+		if(!(crsf_channels_config_header.magic_start == magic && crsf_channels_config_header.magic_end == ~magic)) ERROR_HANDLER_BLINKS(3);
+		magic = next_magic(magic);
+		if(crsf_channels_config_header.block_num_next_datastruct != block){
+			SD_READ_BLOCK(block_data, crsf_channels_config_header.block_num_next_datastruct);
+			block = crsf_channels_config_header.block_num_next_datastruct;
+		}
+
+	CONFIG_WRITE_READ_DATA();
 	CONFIG_READ = 1;
 }
 

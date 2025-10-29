@@ -19,14 +19,6 @@
 #define MAX_PARSE_ITERATIONS 32  // Don't loop forever on garbage
 
 typedef struct{
-	uint8_t throttle;
-	uint8_t pitch;
-	uint8_t roll;
-	uint8_t arm_switch;
-	uint8_t mode_switch;
-}CRSF_CHANNEL;
-
-typedef struct{
 	uint64_t parser_position;
 	uint8_t package_header;
 	uint8_t payload_len;
