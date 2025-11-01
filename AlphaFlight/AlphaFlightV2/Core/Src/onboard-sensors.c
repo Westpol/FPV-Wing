@@ -367,7 +367,7 @@ void GYRO_INTEGRATE_EXACT() {
 
 
     // Convert to Euler angles
-    imu_data.pitch_angle = asinf(2*(q[0]*q[2] - q[3]*q[1])) * 180.0f / M_PI;
+    imu_data.pitch_angle = -asinf(2*(q[0]*q[2] - q[3]*q[1])) * 180.0f / M_PI;
     imu_data.roll_angle = atan2f(2*(q[0]*q[1] + q[2]*q[3]), 1 - 2*(q[1]*q[1] + q[2]*q[2])) * 180.0f / M_PI;
     imu_data.angle_y_fused = imu_data.pitch_angle;
     imu_data.angle_x_fused = imu_data.roll_angle;
@@ -378,7 +378,7 @@ void GYRO_INTEGRATE_EXACT() {
 #define MAX_DEG_PER_SEC 3.0f
 const float correction_angle = (MAX_DEG_PER_SEC * (M_PI/180.0f)) / FUSION_RATE_HZ; // ≈ 8.7266e-5
 void GYRO_FUSION(){
-	float ax = imu_data.accel_x;
+	float ax = -imu_data.accel_x;
 	float ay = imu_data.accel_y;
 	float az = imu_data.accel_z;
 	float norm = sqrtf(ax*ax + ay*ay + az*az);
