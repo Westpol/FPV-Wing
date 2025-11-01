@@ -395,7 +395,7 @@ void GYRO_INTEGRATE_EXACT() {
 
 
 #define FUSION_RATE_HZ 200.0f
-#define MAX_DEG_PER_SEC 1.0f
+#define MAX_DEG_PER_SEC 3.0f
 const float correction_angle = (MAX_DEG_PER_SEC * (M_PI/180.0f)) / FUSION_RATE_HZ; // ≈ 8.7266e-5
 void GYRO_FUSION(){
 	float ax = imu_data.accel_x;
@@ -411,6 +411,13 @@ void GYRO_FUSION(){
 	float ex = (ay*vz - az*vy);
 	float ey = (az*vx - ax*vz);
 	float ez = (ax*vy - ay*vx);
+
+	// remove yaw component: project error onto plane perpendicular to gravity (v)
+	float dot_ev = ex*vx + ey*vy + ez*vz;  // projection of e onto v
+	ex -= dot_ev * vx;
+	ey -= dot_ev * vy;
+	ez -= dot_ev * vz;
+
 
 	float err_norm = sqrtf(ex*ex + ey*ey + ez*ez);
 	if(err_norm > 1e-6f){  // avoid division by zero

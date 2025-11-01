@@ -89,12 +89,12 @@ void CONFIG_READ_CONFIG(){
 	}
 
 	memcpy(&crsf_channels_config_header, &block_data[sd_logger_config_data.index_next_datastruct], sizeof(crsf_channels_config_header));
-		if(!(crsf_channels_config_header.magic_start == magic && crsf_channels_config_header.magic_end == ~magic)) ERROR_HANDLER_BLINKS(3);
-		magic = next_magic(magic);
-		if(crsf_channels_config_header.block_num_next_datastruct != block){
-			SD_READ_BLOCK(block_data, crsf_channels_config_header.block_num_next_datastruct);
-			block = crsf_channels_config_header.block_num_next_datastruct;
-		}
+	if(!(crsf_channels_config_header.magic_start == magic && crsf_channels_config_header.magic_end == ~magic)) ERROR_HANDLER_BLINKS(4);
+	magic = next_magic(magic);
+	if(crsf_channels_config_header.block_num_next_datastruct != block){
+		SD_READ_BLOCK(block_data, crsf_channels_config_header.block_num_next_datastruct);
+		block = crsf_channels_config_header.block_num_next_datastruct;
+	}
 
 	CONFIG_WRITE_READ_DATA();
 	CONFIG_READ = 1;
@@ -135,7 +135,7 @@ static void CONFIG_SET_STANDARD_VALUES(){
 	magic = next_magic(magic);
 	sd_logger_config_data.log_mode = 1;
 
-	INCREASE_INDEX_NEXT_STRUCT(sizeof(sd_logger_config_data), 0, &block_index_pos, &block);
+	INCREASE_INDEX_NEXT_STRUCT(sizeof(sd_logger_config_data), sizeof(crsf_channels_config_header), &block_index_pos, &block);
 	sd_logger_config_data.index_next_datastruct = block_index_pos;
 	sd_logger_config_data.block_num_next_datastruct = block;
 
@@ -149,7 +149,7 @@ static void CONFIG_SET_STANDARD_VALUES(){
 	crsf_channels_config_header.arm_switch = 11;
 	crsf_channels_config_header.mode_switch = 5;
 
-	INCREASE_INDEX_NEXT_STRUCT(sizeof(sd_logger_config_data), 0, &block_index_pos, &block);
+	INCREASE_INDEX_NEXT_STRUCT(sizeof(crsf_channels_config_header), 0, &block_index_pos, &block);
 	crsf_channels_config_header.index_next_datastruct = block_index_pos;
 	crsf_channels_config_header.block_num_next_datastruct = block;
 
@@ -177,6 +177,14 @@ void CONFIG_WRITE_STANDARD_CONFIG(){
 		memset(block_byte_array, 0, sizeof(block_byte_array));
 		block = sd_logger_config_data.block_num_next_datastruct;
 	}
+
+	memcpy(&block_byte_array[index], &crsf_channels_config_header, sizeof(crsf_channels_config_header));
+		index = crsf_channels_config_header.index_next_datastruct;
+		if(crsf_channels_config_header.block_num_next_datastruct != block){
+			SD_WRITE_BLOCK(block_byte_array, 508, block);
+			memset(block_byte_array, 0, sizeof(block_byte_array));
+			block = crsf_channels_config_header.block_num_next_datastruct;
+		}
 
 	SD_WRITE_BLOCK(block_byte_array, sizeof(block_byte_array), block);
 
