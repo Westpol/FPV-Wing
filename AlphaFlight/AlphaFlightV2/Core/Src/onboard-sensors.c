@@ -268,7 +268,7 @@ static void GYRO_CONVERT_DATA(){
 	float gz_chip = (float)raw_data.gyro_z_raw * scale;
 
 	imu_data.gyro_x = gx_chip;
-	imu_data.gyro_y = -gy_chip;
+	imu_data.gyro_y = gy_chip;
 	imu_data.gyro_z = gz_chip;
 }
 
@@ -326,6 +326,17 @@ void BARO_READ(){
 }
 
 
+static void Q_PRODUCT(const float* q1,const float* q2, float* q3){		// calculates q1*q2, saves value in q3
+	float q_new[4];
+	q_new[0] = q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2] - q1[3]*q2[3];
+	q_new[1] = q1[0]*q2[1] + q1[1]*q2[0] + q1[2]*q2[3] - q1[3]*q2[2];
+	q_new[2] = q1[0]*q2[2] - q1[1]*q2[3] + q1[2]*q2[0] + q1[3]*q2[1];
+	q_new[3] = q1[0]*q2[3] + q1[1]*q2[2] - q1[2]*q2[1] + q1[3]*q2[0];
+
+	q3[0] = q_new[0]; q3[1] = q_new[1]; q3[2] = q_new[2]; q3[3] = q_new[3];
+}
+
+
 void GYRO_INTEGRATE_EXACT() {
     uint64_t now = MICROS64();
     uint64_t delta_t_us = now - last_integration_us;
@@ -333,58 +344,27 @@ void GYRO_INTEGRATE_EXACT() {
     float delta_t_s = (float)delta_t_us / 1000000.0f;
 
     // Angular velocity (rad/s)
-    float wx = imu_data.gyro_x;
-    float wy = imu_data.gyro_y;
-    float wz = imu_data.gyro_z;
+    float wx = imu_data.gyro_x * delta_t_s;
+    float wy = imu_data.gyro_y * delta_t_s;
+    float wz = imu_data.gyro_z * delta_t_s;
 
-    // Compute angular speed magnitude
-    float omega_mag = sqrtf(wx*wx + wy*wy + wz*wz);
+    float q_x[4] = {cosf(wx / 2), sinf(wx / 2), 0, 0};
+    float q_y[4] = {cosf(wy / 2), 0, sinf(wy / 2), 0};
+    float q_z[4] = {cosf(wz / 2), 0, 0, sinf(wz / 2)};
 
-    // If very small angular speed, fall back to linear approximation to avoid NaN
-    float sin_term, cos_term;
-    if (omega_mag > 1e-6f) {
-        float half_theta = 0.5f * omega_mag * delta_t_s;
-        sin_term = sinf(half_theta);
-        cos_term = cosf(half_theta);
-        wx = wx / omega_mag * sin_term;
-        wy = wy / omega_mag * sin_term;
-        wz = wz / omega_mag * sin_term;
-    } else {
-        // small-angle approximation
-        sin_term = 0.5f * delta_t_s;
-        cos_term = 1.0f;
-        wx *= sin_term;
-        wy *= sin_term;
-        wz *= sin_term;
-    }
+    float q_total[4] = {1, 0, 0, 0};
 
-    float w = q[0];
-    float x = q[1];
-    float y = q[2];
-    float z = q[3];
+    Q_PRODUCT(q_y, q_x, q_total);
+    Q_PRODUCT(q_z, q_total, q_total);
 
-    // Quaternion multiplication Δq ⊗ q
-    float dq_w = cos_term;
-    float dq_x = wx;
-    float dq_y = wy;
-    float dq_z = wz;
+    float norm = sqrtf(q_total[0]*q_total[0] + q_total[1]*q_total[1] + q_total[2]*q_total[2] + q_total[3]*q_total[3]);
+    for(int i = 0; i < 4; i++) q_total[i] /= norm;
 
-    float new_w = dq_w*w - dq_x*x - dq_y*y - dq_z*z;
-    float new_x = dq_w*x + dq_x*w + dq_y*z - dq_z*y;
-    float new_y = dq_w*y - dq_x*z + dq_y*w + dq_z*x;
-    float new_z = dq_w*z + dq_x*y - dq_y*x + dq_z*w;
+    Q_PRODUCT(q, q_total, q);
 
-    q[0] = new_w;
-    q[1] = new_x;
-    q[2] = new_y;
-    q[3] = new_z;
+    norm = sqrtf(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
+    for(int i = 0; i < 4; i++) q[i] /= norm;
 
-    // Normalize quaternion
-    float norm = sqrtf(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
-    q[0] /= norm;
-    q[1] /= norm;
-    q[2] /= norm;
-    q[3] /= norm;
 
     // Convert to Euler angles
     imu_data.pitch_angle = asinf(2*(q[0]*q[2] - q[3]*q[1])) * 180.0f / M_PI;
