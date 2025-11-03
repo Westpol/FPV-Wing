@@ -10,5 +10,6 @@
 
 float UTIL_MIN_F(float value, float min);
 float UTIL_MAX_F(float value, float max);
+void UTIL_QUATERNION_PRODUCT(const float* q1,const float* q2, float* q3);
 
 #endif /* UTILS_H_ */

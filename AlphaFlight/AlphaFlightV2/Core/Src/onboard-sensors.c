@@ -10,6 +10,7 @@
 #include "stdbool.h"
 #include "time-utils.h"
 #include "main.h"
+#include "utils.h"
 
 extern ADC_HandleTypeDef hadc1;
 
@@ -326,17 +327,6 @@ void BARO_READ(){
 }
 
 
-static void Q_PRODUCT(const float* q1,const float* q2, float* q3){		// calculates q1*q2, saves value in q3
-	float q_new[4];
-	q_new[0] = q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2] - q1[3]*q2[3];
-	q_new[1] = q1[0]*q2[1] + q1[1]*q2[0] + q1[2]*q2[3] - q1[3]*q2[2];
-	q_new[2] = q1[0]*q2[2] - q1[1]*q2[3] + q1[2]*q2[0] + q1[3]*q2[1];
-	q_new[3] = q1[0]*q2[3] + q1[1]*q2[2] - q1[2]*q2[1] + q1[3]*q2[0];
-
-	q3[0] = q_new[0]; q3[1] = q_new[1]; q3[2] = q_new[2]; q3[3] = q_new[3];
-}
-
-
 void GYRO_INTEGRATE_EXACT() {
     uint64_t now = MICROS64();
     uint64_t delta_t_us = now - last_integration_us;
@@ -354,13 +344,13 @@ void GYRO_INTEGRATE_EXACT() {
 
     float q_total[4] = {1, 0, 0, 0};
 
-    Q_PRODUCT(q_y, q_x, q_total);
-    Q_PRODUCT(q_z, q_total, q_total);
+    UTIL_QUATERNION_PRODUCT(q_y, q_x, q_total);
+    UTIL_QUATERNION_PRODUCT(q_z, q_total, q_total);
 
     float norm = sqrtf(q_total[0]*q_total[0] + q_total[1]*q_total[1] + q_total[2]*q_total[2] + q_total[3]*q_total[3]);
     for(int i = 0; i < 4; i++) q_total[i] /= norm;
 
-    Q_PRODUCT(q, q_total, q);
+    UTIL_QUATERNION_PRODUCT(q, q_total, q);
 
     norm = sqrtf(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
     for(int i = 0; i < 4; i++) q[i] /= norm;
