@@ -234,6 +234,8 @@ static int8_t BMP_BARO_INIT(){
 }
 
 int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN){
+	ONBOARD_SENSORS.gyro.q_angle[0] = 1;
+
 	sensor_spi = HSPIx;
 	gyro_cs_port = GYRO_PORT;
 	gyro_cs_pin = GYRO_PIN;
