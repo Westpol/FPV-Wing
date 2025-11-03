@@ -104,9 +104,10 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 		attitude_pid.pitch_error = (q_error[2] / scalar) * angle_total;
 		attitude_pid.roll_error = (q_error[1] / scalar) * angle_total;
 	}
-
-	attitude_pid.pitch_error = 0;
-	attitude_pid.roll_error = 0;
+	else{
+		attitude_pid.pitch_error = 0;
+		attitude_pid.roll_error = 0;
+	}
 
 	//attitude_pid.pitch_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.pitch_error_accumulated + (attitude_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -0.15), 0.15);
 	//attitude_pid.roll_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.roll_error_accumulated + (attitude_pid.roll_error * fbw_pid_settings.roll_i * dt), -0.15), 0.15);
