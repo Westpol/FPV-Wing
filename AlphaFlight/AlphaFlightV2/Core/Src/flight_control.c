@@ -18,7 +18,6 @@
 #include "flight_state.h"
 #include "config_data.h"
 
-extern IMU_Data imu_data;
 extern GPS_NAV_PVT gps_nav_pvt;
 extern CRSF_DATA crsf_data;
 static FLIGHT_MODE current_flight_mode = DIRECT_CONTROL;
@@ -46,8 +45,8 @@ void FC_SANITY_CHECK(){
 
 void FC_MODE_CHECK(){
 	if(!FLIGHT_STATE_IS_RX_LOSS()){
-		if(crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.arm_switch] > 60 && FLIGHT_STATE_IS_ARMED() == false && arm_failed == false){
-			if(crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.throttle] < 1){
+		if(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.arm_switch] > 60 && FLIGHT_STATE_IS_ARMED() == false && arm_failed == false){
+			if(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.throttle] < 1){
 				FLIGHT_STATE_ARM(FLIGHT_STATE_ARM_CHANGE_KEY);
 				FLIGHT_STATE_SET_EVENT(FLIGHT_STATE_ARMED);
 			}
@@ -56,18 +55,18 @@ void FC_MODE_CHECK(){
 				FLIGHT_STATE_SET_EVENT(FLIGHT_STATE_ARM_FAILED);
 			}
 		}
-		if((crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.arm_switch] < 60 && FLIGHT_STATE_IS_ARMED()) || (crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.arm_switch] < 60 && arm_failed == true)){
+		if((crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.arm_switch] < 60 && FLIGHT_STATE_IS_ARMED()) || (crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.arm_switch] < 60 && arm_failed == true)){
 			FLIGHT_STATE_DISARM(FLIGHT_STATE_ARM_CHANGE_KEY);
 			arm_failed = false;
 			FLIGHT_STATE_SET_EVENT(FLIGHT_STATE_DISARMED);
 		}
 
-		if(crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.mode_switch] < 10){
+		if(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.mode_switch] < 10){
 			current_flight_mode = DIRECT_CONTROL;
-			fly_by_wire_setpoints.roll_angle = imu_data.angle_x_fused;
-			fly_by_wire_setpoints.pitch_angle = imu_data.angle_y_fused;
+			fly_by_wire_setpoints.roll_angle = ONBOARD_SENSORS.gyro.angle_fused.x;
+			fly_by_wire_setpoints.pitch_angle = ONBOARD_SENSORS.gyro.angle_fused.y;
 		}
-		else if(crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.mode_switch] < 60){
+		else if(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.mode_switch] < 60){
 			current_flight_mode = FLY_BY_WIRE;
 		}
 		else{
@@ -91,8 +90,8 @@ void FC_PROCESS(){
 		return;
 	}
 
-	fly_by_wire_setpoints.pitch_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.pitch_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.pitch], 0.5, 50) / 50.0f - 1) * 10.0f) / (1000000.0f / dt)), 30), -25);
-	fly_by_wire_setpoints.roll_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.roll_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.roll], 0.5, 50) / 50.0f - 1) * 15.0) / (1000000.0f / dt)), 45), -45);
+	fly_by_wire_setpoints.pitch_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.pitch_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch], 0.5, 50) / 50.0f - 1) * 10.0f) / (1000000.0f / dt)), 30), -25);
+	fly_by_wire_setpoints.roll_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.roll_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll], 0.5, 50) / 50.0f - 1) * 15.0) / (1000000.0f / dt)), 45), -45);
 
 	switch (current_flight_mode) {
 		case DIRECT_CONTROL:

@@ -27,8 +27,6 @@ CRSF_DATA crsf_data = {0};
 
 static uint8_t telemetry_data[64] = {0};
 
-extern IMU_Data imu_data;
-
 static uint8_t crsf_circle_counter = 0;
 
 static uint8_t crc8tab[256] = {
@@ -145,7 +143,7 @@ void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 
 	if(TELEMETRY_TYPE == 0x07){		// vario
 		#define payload_length_vario 3
-		int16_t vertical_speed = (int16_t)imu_data.vertical_speed_cm_s;
+		int16_t vertical_speed = (int16_t)ONBOARD_SENSORS.barometer.vertical_speed_cm_s;
 		uint8_t payload_data[payload_length_vario] = {0};
 
 		payload_data[0] = TELEMETRY_TYPE;
@@ -171,7 +169,7 @@ void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 	if(TELEMETRY_TYPE == 0x09){		// Baro / vertical speed
 		#define payload_length_baro 4
 
-		uint16_t baro_height = (uint16_t)(imu_data.height * 10 + 10000) & 0x7FFF;
+		uint16_t baro_height = (uint16_t)(ONBOARD_SENSORS.barometer.height * 10 + 10000) & 0x7FFF;
 
 		uint8_t payload_data[payload_length_baro] = {0};
 		payload_data[0] = TELEMETRY_TYPE;
@@ -198,9 +196,9 @@ void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 	if(TELEMETRY_TYPE == 0x1E){		// attitude
 		#define payload_length_attitude 7
 		uint8_t payload_data[payload_length_attitude] = {0};
-		int16_t pitch = (int16_t)(imu_data.angle_y_fused * (3.14159f / 180.0f) * 10000.0f);
-		int16_t roll = (int16_t)(imu_data.angle_x_fused * (3.14159f / 180.0f) * 10000.0f);
-		int16_t yaw = (int16_t)(imu_data.angle_z_fused * (3.14159f / 180.0f) * 10000.0f);
+		int16_t pitch = (int16_t)(ONBOARD_SENSORS.gyro.angle_fused.y * 10000.0f);
+		int16_t roll = (int16_t)(ONBOARD_SENSORS.gyro.angle_fused.x * 10000.0f);
+		int16_t yaw = (int16_t)(ONBOARD_SENSORS.gyro.angle_fused.z * 10000.0f);
 
 		payload_data[0] = TELEMETRY_TYPE;
 
@@ -311,7 +309,7 @@ void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 	}
 
 	if(TELEMETRY_TYPE == 0x08){		//Batt Info
-		int16_t vbat = (int16_t)(imu_data.vbat * 10.0f);
+		int16_t vbat = (int16_t)(ONBOARD_SENSORS.vbat.vbat * 10.0f);
 		uint8_t payload_data[9] = {TELEMETRY_TYPE, 0x00, 0x64, 0x00, 0x64, 0x00, 0x00, 0xff, 0x14};
 		payload_data[1] = (vbat >> 8) & 0xFF;
 		payload_data[2] = vbat & 0xFF;

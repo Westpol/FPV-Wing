@@ -57,13 +57,13 @@ uint8_t CONFIG_WAS_READ(){
 }
 
 static void CONFIG_WRITE_READ_DATA(){
-	CONFIG_DATA_SD_LOGGER_SETUP.log_mode = sd_logger_config_data.log_mode;
+	CONFIG_DATA.logger.log_mode = sd_logger_config_data.log_mode;
 
-	CONFIG_DATA_CRSF_CHANNELS.throttle = crsf_channels_config_header.throttle;
-	CONFIG_DATA_CRSF_CHANNELS.roll = crsf_channels_config_header.roll;
-	CONFIG_DATA_CRSF_CHANNELS.pitch = crsf_channels_config_header.pitch;
-	CONFIG_DATA_CRSF_CHANNELS.arm_switch = crsf_channels_config_header.arm_switch;
-	CONFIG_DATA_CRSF_CHANNELS.mode_switch = crsf_channels_config_header.mode_switch;
+	CONFIG_DATA.crossfire.channels.throttle = crsf_channels_config_header.throttle;
+	CONFIG_DATA.crossfire.channels.roll = crsf_channels_config_header.roll;
+	CONFIG_DATA.crossfire.channels.pitch = crsf_channels_config_header.pitch;
+	CONFIG_DATA.crossfire.channels.arm_switch = crsf_channels_config_header.arm_switch;
+	CONFIG_DATA.crossfire.channels.mode_switch = crsf_channels_config_header.mode_switch;
 }
 
 void CONFIG_READ_CONFIG(){

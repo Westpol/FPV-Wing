@@ -21,88 +21,45 @@
 #include "stm32f7xx_ll_pwr.h"
 #include "stm32f7xx_ll_dma.h"
 
-typedef struct {
-	uint16_t NVM_PAR_T1;
-	uint16_t NVM_PAR_T2;
-	int8_t NVM_PAR_T3;
-	int16_t NVM_PAR_P1;
-	int16_t NVM_PAR_P2;
-	int8_t NVM_PAR_P3;
-	int8_t NVM_PAR_P4;
-	uint16_t NVM_PAR_P5;
-	uint16_t NVM_PAR_P6;
-	int8_t NVM_PAR_P7;
-	int8_t NVM_PAR_P8;
-	int16_t NVM_PAR_P9;
-	int8_t NVM_PAR_P10;
-	int8_t NVM_PAR_P11;
-	float par_t1;
-	float par_t2;
-	float par_t3;
-	float par_p1;
-	float par_p2;
-	float par_p3;
-	float par_p4;
-	float par_p5;
-	float par_p6;
-	float par_p7;
-	float par_p8;
-	float par_p9;
-	float par_p10;
-	float par_p11;
-	float t_lin;
-} Baro_Calibration;
-
+//-------------------------------- generating onboard_sensors struct -------------------------------
 typedef struct{
-	float gyro_alpha;
-	float accel_alpha;
-	float baro_alpha;
-	float gyro_cutoff_hertz;
-	float accel_cutoff_hertz;
-}ALPHA_VALUES;
-
+	float x;
+	float y;
+	float z;
+}imu_axis_helper_float_t;
 typedef struct{
-	float gyro_x;		// rotational velocity in °/s
-	float gyro_y;
-	float gyro_z;
-	float gyro_x_filtered;		// rotational velocity in °/s with lowpass filter
-	float gyro_y_filtered;
-	float gyro_z_filtered;
+	imu_axis_helper_float_t gyro;	// raw data converted to radians
+	imu_axis_helper_float_t filtered;		// filtered per axis data (obsolete)
+	imu_axis_helper_float_t angle_fused;
 	float pitch_angle;		// + equals pitch up, - equals pitch down
 	float roll_angle;		// + equals roll x, - equals roll x
-	float angle_x_fused;		// angle in °
-	float angle_y_fused;
-	float angle_z_fused;
-	float angle_x_accel;
-	float angle_y_accel;
-	float accel_x;		// acceleration in mg (9.81mm/s²)
-	float accel_y;
-	float accel_z;
-	float accel_x_filtered;		// acceleration in mg (9.81mm/s²) with lowpass filter
-	float accel_y_filtered;
-	float accel_z_filtered;
-	float temp;
+	float q_angle[4];
+}gyro_t;
+typedef struct{
+	imu_axis_helper_float_t accel;
+	imu_axis_helper_float_t accel_filtered;
+}accel_t;
+typedef struct{
 	float pressure;
 	float pressure_filtered;
 	float pressure_base;
 	float height;
 	float vertical_speed_cm_s;
+	float temperature;
+}barometer_t;
+typedef struct{
 	float vbat;
 	uint32_t vbat_raw;
-	float q_angular_speed[4];
-	float q_angle[4];
-}IMU_Data;
-
+}vbat_t;
 typedef struct{
-	int16_t gyro_x_raw;
-	int16_t gyro_y_raw;
-	int16_t gyro_z_raw;
-	int16_t accel_x_raw;
-    int16_t accel_y_raw;
-    int16_t accel_z_raw;
-    uint32_t baro_temp_raw;
-    uint32_t baro_pressure_raw;
-}Raw_Data;
+	gyro_t gyro;
+	accel_t accel;
+	barometer_t barometer;
+	vbat_t vbat;
+}onboard_sensors_t;
+//-------------------------------- generating onboard_sensors struct -------------------------------
+
+extern onboard_sensors_t ONBOARD_SENSORS;
 
 int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN);
 

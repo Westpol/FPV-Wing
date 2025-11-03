@@ -21,8 +21,6 @@
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 static CURRENT_SERVO_POINTS current_servo_points;
 extern CRSF_DATA crsf_data;
-extern IMU_Data imu_data;
-extern float q[4];
 
 FLY_BY_WIRE_PID_VALUES attitude_pid = {0};
 FLY_BY_WIRE_PID fbw_pid_settings = {0};
@@ -67,10 +65,10 @@ void FC_PID_INIT(){
 
 void FC_PID_DIRECT_CONTROL(){
 	if(FLIGHT_STATE_IS_ARMED() && !FLIGHT_STATE_IS_RX_LOSS()){
-		FC_PID_MIXER(UTIL_MAX_F(crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.pitch] + 10.0f, 100.0f) / 50.0f - 1, UTIL_MAX_F(crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.roll] + 4.0f, 100.0f) / 50.0f - 1, crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.throttle] / 100.0f);
+		FC_PID_MIXER(UTIL_MAX_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch] + 10.0f, 100.0f) / 50.0f - 1, UTIL_MAX_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll] + 4.0f, 100.0f) / 50.0f - 1, crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.throttle] / 100.0f);
 	}
 	else{
-		FC_PID_MIXER(UTIL_MAX_F(crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.pitch] + 10.0f, 100.0f) / 50.0f - 1, UTIL_MAX_F(crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.roll] + 4.0f, 100.0f) / 50.0f - 1, 0.0);
+		FC_PID_MIXER(UTIL_MAX_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch] + 10.0f, 100.0f) / 50.0f - 1, UTIL_MAX_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll] + 4.0f, 100.0f) / 50.0f - 1, 0.0);
 	}
 }
 
@@ -84,7 +82,7 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float q_setpoint[4] = {0};
 	float q_setpoint_pitch[4] = {cosf(pitch_rad / 2.0f), 0, sinf(pitch_rad / 2.0f), 0};
 	float q_setpoint_roll[4] = {cosf(roll_rad / 2.0f), sinf(roll_rad / 2.0f), 0, 0};
-	float q_inverted[4] = {q[0], -q[1], -q[2], -q[3]};
+	float q_inverted[4] = {ONBOARD_SENSORS.gyro.q_angle[0], -ONBOARD_SENSORS.gyro.q_angle[1], -ONBOARD_SENSORS.gyro.q_angle[2], -ONBOARD_SENSORS.gyro.q_angle[3]};
 	float q_error[4];
 
 	UTIL_QUATERNION_PRODUCT(q_setpoint_pitch, q_setpoint_roll, q_setpoint);
@@ -117,7 +115,7 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	attitude_pid.roll_error_last = attitude_pid.roll_error;
 
 	if(FLIGHT_STATE_IS_ARMED() && !FLIGHT_STATE_IS_RX_LOSS()){
-		FC_PID_MIXER(attitude_pid.pitch_pid_correction, attitude_pid.roll_pid_correction, crsf_data.channel_norm[CONFIG_DATA_CRSF_CHANNELS.throttle] / 100.0f);
+		FC_PID_MIXER(attitude_pid.pitch_pid_correction, attitude_pid.roll_pid_correction, crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.throttle] / 100.0f);
 	}
 	else{
 		FC_PID_MIXER(attitude_pid.pitch_pid_correction, attitude_pid.roll_pid_correction, 0.0);

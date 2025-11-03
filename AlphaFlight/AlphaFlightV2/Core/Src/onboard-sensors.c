@@ -12,6 +12,8 @@
 #include "main.h"
 #include "utils.h"
 
+onboard_sensors_t ONBOARD_SENSORS = {0};
+
 extern ADC_HandleTypeDef hadc1;
 
 static SPI_TypeDef *sensor_spi;
@@ -22,8 +24,58 @@ static uint16_t accel_cs_pin;
 static GPIO_TypeDef *baro_cs_port;
 static uint16_t baro_cs_pin;
 
+typedef struct {
+	uint16_t NVM_PAR_T1;
+	uint16_t NVM_PAR_T2;
+	int8_t NVM_PAR_T3;
+	int16_t NVM_PAR_P1;
+	int16_t NVM_PAR_P2;
+	int8_t NVM_PAR_P3;
+	int8_t NVM_PAR_P4;
+	uint16_t NVM_PAR_P5;
+	uint16_t NVM_PAR_P6;
+	int8_t NVM_PAR_P7;
+	int8_t NVM_PAR_P8;
+	int16_t NVM_PAR_P9;
+	int8_t NVM_PAR_P10;
+	int8_t NVM_PAR_P11;
+	float par_t1;
+	float par_t2;
+	float par_t3;
+	float par_p1;
+	float par_p2;
+	float par_p3;
+	float par_p4;
+	float par_p5;
+	float par_p6;
+	float par_p7;
+	float par_p8;
+	float par_p9;
+	float par_p10;
+	float par_p11;
+	float t_lin;
+} Baro_Calibration;
+
+typedef struct{
+	int16_t gyro_x_raw;
+	int16_t gyro_y_raw;
+	int16_t gyro_z_raw;
+	int16_t accel_x_raw;
+    int16_t accel_y_raw;
+    int16_t accel_z_raw;
+    uint32_t baro_temp_raw;
+    uint32_t baro_pressure_raw;
+}Raw_Data;
+
+typedef struct{
+	float gyro_alpha;
+	float accel_alpha;
+	float baro_alpha;
+	float gyro_cutoff_hertz;
+	float accel_cutoff_hertz;
+}ALPHA_VALUES;
+
 static Baro_Calibration baro_calibration = {0};
-IMU_Data imu_data = {0};
 static Raw_Data raw_data = {0};
 static ALPHA_VALUES alpha_values = {0};
 static uint64_t last_integration_us = 0;
@@ -33,7 +85,6 @@ static uint8_t accel_rx[7] = {0};
 
 static uint8_t baro_rx[7] = {0};
 uint64_t baro_last_vs_update_time = 0;
-float q[4] = {1, 0, 0, 0};
 
 __attribute__((optimize("O0"))) static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t *rxbuffer, uint8_t readLength){
 	reg |= READ_BYTE;
@@ -264,49 +315,45 @@ static void GYRO_CONVERT_DATA(){
 
 	const float scale = (2000.0f / 32767.0f) * (M_PI / 180.0f);
 
-	float gx_chip = (float)raw_data.gyro_x_raw * scale;
-	float gy_chip = (float)raw_data.gyro_y_raw * scale;
-	float gz_chip = (float)raw_data.gyro_z_raw * scale;
-
-	imu_data.gyro_x = gx_chip;
-	imu_data.gyro_y = gy_chip;
-	imu_data.gyro_z = gz_chip;
+	ONBOARD_SENSORS.gyro.gyro.x = (float)raw_data.gyro_x_raw * scale;
+	ONBOARD_SENSORS.gyro.gyro.y = (float)raw_data.gyro_y_raw * scale;
+	ONBOARD_SENSORS.gyro.gyro.z = (float)raw_data.gyro_z_raw * scale;
 }
 
 static void ACCEL_CONVERT_DATA(){
 	raw_data.accel_x_raw = ((int16_t)accel_rx[2] << 8) | accel_rx[1];
 	raw_data.accel_y_raw = ((int16_t)accel_rx[4] << 8) | accel_rx[3];
 	raw_data.accel_z_raw = ((int16_t)accel_rx[6] << 8) | accel_rx[5];
-	imu_data.accel_x = -(float)raw_data.accel_x_raw / 32768 * 1000 * 4 * 1.5;
-	imu_data.accel_y = (float)raw_data.accel_y_raw / 32768 * 1000 * 4 * 1.5;
-	imu_data.accel_z = (float)raw_data.accel_z_raw / 32768 * 1000 * 4 * 1.5;
+	ONBOARD_SENSORS.accel.accel.x = (float)raw_data.accel_x_raw / 32768 * 1000 * 4 * 1.5;
+	ONBOARD_SENSORS.accel.accel.y = (float)raw_data.accel_y_raw / 32768 * 1000 * 4 * 1.5;
+	ONBOARD_SENSORS.accel.accel.z = (float)raw_data.accel_z_raw / 32768 * 1000 * 4 * 1.5;
 
-	imu_data.accel_x_filtered = (1.0f - alpha_values.accel_alpha) * imu_data.accel_x_filtered + alpha_values.accel_alpha * imu_data.accel_x;
-	imu_data.accel_y_filtered = (1.0f - alpha_values.accel_alpha) * imu_data.accel_y_filtered + alpha_values.accel_alpha * imu_data.accel_y;
-	imu_data.accel_z_filtered = (1.0f - alpha_values.accel_alpha) * imu_data.accel_z_filtered + alpha_values.accel_alpha * imu_data.accel_z;
+	ONBOARD_SENSORS.accel.accel_filtered.x = (1.0f - alpha_values.accel_alpha) * ONBOARD_SENSORS.accel.accel_filtered.x + alpha_values.accel_alpha * ONBOARD_SENSORS.accel.accel.x;
+	ONBOARD_SENSORS.accel.accel_filtered.y = (1.0f - alpha_values.accel_alpha) * ONBOARD_SENSORS.accel.accel_filtered.y + alpha_values.accel_alpha * ONBOARD_SENSORS.accel.accel.y;
+	ONBOARD_SENSORS.accel.accel_filtered.z = (1.0f - alpha_values.accel_alpha) * ONBOARD_SENSORS.accel.accel_filtered.z + alpha_values.accel_alpha * ONBOARD_SENSORS.accel.accel.z;
 }
 
 #define BARO_PRESSURE_ALPHA 0.3f
 static void BARO_CONVERT_DATA(){
 	raw_data.baro_temp_raw = ((uint32_t)baro_rx[6] << 16) | ((uint32_t)baro_rx[5] << 8) | baro_rx[4];
 	raw_data.baro_pressure_raw = ((uint32_t)baro_rx[3] << 16) | ((uint32_t)baro_rx[2] << 8) | baro_rx[1];
-	imu_data.temp = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
-	imu_data.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
+	ONBOARD_SENSORS.barometer.temperature = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
+	ONBOARD_SENSORS.barometer.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
 
-	imu_data.pressure_filtered = (1.0f - BARO_PRESSURE_ALPHA) * imu_data.pressure_filtered + BARO_PRESSURE_ALPHA * imu_data.pressure;
+	ONBOARD_SENSORS.barometer.pressure_filtered = (1.0f - BARO_PRESSURE_ALPHA) * ONBOARD_SENSORS.barometer.pressure_filtered + BARO_PRESSURE_ALPHA * ONBOARD_SENSORS.barometer.pressure;
 }
 
 #define vertical_speed_lowpass_alpha 0.3f
 static void BARO_CALCULATE_HEIGHT(){
-	float last_height = imu_data.height;
-	imu_data.height = (imu_data.pressure_base - imu_data.pressure_filtered) / 12.015397;
+	float last_height = ONBOARD_SENSORS.barometer.height;
+	ONBOARD_SENSORS.barometer.height = (ONBOARD_SENSORS.barometer.pressure_base - ONBOARD_SENSORS.barometer.pressure_filtered) / 12.015397;
 	uint64_t now = MICROS64();
 	float delta_time_seconds = (float)(now - baro_last_vs_update_time) / 1000000.0f;
 	baro_last_vs_update_time = now;
-	float delta_height_centimeters = (imu_data.height - last_height) * 100.0f;
+	float delta_height_centimeters = (ONBOARD_SENSORS.barometer.height - last_height) * 100.0f;
 	if(delta_time_seconds > 0){
 		float vertical_speed_cm_s = delta_height_centimeters / delta_time_seconds;
-		imu_data.vertical_speed_cm_s = imu_data.vertical_speed_cm_s * (1.0 - vertical_speed_lowpass_alpha) + vertical_speed_cm_s * vertical_speed_lowpass_alpha;
+		ONBOARD_SENSORS.barometer.vertical_speed_cm_s = ONBOARD_SENSORS.barometer.vertical_speed_cm_s * (1.0 - vertical_speed_lowpass_alpha) + vertical_speed_cm_s * vertical_speed_lowpass_alpha;
 	}
 }
 
@@ -334,9 +381,9 @@ void GYRO_INTEGRATE_EXACT() {
     float delta_t_s = (float)delta_t_us / 1000000.0f;
 
     // Angular velocity (rad/s)
-    float wx = imu_data.gyro_x * delta_t_s;
-    float wy = imu_data.gyro_y * delta_t_s;
-    float wz = imu_data.gyro_z * delta_t_s;
+    float wx = ONBOARD_SENSORS.gyro.gyro.x * delta_t_s;
+    float wy = ONBOARD_SENSORS.gyro.gyro.y * delta_t_s;
+    float wz = ONBOARD_SENSORS.gyro.gyro.z * delta_t_s;
 
     float q_x[4] = {cosf(wx / 2), sinf(wx / 2), 0, 0};
     float q_y[4] = {cosf(wy / 2), 0, sinf(wy / 2), 0};
@@ -350,17 +397,15 @@ void GYRO_INTEGRATE_EXACT() {
     float norm = sqrtf(q_total[0]*q_total[0] + q_total[1]*q_total[1] + q_total[2]*q_total[2] + q_total[3]*q_total[3]);
     for(int i = 0; i < 4; i++) q_total[i] /= norm;
 
-    UTIL_QUATERNION_PRODUCT(q, q_total, q);
+    UTIL_QUATERNION_PRODUCT(ONBOARD_SENSORS.gyro.q_angle, q_total, ONBOARD_SENSORS.gyro.q_angle);
 
-    norm = sqrtf(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
-    for(int i = 0; i < 4; i++) q[i] /= norm;
+    norm = sqrtf(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[0] + ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2] + ONBOARD_SENSORS.gyro.q_angle[3]*ONBOARD_SENSORS.gyro.q_angle[3]);
+    for(int i = 0; i < 4; i++) ONBOARD_SENSORS.gyro.q_angle[i] /= norm;
 
 
     // Convert to Euler angles
-    imu_data.pitch_angle = -asinf(2*(q[0]*q[2] - q[3]*q[1])) * 180.0f / M_PI;
-    imu_data.roll_angle = atan2f(2*(q[0]*q[1] + q[2]*q[3]), 1 - 2*(q[1]*q[1] + q[2]*q[2])) * 180.0f / M_PI;
-    imu_data.angle_y_fused = imu_data.pitch_angle;
-    imu_data.angle_x_fused = imu_data.roll_angle;
+    ONBOARD_SENSORS.gyro.pitch_angle = -asinf(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[2] - ONBOARD_SENSORS.gyro.q_angle[3]*ONBOARD_SENSORS.gyro.q_angle[1])) * 180.0f / M_PI;
+    ONBOARD_SENSORS.gyro.roll_angle = atan2f(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[3]), 1 - 2*(ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2])) * 180.0f / M_PI;
 }
 
 
@@ -368,15 +413,15 @@ void GYRO_INTEGRATE_EXACT() {
 #define MAX_DEG_PER_SEC 3.0f
 const float correction_angle = (MAX_DEG_PER_SEC * (M_PI/180.0f)) / FUSION_RATE_HZ; // ≈ 8.7266e-5
 void GYRO_FUSION(){
-	float ax = -imu_data.accel_x;
-	float ay = imu_data.accel_y;
-	float az = imu_data.accel_z;
+	float ax = ONBOARD_SENSORS.accel.accel.x;
+	float ay = ONBOARD_SENSORS.accel.accel.y;
+	float az = ONBOARD_SENSORS.accel.accel.z;
 	float norm = sqrtf(ax*ax + ay*ay + az*az);
 	ax /= norm; ay /= norm; az /= norm;
 
-	float vx = 2*(q[1]*q[3] - q[0]*q[2]);
-	float vy = 2*(q[0]*q[1] + q[2]*q[3]);
-	float vz = q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3];
+	float vx = 2*(ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[3] - ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[2]);
+	float vy = 2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[3]);
+	float vz = ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[0] - ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] - ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2] + ONBOARD_SENSORS.gyro.q_angle[3]*ONBOARD_SENSORS.gyro.q_angle[3];
 
 	float ex = (ay*vz - az*vy);
 	float ey = (az*vx - ax*vz);
@@ -404,21 +449,21 @@ void GYRO_FUSION(){
 	float qy = ey * sinf(half_angle);
 	float qz = ez * sinf(half_angle);
 
-	float w = q[0];
-	float x = q[1];
-	float y = q[2];
-	float z = q[3];
+	float w = ONBOARD_SENSORS.gyro.q_angle[0];
+	float x = ONBOARD_SENSORS.gyro.q_angle[1];
+	float y = ONBOARD_SENSORS.gyro.q_angle[2];
+	float z = ONBOARD_SENSORS.gyro.q_angle[3];
 
-	q[0] = qs*w - qx*x - qy*y - qz*z;  // new w
-	q[1] = qs*x + qx*w + qy*z - qz*y;  // new x
-	q[2] = qs*y - qx*z + qy*w + qz*x;  // new y
-	q[3] = qs*z + qx*y - qy*x + qz*w;  // new z
+	ONBOARD_SENSORS.gyro.q_angle[0] = qs*w - qx*x - qy*y - qz*z;  // new w
+	ONBOARD_SENSORS.gyro.q_angle[1] = qs*x + qx*w + qy*z - qz*y;  // new x
+	ONBOARD_SENSORS.gyro.q_angle[2] = qs*y - qx*z + qy*w + qz*x;  // new y
+	ONBOARD_SENSORS.gyro.q_angle[3] = qs*z + qx*y - qy*x + qz*w;  // new z
 
-	float norm_q = sqrtf(q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]);
-	q[0] /= norm_q;
-	q[1] /= norm_q;
-	q[2] /= norm_q;
-	q[3] /= norm_q;
+	float norm_q = sqrtf(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[0] + ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2] + ONBOARD_SENSORS.gyro.q_angle[3]*ONBOARD_SENSORS.gyro.q_angle[3]);
+	ONBOARD_SENSORS.gyro.q_angle[0] /= norm_q;
+	ONBOARD_SENSORS.gyro.q_angle[1] /= norm_q;
+	ONBOARD_SENSORS.gyro.q_angle[2] /= norm_q;
+	ONBOARD_SENSORS.gyro.q_angle[3] /= norm_q;
 
 }
 
@@ -427,9 +472,9 @@ void BARO_SET_BASE_PRESSURE(){
 	uint8_t counter = 0;
 	while(1){
 		BARO_READ();
-		if(imu_data.pressure > 0){
-			imu_data.pressure_base = imu_data.pressure;
-			imu_data.pressure_filtered = imu_data.pressure;
+		if(ONBOARD_SENSORS.barometer.pressure > 0){
+			ONBOARD_SENSORS.barometer.pressure_base = ONBOARD_SENSORS.barometer.pressure;
+			ONBOARD_SENSORS.barometer.pressure_filtered = ONBOARD_SENSORS.barometer.pressure;
 			return;
 		}
 		if(counter++ > 100){
@@ -451,6 +496,6 @@ static uint32_t BATTERY_READ_SAMPLE(){
 void BATTERY_UPDATE(void){
 	uint32_t current_battery_value = BATTERY_READ_SAMPLE();
 	float voltage = ((float)current_battery_value / 4095.0f) * 3.3f * BAT_VOLTAGE_DIVIDER_SCALING;
-	imu_data.vbat = imu_data.vbat * (1.0f - BAT_NEW_SAMPLE_ALPHA_VALUE) + voltage * BAT_NEW_SAMPLE_ALPHA_VALUE;
-	imu_data.vbat_raw = current_battery_value;
+	ONBOARD_SENSORS.vbat.vbat = ONBOARD_SENSORS.vbat.vbat * (1.0f - BAT_NEW_SAMPLE_ALPHA_VALUE) + voltage * BAT_NEW_SAMPLE_ALPHA_VALUE;
+	ONBOARD_SENSORS.vbat.vbat_raw = current_battery_value;
 }

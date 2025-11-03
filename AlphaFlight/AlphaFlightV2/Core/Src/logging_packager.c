@@ -21,7 +21,6 @@
 
 #define SET_FLAG_COND(flags, bit, cond) ((flags) = ((flags) & ~(1U << (bit))) | ((!!(cond)) << (bit)))
 
-extern IMU_Data imu_data;
 extern CRSF_DATA crsf_data;
 extern GPS_NAV_PVT gps_nav_pvt;
 extern FLY_BY_WIRE_PID_VALUES attitude_pid;
@@ -38,7 +37,7 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 		t1v0_general_data.start_magic = LOG_FRAME_START_MAGIC;
 		t1v0_general_data.end_magic = LOG_FRAME_END_MAGIC;
 		t1v0_general_data.timestamp = MICROS64();
-		t1v0_general_data.baro_altimeter = imu_data.height;
+		t1v0_general_data.baro_altimeter = ONBOARD_SENSORS.barometer.height;
 		t1v0_general_data.crsf_ch[0] = crsf_data.channel_raw[0];
 		t1v0_general_data.crsf_ch[1] = crsf_data.channel_raw[1];
 		t1v0_general_data.crsf_ch[2] = crsf_data.channel_raw[2];
@@ -49,8 +48,8 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 		t1v0_general_data.gps_lon = gps_data.lon;
 		t1v0_general_data.gps_sats = gps_nav_pvt.numSV;
 		t1v0_general_data.gps_speed = gps_data.gspeed;
-		t1v0_general_data.roll_angle = imu_data.roll_angle;
-		t1v0_general_data.pitch_angle = imu_data.pitch_angle;
+		t1v0_general_data.roll_angle = ONBOARD_SENSORS.gyro.roll_angle;
+		t1v0_general_data.pitch_angle = ONBOARD_SENSORS.gyro.pitch_angle;
 		t1v0_general_data.pid_correction_roll = attitude_pid.roll_pid_correction;
 		t1v0_general_data.pid_correction_pitch = attitude_pid.pitch_pid_correction;
 		t1v0_general_data.fbw_setpoint_pitch = fly_by_wire_setpoints.pitch_angle;

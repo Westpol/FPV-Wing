@@ -16,13 +16,21 @@ typedef struct{
 	uint8_t roll;
 	uint8_t arm_switch;
 	uint8_t mode_switch;
-}config_data_crsf_channels_t;
+}config_data_internal_crsf_channels_t;
+
+typedef struct{
+	config_data_internal_crsf_channels_t channels;
+}config_data_internal_crsf_t;
+
 typedef struct{
 	uint8_t log_mode;
-}config_data_sd_logger_setup_t;
+}config_data_internal_sd_logger_setup_t;
 
+typedef struct{
+	config_data_internal_crsf_t crossfire;
+	config_data_internal_sd_logger_setup_t logger;
+}config_data_t;
 
-extern config_data_crsf_channels_t CONFIG_DATA_CRSF_CHANNELS;
-extern config_data_sd_logger_setup_t CONFIG_DATA_SD_LOGGER_SETUP;
+extern config_data_t CONFIG_DATA;
 
 #endif /* INC_CONFIG_DATA_H_ */

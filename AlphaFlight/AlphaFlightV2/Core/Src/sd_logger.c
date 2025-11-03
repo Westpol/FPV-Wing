@@ -102,7 +102,7 @@ static void READ_LATEST_FLIGHT(){
 
 	latest_metadata_block = FLIGHT_NUM_TO_BLOCK(sd_superblock.relative_flight_num - 1);
 	latest_metadata_index = FLIGHT_NUM_TO_INDEX(sd_superblock.relative_flight_num - 1);
-	log_mode = CONFIG_DATA_SD_LOGGER_SETUP.log_mode;
+	log_mode = CONFIG_DATA.logger.log_mode;
 
 	if(sd_superblock.relative_flight_num == 0){		// hard fix bug on first flight because system is built on an existing flight before
 		SD_READ_BLOCK(raw_block_data, LOG_METADATA_BLOCK_START);
