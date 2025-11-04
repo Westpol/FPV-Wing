@@ -88,10 +88,11 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float temp[4];
 	float q_error_body[4];
 
-	UTIL_QUATERNION_PRODUCT(q_setpoint_pitch, q_setpoint_roll, q_setpoint);
+	UTIL_QUATERNION_PRODUCT(q_setpoint_roll, q_setpoint_pitch, q_setpoint);
 	UTIL_QUATERNION_PRODUCT(q_setpoint, q_inverted, q_error);
-	UTIL_QUATERNION_PRODUCT(q_inverted, q_error, temp);
-	UTIL_QUATERNION_PRODUCT(temp, q, q_error_body);
+	UTIL_QUATERNION_PRODUCT(q, q_error, temp);
+	UTIL_QUATERNION_PRODUCT(temp, q_inverted, q_error_body);
+
 
 
 	if(q_error_body[0] < 0){
