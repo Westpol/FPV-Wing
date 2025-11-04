@@ -6,6 +6,7 @@
  */
 
 #include "utils.h"
+#include <math.h>
 
 void UTIL_QUATERNION_PRODUCT(const float* q1,const float* q2, float* q3){		// calculates q1*q2, saves value in q3
 	float q_new[4];
@@ -29,4 +30,12 @@ float UTIL_MAX_F(float value, float max){
 		return max;
 	}
 	return value;
+}
+
+float UTIL_RADIANS(float degrees){
+	return degrees * ((float)M_PI / 180.0f);
+}
+
+float UTIL_DEGREES(float radians){
+	return radians * (180.0f / (float)M_PI);
 }
