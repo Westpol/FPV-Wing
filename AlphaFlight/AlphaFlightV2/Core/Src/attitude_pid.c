@@ -79,28 +79,34 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float pitch_rad = -fly_by_wire_setpoints.pitch_angle;	// in radians
 	float roll_rad  = fly_by_wire_setpoints.roll_angle;	// in radians
 
+	float q[4] = {ONBOARD_SENSORS.gyro.q_angle[0], ONBOARD_SENSORS.gyro.q_angle[1], ONBOARD_SENSORS.gyro.q_angle[2], ONBOARD_SENSORS.gyro.q_angle[3]};
 	float q_setpoint[4] = {0};
 	float q_setpoint_pitch[4] = {cosf(pitch_rad / 2.0f), 0, sinf(pitch_rad / 2.0f), 0};
 	float q_setpoint_roll[4] = {cosf(roll_rad / 2.0f), sinf(roll_rad / 2.0f), 0, 0};
-	float q_inverted[4] = {ONBOARD_SENSORS.gyro.q_angle[0], -ONBOARD_SENSORS.gyro.q_angle[1], -ONBOARD_SENSORS.gyro.q_angle[2], -ONBOARD_SENSORS.gyro.q_angle[3]};
+	float q_inverted[4] = {q[0], -q[1], -q[2], -q[3]};
 	float q_error[4];
+	float temp[4];
+	float q_error_body[4];
 
 	UTIL_QUATERNION_PRODUCT(q_setpoint_pitch, q_setpoint_roll, q_setpoint);
 	UTIL_QUATERNION_PRODUCT(q_setpoint, q_inverted, q_error);
+	UTIL_QUATERNION_PRODUCT(q_inverted, q_error, temp);
+	UTIL_QUATERNION_PRODUCT(temp, q, q_error_body);
 
-	if(q_error[0] < 0){
-		q_error[0] = -q_error[0];
-		q_error[1] = -q_error[1];
-		q_error[2] = -q_error[2];
-		q_error[3] = -q_error[3];
+
+	if(q_error_body[0] < 0){
+		q_error_body[0] = -q_error_body[0];
+		q_error_body[1] = -q_error_body[1];
+		q_error_body[2] = -q_error_body[2];
+		q_error_body[3] = -q_error_body[3];
 	}
 
-	float angle_total = 2 * acosf(UTIL_MAX_F(q_error[0], 1));
-	float scalar = sqrtf(UTIL_MIN_F(1 - q_error[0] * q_error[0], 0));
+	float angle_total = 2 * acosf(UTIL_MAX_F(q_error_body[0], 1));
+	float scalar = sqrtf(UTIL_MIN_F(1 - q_error_body[0] * q_error_body[0], 0));
 
 	if(scalar != 0){
-		attitude_pid.pitch_error = -(q_error[2] / scalar) * angle_total;
-		attitude_pid.roll_error = (q_error[1] / scalar) * angle_total;
+		attitude_pid.pitch_error = -(q_error_body[2] / scalar) * angle_total;
+		attitude_pid.roll_error = (q_error_body[1] / scalar) * angle_total;
 	}
 	else{
 		attitude_pid.pitch_error = 0;
