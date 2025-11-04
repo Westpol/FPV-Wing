@@ -88,8 +88,8 @@ void FC_PROCESS(){
 	last_process_execution_time = MICROS64();
 
 	if(dt < 100000){	// skip setpoint set if deltaT is too big
-		fly_by_wire_setpoints.pitch_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.pitch_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch], 0.5, 50) / 50.0f - 1) * 10.0f) / (1000000.0f / dt)), 30), -25);
-		fly_by_wire_setpoints.roll_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.roll_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll], 0.5, 50) / 50.0f - 1) * 15.0) / (1000000.0f / dt)), 45), -45);
+		fly_by_wire_setpoints.pitch_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.pitch_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch], 0.5, 50) / 50.0f - 1) * UTIL_RADIANS(10)) / (1000000.0f / dt)), UTIL_RADIANS(30)), UTIL_RADIANS(-25));
+		fly_by_wire_setpoints.roll_angle = UTIL_MIN_F(UTIL_MAX_F(fly_by_wire_setpoints.roll_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll], 0.5, 50) / 50.0f - 1) * UTIL_RADIANS(15)) / (1000000.0f / dt)), UTIL_RADIANS(45)), UTIL_RADIANS(-45));
 	}
 
 	switch (current_flight_mode) {

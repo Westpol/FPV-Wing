@@ -196,8 +196,8 @@ void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 	if(TELEMETRY_TYPE == 0x1E){		// attitude
 		#define payload_length_attitude 7
 		uint8_t payload_data[payload_length_attitude] = {0};
-		int16_t pitch = (int16_t)(ONBOARD_SENSORS.gyro.pitch_angle * (M_PI / 180.0f) * 10000.0f);
-		int16_t roll = (int16_t)(ONBOARD_SENSORS.gyro.roll_angle * (M_PI / 180.0f) * 10000.0f);
+		int16_t pitch = (int16_t)(ONBOARD_SENSORS.gyro.pitch_angle * 10000.0f);
+		int16_t roll = (int16_t)(ONBOARD_SENSORS.gyro.roll_angle * 10000.0f);
 		int16_t yaw = (int16_t)(0);
 
 		payload_data[0] = TELEMETRY_TYPE;

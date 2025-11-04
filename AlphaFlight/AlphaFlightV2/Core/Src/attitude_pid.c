@@ -76,8 +76,8 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float dt_seconds = dt / 1000000.0;
 	if(dt_seconds == 0.0f) return;
 
-	float pitch_rad = -fly_by_wire_setpoints.pitch_angle * M_PI / 180.0f;	// in radians
-	float roll_rad  = fly_by_wire_setpoints.roll_angle  * M_PI / 180.0f;	// in radians
+	float pitch_rad = -fly_by_wire_setpoints.pitch_angle;	// in radians
+	float roll_rad  = fly_by_wire_setpoints.roll_angle;	// in radians
 
 	float q_setpoint[4] = {0};
 	float q_setpoint_pitch[4] = {cosf(pitch_rad / 2.0f), 0, sinf(pitch_rad / 2.0f), 0};

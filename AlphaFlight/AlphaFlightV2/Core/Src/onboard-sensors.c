@@ -406,8 +406,8 @@ void GYRO_INTEGRATE_EXACT() {
 
 
     // Convert to Euler angles
-    ONBOARD_SENSORS.gyro.pitch_angle = -asinf(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[2] - ONBOARD_SENSORS.gyro.q_angle[3]*ONBOARD_SENSORS.gyro.q_angle[1])) * 180.0f / M_PI;
-    ONBOARD_SENSORS.gyro.roll_angle = atan2f(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[3]), 1 - 2*(ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2])) * 180.0f / M_PI;
+    ONBOARD_SENSORS.gyro.pitch_angle = -asinf(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[2] - ONBOARD_SENSORS.gyro.q_angle[3]*ONBOARD_SENSORS.gyro.q_angle[1]));
+    ONBOARD_SENSORS.gyro.roll_angle = atan2f(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[3]), 1 - 2*(ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2]));
 }
 
 

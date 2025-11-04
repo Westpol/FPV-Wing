@@ -18,6 +18,7 @@
 #include "scheduler.h"
 #include "time-utils.h"
 #include "flight_state.h"
+#include "utils.h"
 
 #define SET_FLAG_COND(flags, bit, cond) ((flags) = ((flags) & ~(1U << (bit))) | ((!!(cond)) << (bit)))
 
