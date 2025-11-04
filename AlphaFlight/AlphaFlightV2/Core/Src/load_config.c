@@ -144,8 +144,8 @@ static void CONFIG_SET_STANDARD_VALUES(){
 	crsf_channels_config_header.magic_end = ~magic;
 	magic = next_magic(magic);
 	crsf_channels_config_header.throttle = 0;
-	crsf_channels_config_header.roll = 1;
-	crsf_channels_config_header.pitch = 2;
+	crsf_channels_config_header.roll = 2;
+	crsf_channels_config_header.pitch = 1;
 	crsf_channels_config_header.arm_switch = 11;
 	crsf_channels_config_header.mode_switch = 5;
 

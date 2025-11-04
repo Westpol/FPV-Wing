@@ -391,7 +391,7 @@ void GYRO_INTEGRATE_EXACT() {
     float q_y[4] = {cosf(wy / 2), 0, sinf(wy / 2), 0};
     float q_z[4] = {cosf(wz / 2), 0, 0, sinf(wz / 2)};
 
-    float q_total[4] = {1, 0, 0, 0};
+    float q_total[4];
 
     UTIL_QUATERNION_PRODUCT(q_y, q_x, q_total);
     UTIL_QUATERNION_PRODUCT(q_z, q_total, q_total);
