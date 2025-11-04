@@ -95,8 +95,8 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 		q_error[3] = -q_error[3];
 	}
 
-	float angle_total = 2 * acosf(q_error[0]);
-	float scalar = sqrtf(1 - q_error[0] * q_error[0]);
+	float angle_total = 2 * acosf(UTIL_MAX_F(q_error[0], 1));
+	float scalar = sqrtf(UTIL_MIN_F(1 - q_error[0] * q_error[0], 0));
 
 	if(scalar != 0){
 		attitude_pid.pitch_error = -(q_error[2] / scalar) * angle_total;
