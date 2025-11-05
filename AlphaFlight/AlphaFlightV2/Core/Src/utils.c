@@ -18,14 +18,14 @@ void UTIL_QUATERNION_PRODUCT(const float* q1,const float* q2, float* q3){		// ca
 	q3[0] = q_new[0]; q3[1] = q_new[1]; q3[2] = q_new[2]; q3[3] = q_new[3];
 }
 
-float UTIL_MIN_F(float value, float min){
+float UTIL_MAX_F(float value, float min){
 	if(value <= min){
 		return min;
 	}
 	return value;
 }
 
-float UTIL_MAX_F(float value, float max){
+float UTIL_MIN_F(float value, float max){
 	if(value >= max){
 		return max;
 	}

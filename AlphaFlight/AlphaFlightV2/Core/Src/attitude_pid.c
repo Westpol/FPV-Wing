@@ -36,11 +36,11 @@ static void FC_PID_MIXER(float pitchDeflection, float rollDeflection, float thro
 
 	float servoLeft = rollDeflection + pitchDeflection;
 	float servoRight = rollDeflection - pitchDeflection;
-	servoLeft = UTIL_MIN_F(UTIL_MAX_F(servoLeft, 1.0f), -1.0f);
-	servoRight = UTIL_MIN_F(UTIL_MAX_F(servoRight, 1.0f), -1.0f);
+	servoLeft = UTIL_MAX_F(UTIL_MIN_F(servoLeft, 1.0f), -1.0f);
+	servoRight = UTIL_MAX_F(UTIL_MIN_F(servoRight, 1.0f), -1.0f);
 	current_servo_points.servo_left = servoLeft * 500 + 1500;
 	current_servo_points.servo_right = servoRight * 500 + 1500;
-	throttle = UTIL_MIN_F(UTIL_MAX_F(throttle, 1.0f), 0.0f);
+	throttle = UTIL_MAX_F(UTIL_MIN_F(throttle, 1.0f), 0.0f);
 	current_servo_points.motor = throttle * 1000 + 1000;
 	SERVO_SET(0, current_servo_points.servo_left);
 	if(FLIGHT_STATE_IS_ARMED() && !FLIGHT_STATE_IS_RX_LOSS()){
@@ -65,10 +65,10 @@ void FC_PID_INIT(){
 
 void FC_PID_DIRECT_CONTROL(){
 	if(FLIGHT_STATE_IS_ARMED() && !FLIGHT_STATE_IS_RX_LOSS()){
-		FC_PID_MIXER(UTIL_MAX_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch] + 10.0f, 100.0f) / 50.0f - 1, UTIL_MAX_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll] + 4.0f, 100.0f) / 50.0f - 1, crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.throttle] / 100.0f);
+		FC_PID_MIXER(UTIL_MIN_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch] + 10.0f, 100.0f) / 50.0f - 1, UTIL_MIN_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll] + 4.0f, 100.0f) / 50.0f - 1, crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.throttle] / 100.0f);
 	}
 	else{
-		FC_PID_MIXER(UTIL_MAX_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch] + 10.0f, 100.0f) / 50.0f - 1, UTIL_MAX_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll] + 4.0f, 100.0f) / 50.0f - 1, 0.0);
+		FC_PID_MIXER(UTIL_MIN_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch] + 10.0f, 100.0f) / 50.0f - 1, UTIL_MIN_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll] + 4.0f, 100.0f) / 50.0f - 1, 0.0);
 	}
 }
 
@@ -86,28 +86,30 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float q_inverted[4] = {q[0], -q[1], -q[2], -q[3]};
 	float q_error[4];
 	float temp[4];
-	float q_error_body[4];
 
-	UTIL_QUATERNION_PRODUCT(q_setpoint_roll, q_setpoint_pitch, q_setpoint);
+	float siny_cosp = 2.0f * (q[0]*q[3] + q[1]*q[2]);
+	float cosy_cosp = 1.0f - 2.0f * (q[2]*q[2] + q[3]*q[3]);
+	float yaw = atan2f(siny_cosp, cosy_cosp);
+
+	float q_setpoint_yaw[4] = {cosf(yaw/2.0f), 0, 0, sinf(yaw/2.0f)};
+
+	UTIL_QUATERNION_PRODUCT(q_setpoint_roll, q_setpoint_pitch, temp);
+	UTIL_QUATERNION_PRODUCT(temp, q_setpoint_yaw, q_setpoint);
 	UTIL_QUATERNION_PRODUCT(q_setpoint, q_inverted, q_error);
-	UTIL_QUATERNION_PRODUCT(q, q_error, temp);
-	UTIL_QUATERNION_PRODUCT(temp, q_inverted, q_error_body);
 
-
-
-	if(q_error_body[0] < 0){
-		q_error_body[0] = -q_error_body[0];
-		q_error_body[1] = -q_error_body[1];
-		q_error_body[2] = -q_error_body[2];
-		q_error_body[3] = -q_error_body[3];
+	if(q_error[0] < 0){
+		q_error[0] = -q_error[0];
+		q_error[1] = -q_error[1];
+		q_error[2] = -q_error[2];
+		q_error[3] = -q_error[3];
 	}
 
-	float angle_total = 2 * acosf(UTIL_MAX_F(q_error_body[0], 1));
-	float scalar = sqrtf(UTIL_MIN_F(1 - q_error_body[0] * q_error_body[0], 0));
+	float angle_total = 2 * acosf(UTIL_MIN_F(q_error[0], 1));
+	float scalar = sqrtf(UTIL_MAX_F(1 - q_error[0] * q_error[0], 0));
 
 	if(scalar != 0){
-		attitude_pid.pitch_error = -(q_error_body[2] / scalar) * angle_total;
-		attitude_pid.roll_error = (q_error_body[1] / scalar) * angle_total;
+		attitude_pid.pitch_error = -(q_error[2] / scalar) * angle_total;
+		attitude_pid.roll_error = (q_error[1] / scalar) * angle_total;
 	}
 	else{
 		attitude_pid.pitch_error = 0;
