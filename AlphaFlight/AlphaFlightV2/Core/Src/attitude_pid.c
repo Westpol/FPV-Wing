@@ -76,45 +76,8 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float dt_seconds = dt / 1000000.0;
 	if(dt_seconds == 0.0f) return;
 
-	float pitch_rad = -fly_by_wire_setpoints.pitch_angle;	// in radians
-	float roll_rad  = fly_by_wire_setpoints.roll_angle;	// in radians
-
-	float q[4] = {ONBOARD_SENSORS.gyro.q_angle[0], ONBOARD_SENSORS.gyro.q_angle[1], ONBOARD_SENSORS.gyro.q_angle[2], ONBOARD_SENSORS.gyro.q_angle[3]};
-	float q_setpoint[4] = {0};
-	float q_setpoint_pitch[4] = {cosf(pitch_rad / 2.0f), 0, sinf(pitch_rad / 2.0f), 0};
-	float q_setpoint_roll[4] = {cosf(roll_rad / 2.0f), sinf(roll_rad / 2.0f), 0, 0};
-	float q_inverted[4] = {q[0], -q[1], -q[2], -q[3]};
-	float q_error[4];
-	float temp[4];
-
-	float siny_cosp = 2.0f * (q[0]*q[3] + q[1]*q[2]);
-	float cosy_cosp = 1.0f - 2.0f * (q[2]*q[2] + q[3]*q[3]);
-	float yaw = atan2f(siny_cosp, cosy_cosp);
-
-	float q_setpoint_yaw[4] = {cosf(yaw/2.0f), 0, 0, sinf(yaw/2.0f)};
-
-	UTIL_QUATERNION_PRODUCT(q_setpoint_roll, q_setpoint_pitch, temp);
-	UTIL_QUATERNION_PRODUCT(temp, q_setpoint_yaw, q_setpoint);
-	UTIL_QUATERNION_PRODUCT(q_setpoint, q_inverted, q_error);
-
-	if(q_error[0] < 0){
-		q_error[0] = -q_error[0];
-		q_error[1] = -q_error[1];
-		q_error[2] = -q_error[2];
-		q_error[3] = -q_error[3];
-	}
-
-	float angle_total = 2 * acosf(UTIL_MIN_F(q_error[0], 1));
-	float scalar = sqrtf(UTIL_MAX_F(1 - q_error[0] * q_error[0], 0));
-
-	if(scalar != 0){
-		attitude_pid.pitch_error = -(q_error[2] / scalar) * angle_total;
-		attitude_pid.roll_error = (q_error[1] / scalar) * angle_total;
-	}
-	else{
-		attitude_pid.pitch_error = 0;
-		attitude_pid.roll_error = 0;
-	}
+	attitude_pid.pitch_error = ONBOARD_SENSORS.gyro.pitch_angle - fly_by_wire_setpoints.pitch_angle;
+	attitude_pid.roll_error = ONBOARD_SENSORS.gyro.roll_angle - fly_by_wire_setpoints.roll_angle;
 
 	//attitude_pid.pitch_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.pitch_error_accumulated + (attitude_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -0.15), 0.15);
 	//attitude_pid.roll_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.roll_error_accumulated + (attitude_pid.roll_error * fbw_pid_settings.roll_i * dt), -0.15), 0.15);
