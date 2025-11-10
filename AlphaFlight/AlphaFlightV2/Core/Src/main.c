@@ -127,7 +127,7 @@ static void PRINT_DATA(void);
 extern CRSF_DATA crsf_data;
 extern GPS_NAV_PVT gps_nav_pvt;
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
-extern FLY_BY_WIRE_PID_VALUES attitude_pid;
+extern FLY_BY_WIRE_PID_VALUES attitude_pid_values;
 extern FLY_BY_WIRE_PID fbw_pid_settings;
 extern bool arm_status;
 /* USER CODE END 0 */
@@ -228,17 +228,13 @@ int main(void)
 
   progress_counter = 8;
 
-  FC_PID_INIT();
+  uint32_t sd_logger_loop_time_delta = SD_LOGGER_INIT();
 
   progress_counter = 9;
 
-  uint32_t sd_logger_loop_time_delta = SD_LOGGER_INIT();
-
-  progress_counter = 10;
-
   MAGNETOMETER_INIT();
 
-  progress_counter = 11;
+  progress_counter = 10;
   //SCHEDULER_ADD_TASK(SCHEDULER_CHECK_EXECUTION_DELAY, 40000);		// 25 Hz
   SCHEDULER_ADD_TASK(USAGE_STAT_START_OF_SCHEDULER_CALL, HZ_TO_DELTA_T_US(1000));
   SCHEDULER_ADD_TASK(GYRO_READ, HZ_TO_DELTA_T_US(1000));		// 1 kHz
@@ -266,7 +262,7 @@ int main(void)
 
   SCHEDULER_INIT();	// MICROS ONLY WORKS WHEN THIS IS ENABLED
 
-	progress_counter = 12;
+	progress_counter = 11;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -1305,7 +1301,7 @@ static void PRINT_DATA(){
 	//USB_PRINTLN("Angle Gyro X: %f  |  Setpoint Angle X: %f  |  Throttle: %f  |  CRSF Pitch: %f  |  CRSF Roll: %f", imu_data.angle_y_fused, fly_by_wire_setpoints.pitch_angle, crsf_data.channel_norm[CRSF_CHANNEL_THROTTLE], crsf_data.channel_norm[CRSF_CHANNEL_PITCH], crsf_data.channel_norm[CRSF_CHANNEL_ROLL]);
 	//USB_PRINTLN("lat: %f  |  lon: %f  |  altitude: %f  |  gspeed: %f  |  heading: %f  |  num sats: %d  |  vbat: %f  |  vbat raw: %d  |  Accel X: %f", gps_data.lat, gps_data.lon, gps_data.altitude, gps_data.gspeed, gps_data.heading, gps_data.numSV, imu_data.vbat, imu_data.vbat_raw, imu_data.accel_x);	// GPS
 	//USB_PRINTLN("Pitch angle: %f  |  Roll angle: %f  |  CPU usage avrg 1s: %.1f%%  |  CPU max usage 1s: %.1f%%  |  Time: %ld", UTIL_DEGREES(ONBOARD_SENSORS.gyro.pitch_angle), UTIL_DEGREES(ONBOARD_SENSORS.gyro.roll_angle), USAGE_STAT_GET_AVRG_1S() / 10.0f, USAGE_STAT_GET_MAX_LOOP_TIME_1S() / 10.0f, MICROS64());
-	USB_PRINTLN("%f, %f", UTIL_DEGREES(attitude_pid.pitch_error), UTIL_DEGREES(attitude_pid.roll_error));
+	USB_PRINTLN("%f, %f", UTIL_DEGREES(attitude_pid_values.pitch_error), UTIL_DEGREES(attitude_pid_values.roll_error));
 	//USB_PRINTLN("w:%f, x:%f, y:%f, z:%f, y-axis directly integrated:%f", q[0], q[1], q[2], q[3], imu_data.pitch_angle);
 	//USB_PRINTLN("pitch_err:%f, roll_err:%f", attitude_pid.pitch_error, attitude_pid.roll_error);
 	//USB_PRINTLN("pitch:%f,roll:%f", imu_data.pitch_angle, imu_data.roll_angle);

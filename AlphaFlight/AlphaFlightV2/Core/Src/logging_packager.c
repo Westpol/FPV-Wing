@@ -24,7 +24,7 @@
 
 extern CRSF_DATA crsf_data;
 extern GPS_NAV_PVT gps_nav_pvt;
-extern FLY_BY_WIRE_PID_VALUES attitude_pid;
+extern FLY_BY_WIRE_PID_VALUES attitude_pid_values;
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 
 static uint8_t logging_buffer[BUFFER_SIZE] = {0};
@@ -51,8 +51,8 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
 		t1v0_general_data.gps_speed = gps_data.gspeed;
 		t1v0_general_data.roll_angle = ONBOARD_SENSORS.gyro.roll_angle;
 		t1v0_general_data.pitch_angle = ONBOARD_SENSORS.gyro.pitch_angle;
-		t1v0_general_data.pid_correction_roll = attitude_pid.roll_pid_correction;
-		t1v0_general_data.pid_correction_pitch = attitude_pid.pitch_pid_correction;
+		t1v0_general_data.pid_correction_roll = attitude_pid_values.roll_pid_correction;
+		t1v0_general_data.pid_correction_pitch = attitude_pid_values.pitch_pid_correction;
 		t1v0_general_data.fbw_setpoint_pitch = fly_by_wire_setpoints.pitch_angle;
 		t1v0_general_data.fbw_setpoint_roll = fly_by_wire_setpoints.roll_angle;
 

@@ -22,8 +22,7 @@ extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 static CURRENT_SERVO_POINTS current_servo_points;
 extern CRSF_DATA crsf_data;
 
-FLY_BY_WIRE_PID_VALUES attitude_pid = {0};
-FLY_BY_WIRE_PID fbw_pid_settings = {0};
+FLY_BY_WIRE_PID_VALUES attitude_pid_values = {0};
 
 float angle_x_lowpass = 0;
 float angle_y_lowpass = 0;
@@ -52,17 +51,6 @@ static void FC_PID_MIXER(float pitchDeflection, float rollDeflection, float thro
 	SERVO_SET(2, current_servo_points.servo_right);
 }
 
-void FC_PID_INIT(){
-	fbw_pid_settings.pitch_d = 20.0;
-	fbw_pid_settings.pitch_p = 20.0;
-	fbw_pid_settings.pitch_i = 0.001;
-	fbw_pid_settings.pitch_gain = 1.0;
-	fbw_pid_settings.roll_d = 20.0;
-	fbw_pid_settings.roll_p = 20.0;
-	fbw_pid_settings.roll_i = 0.001;
-	fbw_pid_settings.roll_gain = 1.0;
-}
-
 void FC_PID_DIRECT_CONTROL(){
 	if(FLIGHT_STATE_IS_ARMED() && !FLIGHT_STATE_IS_RX_LOSS()){
 		FC_PID_MIXER(UTIL_MIN_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch] + 10.0f, 100.0f) / 50.0f - 1, UTIL_MIN_F(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll] + 4.0f, 100.0f) / 50.0f - 1, crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.throttle] / 100.0f);
@@ -76,21 +64,21 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float dt_seconds = dt / 1000000.0;
 	if(dt_seconds == 0.0f) return;
 
-	attitude_pid.pitch_error = ONBOARD_SENSORS.gyro.pitch_angle - fly_by_wire_setpoints.pitch_angle;
-	attitude_pid.roll_error = ONBOARD_SENSORS.gyro.roll_angle - fly_by_wire_setpoints.roll_angle;
+	attitude_pid_values.pitch_error = ONBOARD_SENSORS.gyro.pitch_angle - fly_by_wire_setpoints.pitch_angle;
+	attitude_pid_values.roll_error = ONBOARD_SENSORS.gyro.roll_angle - fly_by_wire_setpoints.roll_angle;
 
-	//attitude_pid.pitch_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.pitch_error_accumulated + (attitude_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -0.15), 0.15);
+	//attitude_pid_values.pitch_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.pitch_error_accumulated + (attitude_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -0.15), 0.15);
 	//attitude_pid.roll_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.roll_error_accumulated + (attitude_pid.roll_error * fbw_pid_settings.roll_i * dt), -0.15), 0.15);
-	attitude_pid.pitch_pid_correction = ((attitude_pid.pitch_error * fbw_pid_settings.pitch_p) + attitude_pid.pitch_error_accumulated + (((attitude_pid.pitch_error - attitude_pid.pitch_error_last) / dt_seconds) * fbw_pid_settings.pitch_d)) * fbw_pid_settings.pitch_gain;
-	attitude_pid.roll_pid_correction = -((attitude_pid.roll_error * fbw_pid_settings.roll_p) + attitude_pid.roll_error_accumulated + (((attitude_pid.roll_error - attitude_pid.roll_error_last) / dt_seconds) * fbw_pid_settings.roll_d)) * fbw_pid_settings.roll_gain;
-	attitude_pid.pitch_error_last = attitude_pid.pitch_error;
-	attitude_pid.roll_error_last = attitude_pid.roll_error;
+	attitude_pid_values.pitch_pid_correction = ((attitude_pid_values.pitch_error * CONFIG_DATA.pid.pitch.p) + attitude_pid_values.pitch_error_accumulated + (((attitude_pid_values.pitch_error - attitude_pid_values.pitch_error_last) / dt_seconds) * CONFIG_DATA.pid.pitch.d)) * CONFIG_DATA.pid.pitch.multiplier;
+	attitude_pid_values.roll_pid_correction = -((attitude_pid_values.roll_error * CONFIG_DATA.pid.roll.p) + attitude_pid_values.roll_error_accumulated + (((attitude_pid_values.roll_error - attitude_pid_values.roll_error_last) / dt_seconds) * CONFIG_DATA.pid.roll.d)) * CONFIG_DATA.pid.roll.multiplier;
+	attitude_pid_values.pitch_error_last = attitude_pid_values.pitch_error;
+	attitude_pid_values.roll_error_last = attitude_pid_values.roll_error;
 
 	if(FLIGHT_STATE_IS_ARMED() && !FLIGHT_STATE_IS_RX_LOSS()){
-		FC_PID_MIXER(attitude_pid.pitch_pid_correction, attitude_pid.roll_pid_correction, crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.throttle] / 100.0f);
+		FC_PID_MIXER(attitude_pid_values.pitch_pid_correction, attitude_pid_values.roll_pid_correction, crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.throttle] / 100.0f);
 	}
 	else{
-		FC_PID_MIXER(attitude_pid.pitch_pid_correction, attitude_pid.roll_pid_correction, 0.0);
+		FC_PID_MIXER(attitude_pid_values.pitch_pid_correction, attitude_pid_values.roll_pid_correction, 0.0);
 	}
 }
 
