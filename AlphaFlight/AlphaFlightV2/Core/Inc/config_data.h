@@ -27,8 +27,25 @@ typedef struct{
 }config_data_internal_sd_logger_setup_t;
 
 typedef struct{
+	float p;
+	float i;
+	float i_limit;
+	float i_zone;
+	float d;
+	float d_filter;
+	float multiplier;
+	float feed_forward;
+}pid_value_helper_t;
+
+typedef struct{
+	pid_value_helper_t roll;
+	pid_value_helper_t pitch;
+}config_data_internal_pid_t;
+
+typedef struct{
 	config_data_internal_crsf_t crossfire;
 	config_data_internal_sd_logger_setup_t logger;
+	config_data_internal_pid_t pid;
 }config_data_t;
 
 extern config_data_t CONFIG_DATA;

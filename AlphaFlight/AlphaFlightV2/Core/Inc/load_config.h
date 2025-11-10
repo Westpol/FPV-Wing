@@ -58,6 +58,32 @@ typedef struct __attribute((packed)){
 	uint32_t magic_end;
 }CRSF_CHANNELS_CONFIG_DATA;
 
+typedef struct __attribute((packed)){
+	uint32_t magic_start;
+	uint16_t index_next_datastruct;
+	uint32_t block_num_next_datastruct;
+
+	float roll_p;
+	float roll_i;
+	float roll_i_limit;
+	float roll_i_zone;
+	float roll_d;
+	float roll_d_filter;
+	float roll_multiplier;
+	float roll_feed_forward;
+
+	float pitch_p;
+	float pitch_i;
+	float pitch_i_limit;
+	float pitch_i_zone;
+	float pitch_d;
+	float pitch_d_filter;
+	float pitch_multiplier;
+	float pitch_feed_forward;
+
+	uint32_t magic_end;
+}PID_VALUES_CONFIG_DATA;
+
 void print_block_blocking(uint32_t block);
 void LOAD_CONFIG_INIT();
 void CONFIG_WRITE_STANDARD_CONFIG();
