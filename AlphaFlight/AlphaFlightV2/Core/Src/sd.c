@@ -19,8 +19,6 @@ static void LOG_FAIL_WITH_ERROR(uint8_t error_code){
 #if DEBUG_ENDABLED
 	ERROR_HANDLER_BLINKS(error_code);
 	return;
-#else
-	return;
 #endif
 }
 
@@ -68,7 +66,7 @@ void VERIFY_CRC32(const void* data, size_t size, uint32_t expected_crc){
 	}
 }
 
-void SD_READ_BLOCK(uint8_t* data_storage, uint32_t block){
+SD_STATUS SD_READ_BLOCK(uint8_t* data_storage, uint32_t block){
 
 	uint8_t read_buffer[BLOCK_SIZE] = {0};
 
@@ -76,22 +74,26 @@ void SD_READ_BLOCK(uint8_t* data_storage, uint32_t block){
 	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){
 		if (HAL_GetTick() - start > TIMEOUT_MS) {
 			LOG_FAIL_WITH_ERROR(SD_ERROR_TIMEOUT); // Timeout
+			return SD_ERROR_TIMEOUT;
 		}
 	}
 	if(HAL_SD_ReadBlocks(&hsd1, read_buffer, block, 1, TIMEOUT_MS) != HAL_OK){
-		LOG_FAIL_WITH_ERROR(SD_ERROR_WRITE); // Write failed
+		LOG_FAIL_WITH_ERROR(SD_ERROR_READ); // Write failed#
+		return SD_ERROR_READ;
 	}
 
 	uint32_t block_crc32 = ((uint32_t)read_buffer[511] << 24) | ((uint32_t)read_buffer[510] << 16) | ((uint32_t)read_buffer[509] << 8)  | ((uint32_t)read_buffer[508]);
 	VERIFY_CRC32(read_buffer, BLOCK_SIZE - CRC32_BYTE_SIZE, block_crc32);
 	memcpy(data_storage, read_buffer, BLOCK_SIZE);
 
+	return SD_OK;
 }
 
-void SD_WRITE_BLOCK(uint8_t* data_array, uint32_t data_length_bytes, uint32_t block){
+SD_STATUS SD_WRITE_BLOCK(uint8_t* data_array, uint32_t data_length_bytes, uint32_t block){
 
 	if (data_length_bytes > BLOCK_SIZE - CRC32_BYTE_SIZE) {
 		LOG_FAIL_WITH_ERROR(SD_ERROR_BLOCK_LIMIT_REACHED); // Too much data
+		return SD_ERROR_BLOCK_LIMIT_REACHED;
 	}
 
 	uint8_t single_write_buffer[BLOCK_SIZE] = {0};
@@ -106,11 +108,15 @@ void SD_WRITE_BLOCK(uint8_t* data_array, uint32_t data_length_bytes, uint32_t bl
 	while(HAL_SD_GetCardState(&hsd1) != HAL_SD_CARD_TRANSFER){
 		if (HAL_GetTick() - start > TIMEOUT_MS) {
 			LOG_FAIL_WITH_ERROR(SD_ERROR_TIMEOUT); // Timeout
+			return SD_ERROR_TIMEOUT;
 		}
 	}
 	if(HAL_SD_WriteBlocks(&hsd1, single_write_buffer, block, 1, TIMEOUT_MS) != HAL_OK){
 		LOG_FAIL_WITH_ERROR(SD_ERROR_WRITE); // Write failed
+		return SD_ERROR_WRITE;
 	}
+
+	return SD_OK;
 }
 
 SD_DMA_STATUS SD_WRITE_DMA(uint8_t* data_array, uint32_t block, uint32_t num_blocks){
