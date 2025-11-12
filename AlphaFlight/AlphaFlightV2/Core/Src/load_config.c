@@ -81,6 +81,7 @@ static void CONFIG_WRITE_READ_DATA(){
 	CONFIG_DATA.pid.pitch.i_zone = pid_values_config_data.pitch_i_zone;
 	CONFIG_DATA.pid.pitch.multiplier = pid_values_config_data.pitch_multiplier;
 	CONFIG_DATA.pid.pitch.p = pid_values_config_data.pitch_p;
+	CONFIG_DATA_BACKUP_DATA();
 }
 
 void CONFIG_READ_CONFIG(){
