@@ -39,9 +39,10 @@ typedef enum{
 
 void FLIGHT_STATE_ARM(flight_magic_arm_t KEY);
 void FLIGHT_STATE_DISARM(flight_magic_arm_t KEY);
+bool FLIGHT_STATE_IS_ARMED(void);
 void FLIGHT_STATE_USB_ENABLE_OVERRIDE(flight_magic_usb_override KEY);
 void FLIGHT_STATE_USB_DISABLE_OVERRIDE(flight_magic_usb_override KEY);
-bool FLIGHT_STATE_IS_ARMED(void);
+bool FLIGHT_STATE_IS_USB_CONNECTED(void);
 
 void FLIGHT_STATE_RX_VALID(flight_magic_rxloss_t KEY);
 void FLIGHT_STATE_RX_LOSS(flight_magic_rxloss_t KEY);

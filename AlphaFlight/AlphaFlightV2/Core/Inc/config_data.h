@@ -50,4 +50,7 @@ typedef struct{
 
 extern config_data_t CONFIG_DATA;
 
+void CONFIG_DATA_BACKUP_DATA();
+void CONFIG_DATA_COMPARE_TO_BACKUP();
+
 #endif /* INC_CONFIG_DATA_H_ */

@@ -35,6 +35,13 @@ void FLIGHT_STATE_USB_DISABLE_OVERRIDE(flight_magic_usb_override KEY){
 	flight_state.usb_override = 0;
 }
 
+bool FLIGHT_STATE_IS_USB_CONNECTED(void){
+	if(flight_state.usb_override == 0) return 0;
+	if(flight_state.usb_override == FLIGHT_STATE_ARM_USB_OVERRIDE_MAGIC) return 1;
+	flight_state.usb_override = FLIGHT_STATE_ARM_USB_OVERRIDE_MAGIC;
+	return 1;
+}
+
 void FLIGHT_STATE_ARM(flight_magic_arm_t KEY){
 	if(KEY.value != FLIGHT_STATE_ARM_CHANGE_MAGIC) return;
 	flight_state.armed = FLIGHT_STATE_ARM_MAGIC;

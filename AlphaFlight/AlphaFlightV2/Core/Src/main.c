@@ -42,6 +42,7 @@
 #include "load_config.h"
 #include "qmc5883.h"
 #include "usb_manager.h"
+#include "config_data.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -251,6 +252,7 @@ int main(void)
   SCHEDULER_ADD_TASK(SD_LOGGER_LOOP_CALL, sd_logger_loop_time_delta);
   SCHEDULER_ADD_TASK(CRSF_HANDLE_TELEMETRY, HZ_TO_DELTA_T_US(50));	// 5 Hz
   SCHEDULER_ADD_TASK(USB_CHECK_FOR_CONNECTION, HZ_TO_DELTA_T_US(10));
+  SCHEDULER_ADD_TASK(CONFIG_DATA_COMPARE_TO_BACKUP, HZ_TO_DELTA_T_US(10));
   //SCHEDULER_ADD_TASK(FC_PID_PRINT_CURRENT_SERVO_POINTS, 100000);
   SCHEDULER_ADD_TASK(USAGE_STAT_END_OF_SCHEDULER_CALL, HZ_TO_DELTA_T_US(1000));
   #if PRINT_DEBUG_DATA
