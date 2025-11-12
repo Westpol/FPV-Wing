@@ -24,11 +24,6 @@ extern CRSF_DATA crsf_data;
 
 FLY_BY_WIRE_PID_VALUES attitude_pid_values = {0};
 
-float angle_x_lowpass = 0;
-float angle_y_lowpass = 0;
-
-const float lowpass_alpha_x = 0.2;
-const float lowpass_alpha_y = 0.2;
 
 static void FC_PID_MIXER(float pitchDeflection, float rollDeflection, float throttle){
 	// pitch and roll should be -1.0f...1.0f, throttle 0.0f...1.0f
