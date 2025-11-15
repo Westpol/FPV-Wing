@@ -6,13 +6,14 @@
  */
 
 #include "usb_manager.h"
+#include <stdbool.h>
+#include <string.h>
+
 #include "flight_state.h"
 #include "usbd_cdc.h"
 #include "time-utils.h"
 #include "main.h"
 #include "debug.h"
-#include <stdbool.h>
-#include <string.h>
 
 uint8_t cdc_buffer[APP_RX_DATA_SIZE] = {0};
 static uint8_t clear_buffer[64];
