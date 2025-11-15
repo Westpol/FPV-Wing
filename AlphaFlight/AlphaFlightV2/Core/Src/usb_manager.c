@@ -90,8 +90,8 @@ void USB_DECODE_COMMAND(uint32_t length){	// set commands / variables here
 	}
 }
 
-void USB_DECODE_MESSAGE(uint32_t length){
-	if(usb_config_mode_enabled == false){
+void USB_DECODE_MESSAGE(uint32_t length){		// gets called every time usb message is recieved
+	if(usb_config_mode_enabled == false){		// if USB configurator is not connected
 		const char expected[] = "START_COMMUNICATION";
 		uint32_t expected_len = sizeof(expected) - 1;
 		if(length >= expected_len){
@@ -105,7 +105,7 @@ void USB_DECODE_MESSAGE(uint32_t length){
 			}
 		}
 	}
-	else{
+	else{		// if USB configurator is connected
 		USB_DECODE_COMMAND(length);
 	}
 }
