@@ -92,6 +92,8 @@ void USB_DECODE_COMMAND(uint32_t length){	// set commands / variables here
 			continue;
 		}
 
+		if('a' <= cdc_buffer[i] && 'z' >= cdc_buffer[i]) continue;
+
 		if('0' <= cdc_buffer[i] && '9' >= cdc_buffer[i]) continue;		// valid char for now
 
 		if(cdc_buffer[i] == ' '){
