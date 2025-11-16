@@ -25,6 +25,20 @@ bool enter_usb_mode_next_loop = false;
 bool usb_config_mode_enabled = false;
 bool exit_command_line_config = false;
 
+typedef struct{
+	uint8_t mode_point;
+	uint8_t parting_indexes[4];
+	uint8_t strings[5][32];
+
+	uint8_t command;
+	uint8_t topic;
+	uint8_t topic_value_1;
+	uint8_t topic_value_2;
+	uint8_t value;
+}message_decoder_t;
+
+message_decoder_t message_decoder = {0};
+
 void USB_INIT(){
 	MICROS64_HTIM = TIME_UTILS_GET_TIMER();
 	if(MICROS64_HTIM == NULL){
@@ -69,6 +83,80 @@ void USB_CHECK_FOR_CONNECTION(){
 }
 
 void USB_DECODE_COMMAND(uint32_t length){	// set commands / variables here
+
+	memset(&message_decoder, 0, sizeof(message_decoder_t));
+
+	for(int i = 0; i < length; i++){
+		if('A' <= cdc_buffer[i] && 'Z' >= cdc_buffer[i]){		// changing upper case to lower case, valid char for now
+			cdc_buffer[i] += 'a' - 'A';
+			continue;
+		}
+
+		if('0' <= cdc_buffer[i] && '9' >= cdc_buffer[i]) continue;		// valid char for now
+
+		if(cdc_buffer[i] == ' '){
+			if(message_decoder.mode_point == 0){
+				if(i >= 31) return;		// change to length of longest command later
+
+				for(int f = 0; f < i; f++){
+					message_decoder.strings[0][f] = cdc_buffer[f];
+				}
+				message_decoder.strings[0][i] = '\0';		// make shure that null termination is correct
+				message_decoder.parting_indexes[message_decoder.mode_point] = i;
+				message_decoder.mode_point = 1;
+			}
+			else{
+				if(message_decoder.mode_point >= 4) return;
+				uint8_t last_index_space = message_decoder.parting_indexes[message_decoder.mode_point - 1] + 1;
+				uint8_t current_index_space = i;
+				uint8_t token_length = current_index_space - last_index_space;		// absoliute length of current token
+
+				if(token_length >= 31) return;
+
+				for(int f = last_index_space; f < current_index_space; f++){
+					message_decoder.strings[message_decoder.mode_point][f - last_index_space] = cdc_buffer[f];
+				}
+				message_decoder.strings[message_decoder.mode_point][token_length] = '\0';		// make shure that null termination is correct
+				message_decoder.parting_indexes[message_decoder.mode_point] = current_index_space;
+				message_decoder.mode_point += 1;
+			}
+			continue;
+		}
+
+		if(cdc_buffer[i] == '\n'){
+			if(message_decoder.mode_point == 0){
+				if(i >= 31) return;		// change to length of longest command later
+
+				for(int f = 0; f < i; f++){
+					message_decoder.strings[0][f] = cdc_buffer[f];
+				}
+				message_decoder.strings[0][i] = '\0';		// make shure that null termination is correct
+				message_decoder.parting_indexes[message_decoder.mode_point] = i;
+				message_decoder.mode_point = 1;
+			}
+			else{
+				if(message_decoder.mode_point >= 5) return;
+
+				uint8_t last_index_space = message_decoder.parting_indexes[message_decoder.mode_point - 1] + 1;
+				uint8_t current_index_space = i;
+				uint8_t token_length = current_index_space - last_index_space;		// absoliute length of current token
+
+				if(token_length >= 31) return;
+
+				for(int f = last_index_space; f < current_index_space; f++){
+					message_decoder.strings[message_decoder.mode_point][f - last_index_space] = cdc_buffer[f];
+				}
+				message_decoder.strings[message_decoder.mode_point][token_length] = '\0';		// make shure that null termination is correct
+				message_decoder.mode_point += 1;
+
+				break;
+			}
+		}
+
+		return;		// something invalid found
+	}
+
+
 	const char expected[] = "clear";
 	uint32_t expected_len = sizeof(expected) - 1;
 	if(length >= expected_len){
