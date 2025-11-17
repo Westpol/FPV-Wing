@@ -14,6 +14,7 @@
 #include "time-utils.h"
 #include "main.h"
 #include "debug.h"
+#include "load_config.h"
 
 uint8_t cdc_buffer[APP_RX_DATA_SIZE] = {0};
 static uint8_t clear_buffer[64];
@@ -135,6 +136,7 @@ void USB_DECODE_COMMAND(uint32_t length){	// set commands / variables here
 				message_decoder.strings[0][i] = '\0';		// make shure that null termination is correct
 				message_decoder.parting_indexes[message_decoder.mode_point] = i;
 				message_decoder.mode_point = 1;
+				break;
 			}
 			else{
 				if(message_decoder.mode_point >= 5) return;
@@ -158,30 +160,45 @@ void USB_DECODE_COMMAND(uint32_t length){	// set commands / variables here
 		return;		// something invalid found
 	}
 
+	enum{
+		SIMPLE_COMMAND_CLEAR = 0,
+		SIMPLE_COMMAND_EXIT = 1,
+		SIMPLE_COMMAND_SAVE = 2,
+		SIMPLE_COMMAND_DUMP = 3
+	};
 
-	const char expected[] = "clear";
-	uint32_t expected_len = sizeof(expected) - 1;
-	if(length >= expected_len){
-		if(memcmp(cdc_buffer, expected, expected_len) == 0){
-			USBD_CDC_SetTxBuffer(&hUsbDeviceFS, clear_buffer, 64);
-			USBD_CDC_TransmitPacket(&hUsbDeviceFS);
-		}
-	}
+	if(message_decoder.mode_point == 1){		// single command (save, exit, clear, dump)
 
-	const char expected_exit[] = "exit";
-	uint32_t expected_len_exit = sizeof(expected_exit) - 1;
-	if(length >= expected_len_exit){
-		if(memcmp(cdc_buffer, expected_exit, expected_len_exit) == 0){
-			USB_PRINTLN_BLOCKING("exiting command line configuration...");
-			usb_config_mode_enabled = false;
-			exit_command_line_config = true;
-			return;
+		uint8_t basic_commands = 4;
+		const char *command[] = {"clear", "exit", "save", "dump"};
+
+		for(int i = 0; i < basic_commands; i++){
+
+			if(strcmp((const char *)message_decoder.strings[0], command[i]) != 0) continue;
+
+			switch (i) {
+				case SIMPLE_COMMAND_CLEAR:
+					USBD_CDC_SetTxBuffer(&hUsbDeviceFS, clear_buffer, 64);
+					USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+					break;
+				case SIMPLE_COMMAND_EXIT:
+					USB_PRINTLN_BLOCKING("exiting command line configuration...");
+					usb_config_mode_enabled = false;
+					exit_command_line_config = true;
+					return;
+					break;
+				case SIMPLE_COMMAND_SAVE:
+					CONFIG_WRITE();
+					break;
+				default:
+					break;
+			}
 		}
 	}
 }
 
 void USB_DECODE_MESSAGE(uint32_t length){		// gets called every time usb message is recieved
-	if(usb_config_mode_enabled == false){		// if USB configurator is not connected
+	if(usb_config_mode_enabled == false){		// if USB configurator is not connected / enabled
 		const char expected[] = "START_COMMUNICATION";
 		uint32_t expected_len = sizeof(expected) - 1;
 		if(length >= expected_len){
@@ -195,7 +212,7 @@ void USB_DECODE_MESSAGE(uint32_t length){		// gets called every time usb message
 			}
 		}
 	}
-	else{		// if USB configurator is connected
+	else{		// if USB configurator is connected / enabled
 		USB_DECODE_COMMAND(length);
 	}
 }

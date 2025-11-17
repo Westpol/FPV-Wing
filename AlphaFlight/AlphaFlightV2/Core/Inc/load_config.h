@@ -84,10 +84,9 @@ typedef struct __attribute((packed)){
 	uint32_t magic_end;
 }PID_VALUES_CONFIG_DATA;
 
-void print_block_blocking(uint32_t block);
 void LOAD_CONFIG_INIT();
-void CONFIG_WRITE_STANDARD_CONFIG();
-void CONFIG_READ_CONFIG();
+void CONFIG_WRITE();
+void CONFIG_READ();
 uint8_t CONFIG_WAS_READ();
 
 #endif /* INC_LOAD_CONFIG_H_ */

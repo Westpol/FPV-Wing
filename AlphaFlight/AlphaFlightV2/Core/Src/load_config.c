@@ -26,7 +26,7 @@ CONFIG_HEADER config_header;
 CRSF_CHANNELS_CONFIG_DATA crsf_channels_config_data;
 PID_VALUES_CONFIG_DATA pid_values_config_data;
 
-uint8_t CONFIG_READ = 0;
+uint8_t config_been_read = 0;
 
 
 static uint32_t next_magic(uint32_t prev) {
@@ -37,27 +37,105 @@ static uint32_t next_magic(uint32_t prev) {
     return x | 0x80000000; // ensure non-zero and high bit set
 }
 
-void print_block_blocking(uint32_t block){
-	uint8_t bytes[512];
 
-	SD_READ_BLOCK(bytes, block);
-	for(int i = 0; i < 32; i++){
-		USB_PRINTLN_BLOCKING("%02X %02X %02X %02X %02X %02X %02X %02X    %02X %02X %02X %02X %02X %02X %02X %02X", bytes[0+i*16], bytes[1+i*16], bytes[2+i*16], bytes[3+i*16], bytes[4+i*16], bytes[5+i*16], bytes[6+i*16], bytes[7+i*16], bytes[8+i*16], bytes[9+i*16], bytes[10+i*16], bytes[11+i*16], bytes[12+i*16], bytes[13+i*16], bytes[14+i*16], bytes[15+i*16]);
+#ifdef CONFIG_WRITE_STANDARD_ENABLED
+static void INCREASE_INDEX_NEXT_STRUCT(uint16_t current_struct_size, uint16_t next_struct_size, uint16_t* block_index_pos, uint32_t* block){
+	if(*block_index_pos + current_struct_size >= 508){
+		ERROR_HANDLER_BLINKS(1);
+		return;
 	}
+	if(*block_index_pos + current_struct_size + next_struct_size <= 508){
+		*block_index_pos += current_struct_size;
+		return;
+	}
+	*block += 1;
+	*block_index_pos = 0;
+	return;
 }
+
+static void CONFIG_SET_STANDARD_VALUES(){
+	if(config_been_read == 0){
+		uint16_t block_index_pos = 0;
+		uint32_t block = CONFIG_START_BLOCK;
+		uint32_t magic = START_MAGIC;
+		config_header.magic_start = magic;
+		config_header.magic_end = ~magic;
+		magic = next_magic(magic);
+		config_header.num_config_blocks = 1;
+		config_header.version = 0;
+
+		INCREASE_INDEX_NEXT_STRUCT(sizeof(config_header), sizeof(sd_logger_config_data), &block_index_pos, &block);
+		config_header.index_next_datastruct = block_index_pos;
+		config_header.block_num_next_datastruct = block;
+
+
+		sd_logger_config_data.magic_start = magic;		// sd logger setup
+		sd_logger_config_data.magic_end = ~magic;
+		magic = next_magic(magic);
+		sd_logger_config_data.log_mode = 1;
+
+		INCREASE_INDEX_NEXT_STRUCT(sizeof(sd_logger_config_data), sizeof(crsf_channels_config_data), &block_index_pos, &block);
+		sd_logger_config_data.index_next_datastruct = block_index_pos;
+		sd_logger_config_data.block_num_next_datastruct = block;
+
+
+		crsf_channels_config_data.magic_start = magic;
+		crsf_channels_config_data.magic_end = ~magic;
+		magic = next_magic(magic);
+		crsf_channels_config_data.throttle = 0;
+		crsf_channels_config_data.roll = 2;
+		crsf_channels_config_data.pitch = 1;
+		crsf_channels_config_data.arm_switch = 11;
+		crsf_channels_config_data.mode_switch = 5;
+
+		INCREASE_INDEX_NEXT_STRUCT(sizeof(crsf_channels_config_data), sizeof(pid_values_config_data), &block_index_pos, &block);
+		crsf_channels_config_data.index_next_datastruct = block_index_pos;
+		crsf_channels_config_data.block_num_next_datastruct = block;
+
+		pid_values_config_data.magic_start = magic;
+		pid_values_config_data.magic_end = ~magic;
+		magic = next_magic(magic);
+
+		pid_values_config_data.pitch_p = 1.0;
+		pid_values_config_data.pitch_i = 1.0;
+		pid_values_config_data.pitch_d = 1.0;
+		pid_values_config_data.pitch_d_filter = 1.0;
+		pid_values_config_data.pitch_feed_forward = 1.0;
+		pid_values_config_data.pitch_i_limit = 1.0;
+		pid_values_config_data.pitch_i_zone = 1.0;
+		pid_values_config_data.pitch_multiplier = 1.0;
+
+		pid_values_config_data.roll_p = 1.0;
+		pid_values_config_data.roll_i = 1.0;
+		pid_values_config_data.roll_d = 1.0;
+		pid_values_config_data.roll_d_filter = 1.0;
+		pid_values_config_data.roll_feed_forward = 1.0;
+		pid_values_config_data.roll_i_limit = 1.0;
+		pid_values_config_data.roll_i_zone = 1.0;
+		pid_values_config_data.roll_multiplier = 1.0;
+
+		INCREASE_INDEX_NEXT_STRUCT(sizeof(pid_values_config_data), 0, &block_index_pos, &block);
+		pid_values_config_data.index_next_datastruct = block_index_pos;
+		pid_values_config_data.block_num_next_datastruct = block;
+	}
+
+}
+#endif
+
 
 void LOAD_CONFIG_INIT(){
 #ifdef CONFIG_WRITE_STANDARD_ENABLED
-	CONFIG_WRITE_STANDARD_CONFIG();
+	CONFIG_SET_STANDARD_VALUES();
+	CONFIG_WRITE();
 #endif
-	CONFIG_READ_CONFIG();
+	CONFIG_READ();
 }
 
 uint8_t CONFIG_WAS_READ(){
-	return CONFIG_READ;
+	return config_been_read;
 }
 
-static void CONFIG_WRITE_READ_DATA(){
+static void CONFIG_SET_CONFIG_DATA_STRUCT(){
 	CONFIG_DATA.logger.log_mode = sd_logger_config_data.log_mode;
 
 	CONFIG_DATA.crossfire.channels.throttle = crsf_channels_config_data.throttle;
@@ -84,7 +162,7 @@ static void CONFIG_WRITE_READ_DATA(){
 	CONFIG_DATA_BACKUP_DATA();
 }
 
-void CONFIG_READ_CONFIG(){
+void CONFIG_READ(){
 	uint8_t block_data[512];
 	uint32_t magic = START_MAGIC;
 	uint32_t block = CONFIG_START_BLOCK;
@@ -115,100 +193,20 @@ void CONFIG_READ_CONFIG(){
 	}
 
 	memcpy(&pid_values_config_data, &block_data[crsf_channels_config_data.index_next_datastruct], sizeof(pid_values_config_data));
-	if(!(pid_values_config_data.magic_start == magic && pid_values_config_data.magic_end == ~magic)) ERROR_HANDLER_BLINKS(4);
+	if(!(pid_values_config_data.magic_start == magic && pid_values_config_data.magic_end == ~magic)) ERROR_HANDLER_BLINKS(5);
 	magic = next_magic(magic);
 	if(pid_values_config_data.block_num_next_datastruct != block){
 		SD_READ_BLOCK(block_data, pid_values_config_data.block_num_next_datastruct);
 		block = pid_values_config_data.block_num_next_datastruct;
 	}
 
-	CONFIG_WRITE_READ_DATA();
-	CONFIG_READ = 1;
+	CONFIG_SET_CONFIG_DATA_STRUCT();
+	config_been_read = 1;
 }
 
-#ifdef CONFIG_WRITE_STANDARD_ENABLED
-static void INCREASE_INDEX_NEXT_STRUCT(uint16_t current_struct_size, uint16_t next_struct_size, uint16_t* block_index_pos, uint32_t* block){
-	if(*block_index_pos + current_struct_size >= 508){
-		ERROR_HANDLER_BLINKS(1);
-		return;
-	}
-	if(*block_index_pos + current_struct_size + next_struct_size <= 508){
-		*block_index_pos += current_struct_size;
-		return;
-	}
-	*block += 1;
-	*block_index_pos = 0;
-	return;
-}
-
-static void CONFIG_SET_STANDARD_VALUES(){
-	uint16_t block_index_pos = 0;
-	uint32_t block = CONFIG_START_BLOCK;
-	uint32_t magic = START_MAGIC;
-	config_header.magic_start = magic;
-	config_header.magic_end = ~magic;
-	magic = next_magic(magic);
-	config_header.num_config_blocks = 1;
-	config_header.version = 0;
-
-	INCREASE_INDEX_NEXT_STRUCT(sizeof(config_header), sizeof(sd_logger_config_data), &block_index_pos, &block);
-	config_header.index_next_datastruct = block_index_pos;
-	config_header.block_num_next_datastruct = block;
 
 
-	sd_logger_config_data.magic_start = magic;		// sd logger setup
-	sd_logger_config_data.magic_end = ~magic;
-	magic = next_magic(magic);
-	sd_logger_config_data.log_mode = 1;
-
-	INCREASE_INDEX_NEXT_STRUCT(sizeof(sd_logger_config_data), sizeof(crsf_channels_config_data), &block_index_pos, &block);
-	sd_logger_config_data.index_next_datastruct = block_index_pos;
-	sd_logger_config_data.block_num_next_datastruct = block;
-
-
-	crsf_channels_config_data.magic_start = magic;
-	crsf_channels_config_data.magic_end = ~magic;
-	magic = next_magic(magic);
-	crsf_channels_config_data.throttle = 0;
-	crsf_channels_config_data.roll = 2;
-	crsf_channels_config_data.pitch = 1;
-	crsf_channels_config_data.arm_switch = 11;
-	crsf_channels_config_data.mode_switch = 5;
-
-	INCREASE_INDEX_NEXT_STRUCT(sizeof(crsf_channels_config_data), sizeof(pid_values_config_data), &block_index_pos, &block);
-	crsf_channels_config_data.index_next_datastruct = block_index_pos;
-	crsf_channels_config_data.block_num_next_datastruct = block;
-
-	pid_values_config_data.magic_start = magic;
-	pid_values_config_data.magic_end = ~magic;
-	magic = next_magic(magic);
-
-	pid_values_config_data.pitch_p = 1.0;
-	pid_values_config_data.pitch_i = 1.0;
-	pid_values_config_data.pitch_d = 1.0;
-	pid_values_config_data.pitch_d_filter = 1.0;
-	pid_values_config_data.pitch_feed_forward = 1.0;
-	pid_values_config_data.pitch_i_limit = 1.0;
-	pid_values_config_data.pitch_i_zone = 1.0;
-	pid_values_config_data.pitch_multiplier = 1.0;
-
-	pid_values_config_data.roll_p = 1.0;
-	pid_values_config_data.roll_i = 1.0;
-	pid_values_config_data.roll_d = 1.0;
-	pid_values_config_data.roll_d_filter = 1.0;
-	pid_values_config_data.roll_feed_forward = 1.0;
-	pid_values_config_data.roll_i_limit = 1.0;
-	pid_values_config_data.roll_i_zone = 1.0;
-	pid_values_config_data.roll_multiplier = 1.0;
-
-	INCREASE_INDEX_NEXT_STRUCT(sizeof(pid_values_config_data), 0, &block_index_pos, &block);
-	pid_values_config_data.index_next_datastruct = block_index_pos;
-	pid_values_config_data.block_num_next_datastruct = block;
-
-}
-
-void CONFIG_WRITE_STANDARD_CONFIG(){
-	CONFIG_SET_STANDARD_VALUES();
+void CONFIG_WRITE(){
 
 	uint32_t block = CONFIG_START_BLOCK;
 	uint16_t index = 0;
@@ -249,4 +247,3 @@ void CONFIG_WRITE_STANDARD_CONFIG(){
 	SD_WRITE_BLOCK(block_byte_array, sizeof(block_byte_array), block);
 
 }
-#endif
