@@ -20,7 +20,6 @@ uint8_t cdc_buffer[APP_RX_DATA_SIZE] = {0};
 static uint8_t clear_buffer[64];
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
-TIM_HandleTypeDef* MICROS64_HTIM = NULL;
 
 bool enter_usb_mode_next_loop = false;
 bool usb_config_mode_enabled = false;
@@ -41,45 +40,9 @@ typedef struct{
 message_decoder_t message_decoder = {0};
 
 void USB_INIT(){
-	MICROS64_HTIM = TIME_UTILS_GET_TIMER();
-	if(MICROS64_HTIM == NULL){
-		ERROR_HANDLER_BLINKS(1);
-	}
 	USB_CHECK_FOR_CONNECTION();
 	for(int i = 0; i < 64;i++){
 		clear_buffer[i] = (i % 2 == 0)? 13 : 10;
-	}
-}
-
-
-void USB_CHECK_FOR_CONNECTION(){
-	if(!FLIGHT_STATE_IS_ARMED()){
-		if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED){
-			FLIGHT_STATE_USB_ENABLE_OVERRIDE(FLIGHT_STATE_USB_OVERRIDE_KEY);
-
-			if(enter_usb_mode_next_loop){
-				enter_usb_mode_next_loop = false;
-				usb_config_mode_enabled = true;
-				HAL_TIM_Base_Stop(MICROS64_HTIM);
-				__HAL_TIM_DISABLE(MICROS64_HTIM);
-
-				while(1){
-					if(hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED || exit_command_line_config){
-						exit_command_line_config = false;
-						FLIGHT_STATE_USB_DISABLE_OVERRIDE(FLIGHT_STATE_USB_OVERRIDE_KEY);
-						break;
-					}
-				}
-
-				__HAL_TIM_ENABLE(MICROS64_HTIM);
-				HAL_TIM_Base_Start(MICROS64_HTIM);
-				usb_config_mode_enabled = false;
-			}
-
-		}
-		else{
-			FLIGHT_STATE_USB_DISABLE_OVERRIDE(FLIGHT_STATE_USB_OVERRIDE_KEY);
-		}
 	}
 }
 
@@ -133,7 +96,7 @@ void USB_DECODE_COMMAND(uint32_t length){	// set commands / variables here
 				for(int f = 0; f < i; f++){
 					message_decoder.strings[0][f] = cdc_buffer[f];
 				}
-				message_decoder.strings[0][i] = '\0';		// make shure that null termination is correct
+				message_decoder.strings[0][i] = '\0';		// make sure that null termination is correct
 				message_decoder.parting_indexes[message_decoder.mode_point] = i;
 				message_decoder.mode_point = 1;
 				break;
@@ -143,14 +106,14 @@ void USB_DECODE_COMMAND(uint32_t length){	// set commands / variables here
 
 				uint8_t last_index_space = message_decoder.parting_indexes[message_decoder.mode_point - 1] + 1;
 				uint8_t current_index_space = i;
-				uint8_t token_length = current_index_space - last_index_space;		// absoliute length of current token
+				uint8_t token_length = current_index_space - last_index_space;		// absolute length of current token
 
 				if(token_length >= 31) return;
 
 				for(int f = last_index_space; f < current_index_space; f++){
 					message_decoder.strings[message_decoder.mode_point][f - last_index_space] = cdc_buffer[f];
 				}
-				message_decoder.strings[message_decoder.mode_point][token_length] = '\0';		// make shure that null termination is correct
+				message_decoder.strings[message_decoder.mode_point][token_length] = '\0';		// make sure that null termination is correct
 				message_decoder.mode_point += 1;
 
 				break;
@@ -197,6 +160,7 @@ void USB_DECODE_COMMAND(uint32_t length){	// set commands / variables here
 	}
 }
 
+
 void USB_DECODE_MESSAGE(uint32_t length){		// gets called every time usb message is recieved
 	if(usb_config_mode_enabled == false){		// if USB configurator is not connected / enabled
 		const char expected[] = "START_COMMUNICATION";
@@ -214,5 +178,35 @@ void USB_DECODE_MESSAGE(uint32_t length){		// gets called every time usb message
 	}
 	else{		// if USB configurator is connected / enabled
 		USB_DECODE_COMMAND(length);
+	}
+}
+
+
+void USB_CHECK_FOR_CONNECTION(){		// logic while USB connection is established
+	if(!FLIGHT_STATE_IS_ARMED()){
+		if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED){
+			FLIGHT_STATE_USB_ENABLE_OVERRIDE(FLIGHT_STATE_USB_OVERRIDE_KEY);
+
+			if(enter_usb_mode_next_loop){
+				enter_usb_mode_next_loop = false;
+				usb_config_mode_enabled = true;
+				TIME_UTILS_PAUSE_MICROS64();
+
+				while(1){
+					if(hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED || exit_command_line_config){
+						exit_command_line_config = false;
+						FLIGHT_STATE_USB_DISABLE_OVERRIDE(FLIGHT_STATE_USB_OVERRIDE_KEY);
+						break;
+					}
+				}
+
+				TIME_UTILS_CONTINUE_MICROS64();
+				usb_config_mode_enabled = false;
+			}
+
+		}
+		else{
+			FLIGHT_STATE_USB_DISABLE_OVERRIDE(FLIGHT_STATE_USB_OVERRIDE_KEY);
+		}
 	}
 }
