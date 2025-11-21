@@ -191,15 +191,40 @@ void USB_CHECK_FOR_CONNECTION(){		// logic while USB connection is established
 				enter_usb_mode_next_loop = false;
 				usb_config_mode_enabled = true;
 				TIME_UTILS_PAUSE_MICROS64();
+				bool usb_activated = true;
 
-				while(1){
+				// USB mode global variables here
+
+				uint64_t led_delay = 500 * 1000;
+
+				// USB mode global variables here
+
+				// USB Mode default config
+
+				STATUS_LED_BLUE_OFF();
+				STATUS_LED_GREEN_OFF();
+
+				// USB mode default config
+
+				while(usb_activated){
+					//USB LOGIC HERE
+
+					if(led_delay < MICROS64_USB()){
+						STATUS_LED_GREEN_TOGGLE();
+						led_delay = MICROS64_USB() + 500 * 1000;
+					}
+
+					//USB LOGIC HERE
+
+					// cheks if CLI is exited or USB is disconnected
 					if(hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED || exit_command_line_config){
 						exit_command_line_config = false;
+						usb_activated = false;
 						FLIGHT_STATE_USB_DISABLE_OVERRIDE(FLIGHT_STATE_USB_OVERRIDE_KEY);
-						break;
 					}
 				}
 
+				STATUS_LED_GREEN_OFF();
 				TIME_UTILS_CONTINUE_MICROS64();
 				usb_config_mode_enabled = false;
 			}
