@@ -96,23 +96,23 @@ static void CONFIG_SET_STANDARD_VALUES(){
 		pid_values_config_data.magic_end = ~magic;
 		magic = next_magic(magic);
 
-		pid_values_config_data.pitch_p = 1.0;
-		pid_values_config_data.pitch_i = 1.0;
-		pid_values_config_data.pitch_d = 1.0;
-		pid_values_config_data.pitch_d_filter = 1.0;
-		pid_values_config_data.pitch_feed_forward = 1.0;
-		pid_values_config_data.pitch_i_limit = 1.0;
-		pid_values_config_data.pitch_i_zone = 1.0;
-		pid_values_config_data.pitch_multiplier = 1.0;
+		pid_values_config_data.pitch_p = 0.1;
+		pid_values_config_data.pitch_i = 0.1;
+		pid_values_config_data.pitch_d = 0.1;
+		pid_values_config_data.pitch_d_filter = 0.1;
+		pid_values_config_data.pitch_feed_forward = 0.1;
+		pid_values_config_data.pitch_i_limit = 0.3;
+		pid_values_config_data.pitch_i_zone = 0.3;
+		pid_values_config_data.pitch_multiplier = 0.1;
 
-		pid_values_config_data.roll_p = 1.0;
-		pid_values_config_data.roll_i = 1.0;
-		pid_values_config_data.roll_d = 1.0;
-		pid_values_config_data.roll_d_filter = 1.0;
-		pid_values_config_data.roll_feed_forward = 1.0;
-		pid_values_config_data.roll_i_limit = 1.0;
-		pid_values_config_data.roll_i_zone = 1.0;
-		pid_values_config_data.roll_multiplier = 1.0;
+		pid_values_config_data.roll_p = 0.1;
+		pid_values_config_data.roll_i = 0.1;
+		pid_values_config_data.roll_d = 0.1;
+		pid_values_config_data.roll_d_filter = 0.1;
+		pid_values_config_data.roll_feed_forward = 0.1;
+		pid_values_config_data.roll_i_limit = 0.3;
+		pid_values_config_data.roll_i_zone = 0.3;
+		pid_values_config_data.roll_multiplier = 0.1;
 
 		INCREASE_INDEX_NEXT_STRUCT(sizeof(pid_values_config_data), 0, &block_index_pos, &block);
 		pid_values_config_data.index_next_datastruct = block_index_pos;
