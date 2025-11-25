@@ -55,6 +55,28 @@ void FC_PID_DIRECT_CONTROL(){
 	}
 }
 
+void FC_PID_ANGLE_MODE(uint32_t dt){
+	float dt_seconds = dt / 1000000.0;
+	if(dt_seconds == 0.0f) return;
+
+	attitude_pid_values.pitch_error = ONBOARD_SENSORS.gyro.gyro.y - fly_by_wire_setpoints.pitch_angular_velocity;
+	attitude_pid_values.roll_error = ONBOARD_SENSORS.gyro.gyro.x - fly_by_wire_setpoints.roll_angular_velocity;
+
+	//attitude_pid_values.pitch_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.pitch_error_accumulated + (attitude_pid.pitch_error * fbw_pid_settings.pitch_i * dt), -0.15), 0.15);
+	//attitude_pid.roll_error_accumulated = UTIL_MAX_F(UTIL_MIN_F(attitude_pid.roll_error_accumulated + (attitude_pid.roll_error * fbw_pid_settings.roll_i * dt), -0.15), 0.15);
+	attitude_pid_values.pitch_pid_correction = ((attitude_pid_values.pitch_error * CONFIG_DATA.pid.pitch.p) + attitude_pid_values.pitch_error_accumulated + (((attitude_pid_values.pitch_error - attitude_pid_values.pitch_error_last) / dt_seconds) * CONFIG_DATA.pid.pitch.d)) * CONFIG_DATA.pid.pitch.multiplier;
+	attitude_pid_values.roll_pid_correction = -((attitude_pid_values.roll_error * CONFIG_DATA.pid.roll.p) + attitude_pid_values.roll_error_accumulated + (((attitude_pid_values.roll_error - attitude_pid_values.roll_error_last) / dt_seconds) * CONFIG_DATA.pid.roll.d)) * CONFIG_DATA.pid.roll.multiplier;
+	attitude_pid_values.pitch_error_last = attitude_pid_values.pitch_error;
+	attitude_pid_values.roll_error_last = attitude_pid_values.roll_error;
+
+	if(FLIGHT_STATE_IS_ARMED() && !FLIGHT_STATE_IS_RX_LOSS()){
+		FC_PID_MIXER(attitude_pid_values.pitch_pid_correction, attitude_pid_values.roll_pid_correction, crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.throttle] / 100.0f);
+	}
+	else{
+		FC_PID_MIXER(attitude_pid_values.pitch_pid_correction, attitude_pid_values.roll_pid_correction, 0.0);
+	}
+}
+
 void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 	float dt_seconds = dt / 1000000.0;
 	if(dt_seconds == 0.0f) return;
