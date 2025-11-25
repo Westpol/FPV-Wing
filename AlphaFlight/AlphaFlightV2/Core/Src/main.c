@@ -1306,7 +1306,7 @@ static void PRINT_DATA(){
 	//USB_PRINTLN("%f, %f", UTIL_DEGREES(attitude_pid_values.pitch_error), UTIL_DEGREES(attitude_pid_values.roll_error));
 	//USB_PRINTLN("w:%f, x:%f, y:%f, z:%f, y-axis directly integrated:%f", q[0], q[1], q[2], q[3], imu_data.pitch_angle);
 	//USB_PRINTLN("pitch_err:%f, roll_err:%f", attitude_pid.pitch_error, attitude_pid.roll_error);
-	//USB_PRINTLN("pitch:%f,roll:%f", imu_data.pitch_angle, imu_data.roll_angle);
+	//USB_PRINTLN("pitch:%f,roll:%f", ONBOARD_SENSORS.gyro.gyro.y, ONBOARD_SENSORS.gyro.gyro.x);
 }
 #endif
 
