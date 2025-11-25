@@ -389,22 +389,15 @@ void GYRO_INTEGRATE_EXACT() {
 
     float q_delta[4];
 
-    if (theta > 1e-12f) {
-        float half_theta = 0.5f * theta;
-        float sin_half = sinf(half_theta);
-        float k = sin_half / (theta);
 
-        q_delta[0] = cosf(half_theta);
-        q_delta[1] = wx * dt * k;
-        q_delta[2] = wy * dt * k;
-        q_delta[3] = wz * dt * k;
-    } else {
-        // Small angle approximation
-        q_delta[0] = 1.0f;
-        q_delta[1] = 0.5f * wx * dt;
-        q_delta[2] = 0.5f * wy * dt;
-        q_delta[3] = 0.5f * wz * dt;
-    }
+	float half_theta = 0.5f * theta;
+	float sin_half = sinf(half_theta);
+	float k = sin_half / (theta);
+
+	q_delta[0] = cosf(half_theta);
+	q_delta[1] = wx * dt * k;
+	q_delta[2] = wy * dt * k;
+	q_delta[3] = wz * dt * k;
 
     // q <- q ⊗ q_delta
     float q_new[4];
@@ -426,106 +419,6 @@ void GYRO_INTEGRATE_EXACT() {
         atan2f(2*(q[0]*q[1] + q[2]*q[3]),
                1 - 2*(q[1]*q[1] + q[2]*q[2]));
 }
-
-
-// how many radians per fusion step you allow for correction (tune if needed)
-// e.g. allow up to 2 degrees per update at 200 Hz -> 2*(pi/180)/200
-#define FUSION_RATE_HZ 200.0f
-#define MAX_CORRECTION_DEG_PER_SEC 10.0f
-#define MAX_CORRECTION_RAD_PER_STEP ((MAX_CORRECTION_DEG_PER_SEC * (M_PI/180.0f)) / FUSION_RATE_HZ)
-
-void GYRO_FUSION() {
-    // read & normalize accelerometer (body frame)
-    float ax = ONBOARD_SENSORS.accel.accel.x;
-    float ay = ONBOARD_SENSORS.accel.accel.y;
-    float az = ONBOARD_SENSORS.accel.accel.z;
-    float an = sqrtf(ax*ax + ay*ay + az*az);
-    if (an < 1e-6f) return;
-    ax /= an; ay /= an; az /= an;
-
-    // current quaternion (q0,q1,q2,q3)
-    float q0 = ONBOARD_SENSORS.gyro.q_angle[0];
-    float q1 = ONBOARD_SENSORS.gyro.q_angle[1];
-    float q2 = ONBOARD_SENSORS.gyro.q_angle[2];
-    float q3 = ONBOARD_SENSORS.gyro.q_angle[3];
-
-    // predicted gravity direction in body frame (v)
-    float vx = 2.0f * (q1*q3 - q0*q2);
-    float vy = 2.0f * (q0*q1 + q2*q3);
-    float vz = q0*q0 - q1*q1 - q2*q2 + q3*q3;
-
-    // measured gravity (a) is (ax,ay,az) (both body frame)
-    // compute rotation that brings v -> a
-    // rotation axis = cross(v, a)
-    float rx = vy*az - vz*ay;  // v x a
-    float ry = vz*ax - vx*az;
-    float rz = vx*ay - vy*ax;
-
-    // sine of angle = |r|, cosine = dot(v,a)
-    float r_norm = sqrtf(rx*rx + ry*ry + rz*rz);
-    float dot_va = vx*ax + vy*ay + vz*az;
-
-    // clamp dot to [-1,1] to avoid NaNs
-    if (dot_va > 1.0f) dot_va = 1.0f;
-    if (dot_va < -1.0f) dot_va = -1.0f;
-
-    // full angle between v and a
-    float angle = atan2f(r_norm, dot_va);  // in [0, pi]
-
-    // nothing to do if angle is ~0
-    if (angle < 1e-6f) return;
-
-    // limit correction per step to avoid big jumps (optional but recommended)
-    float limited_angle = angle;
-    if (limited_angle > MAX_CORRECTION_RAD_PER_STEP) limited_angle = MAX_CORRECTION_RAD_PER_STEP;
-
-    // compute normalized axis (if very small, use an arbitrary axis)
-    float ux = 0.0f, uy = 0.0f, uz = 1.0f;
-    if (r_norm > 1e-8f) {
-        ux = rx / r_norm;
-        uy = ry / r_norm;
-        uz = rz / r_norm;
-    } else {
-        // v and a are nearly collinear; nothing to do
-        return;
-    }
-
-    // build quaternion q_delta from axis-angle (limited_angle)
-    float half = 0.5f * limited_angle;
-    float s = sinf(half);
-    float qd0 = cosf(half);
-    float qd1 = ux * s;
-    float qd2 = uy * s;
-    float qd3 = uz * s;
-
-    // Apply correction to current orientation quaternion.
-    // WARNING: quaternion multiplication order depends on your convention.
-    // Try q_new = q_delta * q_old first:
-    float q_new[4];
-    UTIL_QUATERNION_PRODUCT(qd0 ? (float[]){qd0,qd1,qd2,qd3} : NULL,
-                            NULL, q_new); // placeholder — see note below
-
-    // You must actually multiply properly. Use UTIL_QUATERNION_PRODUCT like this:
-    // q_new = q_delta ⊗ q_old
-    float q_delta[4] = { qd0, qd1, qd2, qd3 };
-    //UTIL_QUATERNION_PRODUCT(q_delta, ONBOARD_SENSORS.gyro.q_angle, q_new);
-
-    // If your quaternion convention expects the correction on the right (i.e. q_new = q_old ⊗ q_delta)
-    // then instead call:
-    UTIL_QUATERNION_PRODUCT(ONBOARD_SENSORS.gyro.q_angle, q_delta, q_new);
-    // If results look inverted, swap the order.
-
-    // Normalize and store back
-    float n = sqrtf(q_new[0]*q_new[0] + q_new[1]*q_new[1] + q_new[2]*q_new[2] + q_new[3]*q_new[3]);
-    if (n > 1e-12f) {
-        ONBOARD_SENSORS.gyro.q_angle[0] = q_new[0] / n;
-        ONBOARD_SENSORS.gyro.q_angle[1] = q_new[1] / n;
-        ONBOARD_SENSORS.gyro.q_angle[2] = q_new[2] / n;
-        ONBOARD_SENSORS.gyro.q_angle[3] = q_new[3] / n;
-    }
-}
-
-
 
 
 /*void GYRO_INTEGRATE_EXACT() {
@@ -562,7 +455,7 @@ void GYRO_FUSION() {
     ONBOARD_SENSORS.gyro.roll_angle = atan2f(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[3]), 1 - 2*(ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2]));
 }*/
 
-/*
+
 #define FUSION_RATE_HZ 200.0f
 #define MAX_DEG_PER_SEC 3.0f
 const float correction_angle = (MAX_DEG_PER_SEC * (M_PI/180.0f)) / FUSION_RATE_HZ; // ≈ 8.7266e-5
@@ -619,7 +512,7 @@ void GYRO_FUSION(){
 	ONBOARD_SENSORS.gyro.q_angle[2] /= norm_q;
 	ONBOARD_SENSORS.gyro.q_angle[3] /= norm_q;
 
-}*/
+}
 
 
 void BARO_SET_BASE_PRESSURE(){
