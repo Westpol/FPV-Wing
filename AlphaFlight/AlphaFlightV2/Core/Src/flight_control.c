@@ -88,10 +88,18 @@ void FC_PROCESS(){
 	last_process_execution_time = MICROS64();
 
 	if(dt < 100000){	// skip setpoint set if deltaT is too big
-		fly_by_wire_setpoints.pitch_angle = UTIL_MAX_F(UTIL_MIN_F(fly_by_wire_setpoints.pitch_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch], 0.5, 50) / 50.0f - 1) * UTIL_RADIANS(10)) / (1000000.0f / dt)), UTIL_RADIANS(30)), UTIL_RADIANS(-25));
-		fly_by_wire_setpoints.roll_angle = UTIL_MAX_F(UTIL_MIN_F(fly_by_wire_setpoints.roll_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll], 0.5, 50) / 50.0f - 1) * UTIL_RADIANS(15)) / (1000000.0f / dt)), UTIL_RADIANS(45)), UTIL_RADIANS(-45));
-		fly_by_wire_setpoints.pitch_angular_velocity = (FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch], 0.5, 50) / 50.0f - 1) * UTIL_RADIANS(20);
-		fly_by_wire_setpoints.roll_angular_velocity = (FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll], 0.5, 50) / 50.0f - 1) * UTIL_RADIANS(30);
+		switch(current_flight_mode){
+		case FLY_BY_WIRE:
+			fly_by_wire_setpoints.pitch_angle = UTIL_MAX_F(UTIL_MIN_F(fly_by_wire_setpoints.pitch_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch], 0.5, 50) / 50.0f - 1) * UTIL_RADIANS(10)) / (1000000.0f / dt)), UTIL_RADIANS(30)), UTIL_RADIANS(-25));
+			fly_by_wire_setpoints.roll_angle = UTIL_MAX_F(UTIL_MIN_F(fly_by_wire_setpoints.roll_angle - (((FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll], 0.5, 50) / 50.0f - 1) * UTIL_RADIANS(15)) / (1000000.0f / dt)), UTIL_RADIANS(45)), UTIL_RADIANS(-45));
+			break;
+		case ANGLE_MODE:
+			fly_by_wire_setpoints.pitch_angular_velocity = (FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.pitch], 0.5, 50) / 50.0f - 1) * UTIL_RADIANS(20);
+			fly_by_wire_setpoints.roll_angular_velocity = (FC_CRSF_DEADBAND(crsf_data.channel_norm[CONFIG_DATA.crossfire.channels.roll], 0.5, 50) / 50.0f - 1) * UTIL_RADIANS(30);
+			break;
+		default:
+			break;
+		}
 	}
 
 	switch (current_flight_mode) {
