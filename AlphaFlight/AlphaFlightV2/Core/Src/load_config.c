@@ -72,7 +72,7 @@ static void CONFIG_SET_STANDARD_VALUES(){
 		sd_logger_config_data.magic_start = magic;		// sd logger setup
 		sd_logger_config_data.magic_end = ~magic;
 		magic = next_magic(magic);
-		sd_logger_config_data.log_mode = 1;
+		sd_logger_config_data.log_mode = 3;
 
 		INCREASE_INDEX_NEXT_STRUCT(sizeof(sd_logger_config_data), sizeof(crsf_channels_config_data), &block_index_pos, &block);
 		sd_logger_config_data.index_next_datastruct = block_index_pos;

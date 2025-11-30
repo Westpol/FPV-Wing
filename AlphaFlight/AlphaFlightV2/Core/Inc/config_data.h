@@ -23,7 +23,7 @@ typedef struct{
 }config_data_internal_crsf_t;
 
 typedef struct{
-	uint8_t log_mode;
+	uint64_t log_mode;		// each bit is one log topic, first bit = LOG_ENABLE
 }config_data_internal_sd_logger_setup_t;
 
 typedef struct{

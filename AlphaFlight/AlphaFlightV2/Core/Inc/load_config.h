@@ -42,7 +42,7 @@ typedef struct __attribute((packed)){
 	uint32_t magic_start;
 	uint16_t index_next_datastruct;
 	uint32_t block_num_next_datastruct;
-	uint8_t log_mode;
+	uint64_t log_mode;
 	uint32_t magic_end;
 }SD_LOGGER_CONFIG_DATA;
 

@@ -45,7 +45,7 @@ static uint8_t* active_log_buffer = &log_buffer_1[0];
 static uint32_t latest_metadata_block = 0;
 static uint8_t latest_metadata_index = 0;
 static uint8_t current_metadata_index = 0;
-static uint8_t log_mode = LOG_TYPE_DISABLE_LOGGING;
+static uint64_t log_mode = LOG_TYPE_DISABLE_LOGGING;
 
 static uint32_t last_log_block;
 static SD_SUPERBLOCK sd_superblock = {0};
@@ -165,18 +165,20 @@ uint32_t SD_LOGGER_INIT(){
 	//SD_LOGGER_SETUP_CARD();
 	READ_LATEST_FLIGHT();
 
-	return LOGGING_PACKER_INTERVAL_MICROSECONDS(log_mode);
-
+	return 0;
 
 }
 
+#define LOG_ENABLED_BITMASK (1ULL << 0)
+#define LOG_ENABLED (log_mode & LOG_ENABLED_BITMASK)
+
 void SD_LOGGER_LOOP_CALL(){
-	if(log_mode == LOG_TYPE_DISABLE_LOGGING) return;
+	if(!LOG_ENABLED) return;
 	// open file at arm
 	if(last_arm_status == false && FLIGHT_STATE_IS_ARMED() == true){
 		last_arm_status = true;
 		READ_LATEST_FLIGHT();
-		if(log_mode == LOG_TYPE_DISABLE_LOGGING) return;	// in case something went wrong in READ_LATEST_FLIGHT
+		if(!LOG_ENABLED) return;	// in case something went wrong in READ_LATEST_FLIGHT
 
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].active_flag = true;
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number = sd_superblock.absolute_flight_num;
@@ -185,7 +187,6 @@ void SD_LOGGER_LOOP_CALL(){
 		last_log_block = sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].start_block;
 
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].log_version = LOG_VERSION;
-		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].log_mode = log_mode;
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].timestamp_unix = gps_data.unix_timestamp;
 
 		DEBUG_PRINT_VERBOSE("Current: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].start_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].end_block);
@@ -204,45 +205,49 @@ void SD_LOGGER_LOOP_CALL(){
 	}
 	// log file while arm_status
 	if(FLIGHT_STATE_IS_ARMED() == true && last_arm_status == true){
-		uint8_t* array_pointer = LOGGING_PACKER_BY_MODE(log_mode);
+		for(int i = 1; i < 64; i++){
 
-		uint8_t array_length = array_pointer[0];
+			if(!(log_mode & (1ULL << i))) continue;
+			uint8_t* array_pointer = LOGGING_PACKER_BY_MODE(i);
 
-		if(buffer_index + array_length <= 512 - sizeof(CRC32_BYTE_SIZE)){
-			memcpy(active_log_buffer + buffer_index + (512 * buffer_block), array_pointer + 1, array_length);
-			buffer_index += array_length;
-		}
-		else{
-			uint32_t crc = CALCULATE_CRC32_HW(active_log_buffer + (512 * buffer_block), 508);
-			memcpy(active_log_buffer + 508 + (512 * buffer_block), &crc, sizeof(crc));
-			buffer_index = 0;
-			buffer_block += 1;
-			if(buffer_block > 3){
-				// change buffers, write buffer to SD card, write value other buffer
-				if(WRITE_BUFFER_DMA(last_log_block) != 0){
-					LOG_FAIL_WITH_ERROR(ERROR_DMA_WRITE);		// conditional executions
-				}
-				last_log_block += 4;
-				DEBUG_PRINT_VERBOSE("Block %d", last_log_block);
-				buffer_block = 0;
-				buffer_index = 0;
-				if(current_buffer == 0){
-					active_log_buffer = &log_buffer_2[0];
-					current_buffer = 1;
-				}
-				else{
-					active_log_buffer = &log_buffer_1[0];
-					current_buffer = 0;
-				}
+			uint8_t array_length = array_pointer[0];
 
-			}
-			else{		// continue filling the next buffer
+			if(buffer_index + array_length <= 512 - sizeof(CRC32_BYTE_SIZE)){
 				memcpy(active_log_buffer + buffer_index + (512 * buffer_block), array_pointer + 1, array_length);
 				buffer_index += array_length;
 			}
-		}
+			else{
+				uint32_t crc = CALCULATE_CRC32_HW(active_log_buffer + (512 * buffer_block), 508);
+				memcpy(active_log_buffer + 508 + (512 * buffer_block), &crc, sizeof(crc));
+				buffer_index = 0;
+				buffer_block += 1;
+				if(buffer_block > 3){
+					// change buffers, write buffer to SD card, write value other buffer
+					if(WRITE_BUFFER_DMA(last_log_block) != 0){
+						LOG_FAIL_WITH_ERROR(ERROR_DMA_WRITE);		// conditional executions
+					}
+					last_log_block += 4;
+					DEBUG_PRINT_VERBOSE("Block %d", last_log_block);
+					buffer_block = 0;
+					buffer_index = 0;
+					if(current_buffer == 0){
+						active_log_buffer = &log_buffer_2[0];
+						current_buffer = 1;
+					}
+					else{
+						active_log_buffer = &log_buffer_1[0];
+						current_buffer = 0;
+					}
 
+				}
+				else{		// continue filling the next buffer
+					memcpy(active_log_buffer + buffer_index + (512 * buffer_block), array_pointer + 1, array_length);
+					buffer_index += array_length;
+				}
+			}
+		}
 	}
+
 	// close file after disarm
 	if(last_arm_status == true && FLIGHT_STATE_IS_ARMED() == false){
 

@@ -10,44 +10,40 @@
 
 #include "stdint.h"
 
-#define LOG_FRAME_START_MAGIC 0xC8
-#define LOG_FRAME_END_MAGIC 0x9A
-#define BUFFER_SIZE 254
+#define LOG_FRAME_BASE_MAGIC 0xC85A
+#define LOG_FRAME_START_MAGIC LOG_FRAME_BASE_MAGIC
+#define LOG_FRAME_END_MAGIC ~LOG_FRAME_BASE_MAGIC
+#define LOG_BUFFER_SIZE 256
+#define LOG_VERSION 1
 
 typedef enum{
 	LOG_TYPE_DISABLE_LOGGING = 0,
-	LOG_TYPE_T1V0_GENERAL = 1,
-	LOG_TYPE_THROTTLE = 2,
-	LOG_TYPE_GYRO = 3,
-	LOG_TYPE_SENSORS = 4,
-	LOG_TYPE_FLY_BY_WIRE = 5
+	LOG_TYPE_GYRO_GENERAL = 1,
 }LOG_TYPES;
 
 typedef struct __attribute__((packed)){
-	uint16_t start_magic;
-
+	uint32_t start_magic;
+	uint8_t log_struct_length;
+	uint8_t log_type;
+	uint8_t log_version;
 	uint64_t timestamp;
+}log_general_header_t;
 
-	float roll_angle, pitch_angle;		// onboard-sensors
+typedef struct __attribute__((packed)){
+	uint32_t end_magic;
+}log_general_end_t;
 
-	float baro_altimeter;
-
-	double gps_lon, gps_lat, gps_height, gps_speed, gps_heading;		// GPS
-	uint8_t gps_sats;
-
-	uint16_t crsf_ch[4];		// user inputs
-
-	uint16_t status_flags;
-
-	float pid_correction_roll, pid_correction_pitch;
-	float fbw_setpoint_roll, fbw_setpoint_pitch;
-
-	uint16_t end_magic;
-
-}T1V0_GENERAL_DATA;
+typedef struct __attribute__((packed)){
+	log_general_header_t header;
+	float gyro_x_rad;
+	float gyro_y_rad;
+	float gyro_z_rad;
+	float gyro_pitch_angle;
+	float gyro_roll_angle;
+	float quaternion_values[4];
+	log_general_end_t end;
+}LOG_GYRO_GENERAL_T;
 
 uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE);
-
-uint32_t LOGGING_PACKER_INTERVAL_MICROSECONDS(uint16_t MODE);
 
 #endif /* INC_LOGGING_PACKAGER_H_ */

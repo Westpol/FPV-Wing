@@ -27,62 +27,45 @@ extern GPS_NAV_PVT gps_nav_pvt;
 extern FLY_BY_WIRE_PID_VALUES attitude_pid_values;
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 
-static uint8_t logging_buffer[BUFFER_SIZE] = {0};
+static uint8_t logging_buffer[LOG_BUFFER_SIZE] = {0};
 static uint8_t* logging_buffer_pointer = logging_buffer;
 
-T1V0_GENERAL_DATA t1v0_general_data = {0};
+LOG_GYRO_GENERAL_T log_gyro_general = {0};
 
-uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE){
+uint8_t* LOGGING_PACKER_BY_MODE(uint16_t TOPIC){
 
-	void snapshot_t1v0_general(){
-		t1v0_general_data.start_magic = LOG_FRAME_START_MAGIC;
-		t1v0_general_data.end_magic = LOG_FRAME_END_MAGIC;
-		t1v0_general_data.timestamp = MICROS64();
-		t1v0_general_data.baro_altimeter = ONBOARD_SENSORS.barometer.height;
-		t1v0_general_data.crsf_ch[0] = crsf_data.channel_raw[0];
-		t1v0_general_data.crsf_ch[1] = crsf_data.channel_raw[1];
-		t1v0_general_data.crsf_ch[2] = crsf_data.channel_raw[2];
-		t1v0_general_data.crsf_ch[3] = crsf_data.channel_raw[3];
-		t1v0_general_data.gps_heading = gps_data.heading;
-		t1v0_general_data.gps_height = gps_data.altitude;
-		t1v0_general_data.gps_lat = gps_data.lat;
-		t1v0_general_data.gps_lon = gps_data.lon;
-		t1v0_general_data.gps_sats = gps_nav_pvt.numSV;
-		t1v0_general_data.gps_speed = gps_data.gspeed;
-		t1v0_general_data.roll_angle = ONBOARD_SENSORS.gyro.roll_angle;
-		t1v0_general_data.pitch_angle = ONBOARD_SENSORS.gyro.pitch_angle;
-		t1v0_general_data.pid_correction_roll = attitude_pid_values.roll_pid_correction;
-		t1v0_general_data.pid_correction_pitch = attitude_pid_values.pitch_pid_correction;
-		t1v0_general_data.fbw_setpoint_pitch = fly_by_wire_setpoints.pitch_angle;
-		t1v0_general_data.fbw_setpoint_roll = fly_by_wire_setpoints.roll_angle;
+	void snapshot_gyro_general(){
+		log_gyro_general.header.start_magic = LOG_FRAME_START_MAGIC;
+		log_gyro_general.header.log_struct_length = sizeof(log_gyro_general);
+		log_gyro_general.header.log_type = LOG_TYPE_GYRO_GENERAL;
+		log_gyro_general.header.log_version = LOG_VERSION;
+		log_gyro_general.header.timestamp = 0;
 
-		SET_FLAG_COND(t1v0_general_data.status_flags, 0, FLIGHT_STATE_IS_ARMED());
-		SET_FLAG_COND(t1v0_general_data.status_flags, 1, FLIGHT_STATE_IS_RX_LOSS());
+		log_gyro_general.quaternion_values[0] = ONBOARD_SENSORS.gyro.q_angle[0];
+		log_gyro_general.quaternion_values[1] = ONBOARD_SENSORS.gyro.q_angle[1];
+		log_gyro_general.quaternion_values[2] = ONBOARD_SENSORS.gyro.q_angle[2];
+		log_gyro_general.quaternion_values[3] = ONBOARD_SENSORS.gyro.q_angle[3];
+		log_gyro_general.gyro_x_rad = ONBOARD_SENSORS.gyro.gyro.x;
+		log_gyro_general.gyro_y_rad = ONBOARD_SENSORS.gyro.gyro.y;
+		log_gyro_general.gyro_z_rad = ONBOARD_SENSORS.gyro.gyro.z;
+		log_gyro_general.gyro_pitch_angle = ONBOARD_SENSORS.gyro.pitch_angle;
+		log_gyro_general.gyro_roll_angle = ONBOARD_SENSORS.gyro.roll_angle;
+
+		log_gyro_general.end.end_magic = LOG_FRAME_END_MAGIC;
 	}
 
-	switch (MODE) {
+	switch (TOPIC) {
 		case LOG_TYPE_DISABLE_LOGGING:		// default
 			break;
-		case LOG_TYPE_T1V0_GENERAL:
+		case LOG_TYPE_GYRO_GENERAL:
 
-			snapshot_t1v0_general();
+			snapshot_gyro_general();
 
-			memcpy(logging_buffer_pointer + 1, &t1v0_general_data, sizeof(t1v0_general_data));
-			logging_buffer[0] = sizeof(t1v0_general_data);
+			memcpy(logging_buffer_pointer + 1, &log_gyro_general, sizeof(log_gyro_general));
+			logging_buffer[0] = sizeof(log_gyro_general);
 			break;
 		default:
 			break;
 	}
 	return &logging_buffer[0];
-}
-
-
-uint32_t LOGGING_PACKER_INTERVAL_MICROSECONDS(uint16_t MODE){
-
-	static const uint32_t log_intervals_us[] = {
-		[LOG_TYPE_DISABLE_LOGGING] = HZ_TO_DELTA_T_US(10),
-		[LOG_TYPE_T1V0_GENERAL]    = HZ_TO_DELTA_T_US(50),
-	};
-
-	return log_intervals_us[MODE];
 }
