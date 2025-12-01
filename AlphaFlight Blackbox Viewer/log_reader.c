@@ -98,11 +98,11 @@ static int READ_SINGLE_BLOCK(uint8_t* BUFFER, uint32_t BLOCK){
     return 0;
 }
 
-static void DUMP_FLIGHT_TO_BIN(int chosen_flight){
+static void DUMP_FLIGHT_TO_BIN(int chosen_flight, const char* filename){
     const int start_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].start_block;
     const int end_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].end_block;
     uint8_t block_buffer[512] = {0};
-    FILE* of = fopen("test.bin", "wb");
+    FILE* of = fopen(filename, "wb");
     for(int i = start_block; i <= end_block; i++){
         READ_SINGLE_BLOCK(block_buffer, i);
         fwrite(block_buffer, 1, BLOCK_SIZE, of);
@@ -110,48 +110,7 @@ static void DUMP_FLIGHT_TO_BIN(int chosen_flight){
     fclose(of);
 }
 
-static void PRINT_FLIGHT_DATA(int chosen_flight){
-    const int start_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].start_block;
-    const int end_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].end_block;
-    uint8_t block_buffer[512] = {0};
-    for(int i = start_block; i <= end_block; i++){
-        READ_SINGLE_BLOCK(block_buffer, i);
-        int block_position = 0;
-        int entry_length = sizeof(T1V0_GENERAL_DATA);
-        T1V0_GENERAL_DATA log_entry = {0};
-        while(block_position < BLOCK_SIZE - 4 - entry_length){
-            memcpy(&log_entry, block_buffer + block_position, sizeof(T1V0_GENERAL_DATA));
-            //printf("Time: %ldus, Height: %fm, Angle X: %f, Angle Y: %f, GPS lon: %f, GPS lat: %f, GPS height: %f, GPS speed: %f, GPS heading: %f, GPS sats: %d, Status Flags: %X\n", log_entry.timestamp, log_entry.baro_altimeter, log_entry.angle_fused_x, log_entry.angle_fused_y, log_entry.gps_lon, log_entry.gps_lat, log_entry.gps_height, log_entry.gps_speed, log_entry.gps_heading, log_entry.gps_sats, log_entry.status_flags);
-            //uint32_t timestamp = *(uint32_t*)(block_buffer + block_position);
-            //uint16_t channel   = *(uint16_t*)(block_buffer + block_position + 4);
-            //printf("Time: %d, Throttle Value: %d\n", timestamp, channel);
-            block_position += entry_length;
-        }
-    }
-}
-
-static void EXPORT_FLIGHT(int chosen_flight){
-    
-    const int start_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].start_block;
-    const int end_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].end_block;
-    uint8_t block_buffer[512] = {0};
-    FILE* of2 = fopen("test.csv", "wb");
-    fprintf(of2, "timestamp,gyro_fused_x,gyro_fused_y,baro_height,gps_lon,gps_lat,gps_height,gps_speed,gps_heading,gps_sats,status_flags,pid_correction_roll,pid_correction_pitch,crsf_1,crsf_2,crsf_3,crsf_4,fbw_setpoint_pitch,fbw_setpoint_roll\n");
-    for(int i = start_block; i <= end_block; i++){
-        READ_SINGLE_BLOCK(block_buffer, i);
-        int block_position = 0;
-        int entry_length = sizeof(T1V0_GENERAL_DATA);
-        T1V0_GENERAL_DATA log_entry = {0};
-        while(block_position < BLOCK_SIZE - 4 - entry_length){
-            memcpy(&log_entry, block_buffer + block_position, sizeof(T1V0_GENERAL_DATA));
-            fprintf(of2, "%ld,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%d,%d,%d,%d,%f,%f\n", log_entry.timestamp, log_entry.angle_fused_x, log_entry.angle_fused_y, log_entry.baro_altimeter, log_entry.gps_lon, log_entry.gps_lat, log_entry.gps_height, log_entry.gps_speed, log_entry.gps_heading, log_entry.gps_sats, log_entry.status_flags, log_entry.pid_correction_roll, log_entry.pid_correction_pitch, log_entry.crsf_ch[0], log_entry.crsf_ch[1], log_entry.crsf_ch[2], log_entry.crsf_ch[3], log_entry.fbw_setpoint_pitch, log_entry.fbw_setpoint_roll);
-            block_position += entry_length;
-        }
-    }
-    fclose(of2);
-}
-
-int INITIALIZE_SD_CARD(const char* PATH){
+int INITIALIZE_SD_CARD(const char* PATH, bool ENABLE_BIN_FILE, const char* BIN_FILENAME, bool ENABLE_CSV_FILE, const char* CSV_FILENAME, bool PRINT_ENABLE){
     fd = open(PATH, O_RDONLY);
     if (fd < 0) {
         perror("Failed to open device");
@@ -193,23 +152,43 @@ int INITIALIZE_SD_CARD(const char* PATH){
         printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n", sd_metadata_block.sd_file_metadata_chunk[i].flight_number, sd_metadata_block.sd_file_metadata_chunk[i].active_flag, sd_metadata_block.sd_file_metadata_chunk[i].log_finished, sd_metadata_block.sd_file_metadata_chunk[i].start_block, sd_metadata_block.sd_file_metadata_chunk[i].end_block);
     }
     #endif
-    printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n", sd_metadata_block.sd_file_metadata_chunk[flight_chosen].flight_number, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].active_flag, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].log_finished, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].start_block, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].end_block);
+    printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n\n", sd_metadata_block.sd_file_metadata_chunk[flight_chosen].flight_number, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].active_flag, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].log_finished, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].start_block, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].end_block);
+    printf("Active log types:\n");
+
+    uint64_t chosen_log_mode = sd_metadata_block.sd_file_metadata_chunk[flight_chosen].log_mode;
+    const char* log_types[64];
+    log_types[1] = "ONBOARD_SENSORS";
+    log_types[2] = "CRSF";
+    for(int i = 1; i < 64; i++){
+        if((chosen_log_mode >> i) && 1){
+            printf("%s\n", log_types[i]);
+        }
+    }
+    printf("\n");
+
     char buff[21];
     const long int time_unix = sd_metadata_block.sd_file_metadata_chunk[flight_chosen].timestamp_unix;
     strftime(buff, 20, "%d.%m.%Y %H:%M:%S", localtime(&time_unix));
     buff[20] = '\0';
-    printf("%s\n", buff);
-    printf("Dumping data to test.bin...\n");
-    DUMP_FLIGHT_TO_BIN(flight_chosen);
-    printf("Done.\n");
+    printf("%s\n\n", buff);
 
-    printf("Printing Data...\n");
-    PRINT_FLIGHT_DATA(flight_chosen);
-    printf("\n\nDone.");
+    if(PRINT_ENABLE){
+        printf("Printing Data...\n");
+        //PRINT_FLIGHT_DATA(flight_chosen);
+        printf("\n\nDone.");
+    }
 
-    printf("Exporting to test.csv...\n");
-    EXPORT_FLIGHT(flight_chosen);
-    printf("Done.\n");
+    if(ENABLE_BIN_FILE){
+        printf("\n\nDumping data to %s...\n", BIN_FILENAME);
+        DUMP_FLIGHT_TO_BIN(flight_chosen, BIN_FILENAME);
+        printf("Done.\n");
+    }
+
+    if(ENABLE_CSV_FILE){
+        printf("\nExporting to %s...\n", CSV_FILENAME);
+        //EXPORT_FLIGHT(flight_chosen);
+        printf("Done.\n");
+    }
 
     close(fd);
     return 0;
