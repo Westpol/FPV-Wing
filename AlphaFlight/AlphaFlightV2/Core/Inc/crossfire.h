@@ -33,12 +33,14 @@ typedef struct{
 	float channel_norm[16];
 	uint64_t last_channel_update;
 	uint16_t rssi;
-}CRSF_DATA;
+}CRSF_DATA_T;
 
 void CRSF_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx);
 void CRSF_HANDLE_TELEMETRY();
 void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE);
 void CRSF_PARSE_BUFFER();
 void CRSF_OVERFLOW_INCREMENT();
+
+extern CRSF_DATA_T CRSF_DATA;
 
 #endif /* INC_CROSSFIRE_H_ */

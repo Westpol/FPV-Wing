@@ -32,6 +32,7 @@
 #include "flight_state.h"
 #include "sd.h"
 #include "config_data.h"
+#include "time-utils.h"
 
 static bool last_arm_status = false;
 
@@ -162,7 +163,7 @@ uint32_t SD_LOGGER_INIT(){
 	// check init
 
 
-	//SD_LOGGER_SETUP_CARD();
+	SD_LOGGER_SETUP_CARD();
 	READ_LATEST_FLIGHT();
 
 	return 0;
@@ -205,10 +206,11 @@ void SD_LOGGER_LOOP_CALL(){
 	}
 	// log file while arm_status
 	if(FLIGHT_STATE_IS_ARMED() == true && last_arm_status == true){
+		uint64_t timestamp = MICROS64();
 		for(int i = 1; i < 64; i++){
 
 			if(!(log_mode & (1ULL << i))) continue;
-			uint8_t* array_pointer = LOGGING_PACKER_BY_MODE(i);
+			uint8_t* array_pointer = LOGGING_PACKER_BY_MODE(i, timestamp);
 
 			uint8_t array_length = array_pointer[0];
 

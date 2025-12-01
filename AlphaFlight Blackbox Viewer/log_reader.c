@@ -1,17 +1,17 @@
-    #include "log_reader.h"
-    #include "stdio.h"
-    #include "stdint.h"
-    #include <fcntl.h>
-    #include <unistd.h>
-    #include <string.h>
-    #include "stdbool.h"
-    #include <time.h>
+#include "log_reader.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdbool.h>
+#include <time.h>
 
-    uint8_t super_block_buffer[512] = {0};
-    uint8_t metadata_block_buffer[512] = {0};
-    int fd;
-    SD_SUPERBLOCK sd_superblock;
-    SD_FILE_METADATA_BLOCK sd_metadata_block;
+uint8_t super_block_buffer[512] = {0};
+uint8_t metadata_block_buffer[512] = {0};
+int fd;
+SD_SUPERBLOCK sd_superblock;
+SD_FILE_METADATA_BLOCK sd_metadata_block;
 
 uint32_t crc32_stm32(const uint8_t* data, size_t length) {
     uint32_t crc = 0xFFFFFFFF;
@@ -69,34 +69,34 @@ static uint8_t FLIGHT_NUM_TO_INDEX(uint32_t relative_flight_num){
 	return index;
 }
 
-    static int READ_SINGLE_BLOCK(uint8_t* BUFFER, uint32_t BLOCK){
-        off_t offset = BLOCK * BLOCK_SIZE;
-        if (lseek(fd, offset, SEEK_SET) != offset) {
-            perror("Seek failed");
-            return 1;
-        }
-
-        ssize_t bytes_read = read(fd, BUFFER, BLOCK_SIZE);
-        if (bytes_read != BLOCK_SIZE) {
-            perror("Read failed");
-            return 1;
-        }
-
-        #if ENABLE_CRC
-        uint32_t calculated_block_crc32 = crc32_stm32(BUFFER, 508);
-        uint32_t block_crc;
-        memcpy(&block_crc, BUFFER + 508, sizeof(block_crc));
-        if(block_crc != calculated_block_crc32){
-            printf("Problem with Block %d\n", BLOCK);
-            printf("Calculated CRC: %08X\n", calculated_block_crc32);
-            printf("Block CRC     : %08X\n", block_crc);
-            //fprintf(stderr, "Block CRC wrong");
-            return 1;
-        }
-        #endif
-
-        return 0;
+static int READ_SINGLE_BLOCK(uint8_t* BUFFER, uint32_t BLOCK){
+    off_t offset = BLOCK * BLOCK_SIZE;
+    if (lseek(fd, offset, SEEK_SET) != offset) {
+        perror("Seek failed");
+        return 1;
     }
+
+    ssize_t bytes_read = read(fd, BUFFER, BLOCK_SIZE);
+    if (bytes_read != BLOCK_SIZE) {
+        perror("Read failed");
+        return 1;
+    }
+
+    #if ENABLE_CRC
+    uint32_t calculated_block_crc32 = crc32_stm32(BUFFER, 508);
+    uint32_t block_crc;
+    memcpy(&block_crc, BUFFER + 508, sizeof(block_crc));
+    if(block_crc != calculated_block_crc32){
+        printf("Problem with Block %d\n", BLOCK);
+        printf("Calculated CRC: %08X\n", calculated_block_crc32);
+        printf("Block CRC     : %08X\n", block_crc);
+        //fprintf(stderr, "Block CRC wrong");
+        return 1;
+    }
+    #endif
+
+    return 0;
+}
 
 static void DUMP_FLIGHT_TO_BIN(int chosen_flight){
     const int start_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].start_block;

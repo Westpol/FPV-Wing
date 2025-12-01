@@ -125,7 +125,6 @@ static void PRINT_DATA(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-extern CRSF_DATA crsf_data;
 extern GPS_NAV_PVT gps_nav_pvt;
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 extern FLY_BY_WIRE_PID_VALUES attitude_pid_values;
@@ -250,7 +249,7 @@ int main(void)
   SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, HZ_TO_DELTA_T_US(25));	// 25 Hz
   SCHEDULER_ADD_TASK(SD_LOGGER_LOOP_CALL, HZ_TO_DELTA_T_US(logging_frequency));
   SCHEDULER_ADD_TASK(CRSF_HANDLE_TELEMETRY, HZ_TO_DELTA_T_US(50));	// 5 Hz
-  SCHEDULER_ADD_TASK(USB_CHECK_FOR_CONNECTION, HZ_TO_DELTA_T_US(10));
+  //SCHEDULER_ADD_TASK(USB_CHECK_FOR_CONNECTION, HZ_TO_DELTA_T_US(10));
   SCHEDULER_ADD_TASK(CONFIG_DATA_COMPARE_TO_BACKUP, HZ_TO_DELTA_T_US(10));
   //SCHEDULER_ADD_TASK(FC_PID_PRINT_CURRENT_SERVO_POINTS, 100000);
   SCHEDULER_ADD_TASK(USAGE_STAT_END_OF_SCHEDULER_CALL, HZ_TO_DELTA_T_US(1000));
@@ -259,7 +258,7 @@ int main(void)
   #endif
   TIME_UTILS_MICROS_TIM_START(&htim5);
 
-  USB_INIT();
+  //USB_INIT();
 
   SCHEDULER_INIT();	// MICROS ONLY WORKS WHEN THIS IS ENABLED
 
@@ -1298,7 +1297,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
 #if PRINT_DEBUG_DATA
 static void PRINT_DATA(){
-	//USB_PRINTLN("Executed at: %lu%lu  |  Angle Gyro Y: %f  |  GPS Sats: %d  |   Accel X: %f  |  GPS Timestamp: %ld  |  GPS Year: %d  |  GPS Month: %d  |  GPS Day: %d  |  GPS Fix Tag: %d  |  GPS sats: %d  |  GPS Lat: %f", (uint32_t)(MICROS64() >> 32), (uint32_t)(MICROS64() & 0xFFFFFFFF), imu_data.angle_y_fused, gps_data.numSV, imu_data.accel_x, gps_data.unix_timestamp, gps_nav_pvt.year, gps_nav_pvt.month, gps_nav_pvt.day, gps_data.fix_type, gps_data.numSV, gps_data.lat);
+	//USB_PRINTLN("Executed at: %lu%lu  |  GPS Sats: %d  |   GPS Timestamp: %ld  |  GPS Year: %d  |  GPS Month: %d  |  GPS Day: %d  |  GPS Fix Tag: %d  |  GPS sats: %d  |  GPS Lat: %f", (uint32_t)(MICROS64() >> 32), (uint32_t)(MICROS64() & 0xFFFFFFFF), gps_data.numSV, gps_data.unix_timestamp, gps_nav_pvt.year, gps_nav_pvt.month, gps_nav_pvt.day, gps_data.fix_type, gps_data.numSV, gps_data.lat);
 	//USB_PRINTLN("Angle Gyro X: %f  |  Setpoint Angle X: %f  |  Throttle: %f  |  CRSF Pitch: %f  |  CRSF Roll: %f", imu_data.angle_y_fused, fly_by_wire_setpoints.pitch_angle, crsf_data.channel_norm[CRSF_CHANNEL_THROTTLE], crsf_data.channel_norm[CRSF_CHANNEL_PITCH], crsf_data.channel_norm[CRSF_CHANNEL_ROLL]);
 	//USB_PRINTLN("lat: %f  |  lon: %f  |  altitude: %f  |  gspeed: %f  |  heading: %f  |  num sats: %d  |  vbat: %f  |  vbat raw: %d  |  Accel X: %f", gps_data.lat, gps_data.lon, gps_data.altitude, gps_data.gspeed, gps_data.heading, gps_data.numSV, imu_data.vbat, imu_data.vbat_raw, imu_data.accel_x);	// GPS
 	USB_PRINTLN("Pitch angle: %f  |  Roll angle: %f  |  CPU usage avrg 1s: %.1f%%  |  CPU max usage 1s: %.1f%%  |  Time: %ld", UTIL_DEGREES(ONBOARD_SENSORS.gyro.pitch_angle), UTIL_DEGREES(ONBOARD_SENSORS.gyro.roll_angle), USAGE_STAT_GET_AVRG_1S() / 10.0f, USAGE_STAT_GET_MAX_LOOP_TIME_1S() / 10.0f, MICROS64());

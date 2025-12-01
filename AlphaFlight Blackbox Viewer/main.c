@@ -1,7 +1,7 @@
-#include "stdio.h"
-#include "stdint.h"
-#include "stdlib.h"
-#include "string.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include "log_reader.h"
 
 int main(int argc, char *argv[]){
@@ -12,7 +12,7 @@ int main(int argc, char *argv[]){
         }
         if(argc > 1){
             if(strcmp(argv[1], "-h") == 0){
-                printf("Usage: %s <device/img> <csv_output>\n", argv[0]);
+                printf("Usage: sudo %s <dev/sdX> <csv_output.csv>\n", argv[0]);
                 return 0;
             }
         }

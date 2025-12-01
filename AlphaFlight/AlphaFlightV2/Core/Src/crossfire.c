@@ -23,7 +23,7 @@ static DMA_HandleTypeDef *crsf_dma;
 static uint32_t buffer_wrap_around_count = 0;
 __attribute__((aligned(32))) static uint8_t dma_buffer[CRSF_BUFFER_SIZE] = {0};
 static CRSF_PARSE_STRUCT parser = {0};
-CRSF_DATA crsf_data = {0};
+CRSF_DATA_T CRSF_DATA = {0};
 
 static uint8_t telemetry_data[64] = {0};
 
@@ -108,17 +108,17 @@ static void MEMCPY_FROM_RINGBUFFER(uint8_t *dest, const uint8_t *src_ring, uint1
 
 static void CRSF_NORMALIZE(){
 	for(int i = 0; i < 16; i++){
-		crsf_data.channel_norm[i] = ((float)crsf_data.channel_raw[i] - CRSF_MIN) / CRSF_SCALE;
-		if(crsf_data.channel_norm[i] < 0.0f) crsf_data.channel_norm[i] = 0.0f;
-		if(crsf_data.channel_norm[i] > 100.0f) crsf_data.channel_norm[i] = 100.0f;
+		CRSF_DATA.channel_norm[i] = ((float)CRSF_DATA.channel_raw[i] - CRSF_MIN) / CRSF_SCALE;
+		if(CRSF_DATA.channel_norm[i] < 0.0f) CRSF_DATA.channel_norm[i] = 0.0f;
+		if(CRSF_DATA.channel_norm[i] > 100.0f) CRSF_DATA.channel_norm[i] = 100.0f;
 
 	}
 }
 
 static void CRSF_DECODE(){
 	if(parser.payload_type == 0x16 && VALIDATE_CRSF_CRC()){
-		CRSF_DECODE_CHANNELS(&parser.crsf_package[3], crsf_data.channel_raw);
-		crsf_data.last_channel_update = MICROS64();
+		CRSF_DECODE_CHANNELS(&parser.crsf_package[3], CRSF_DATA.channel_raw);
+		CRSF_DATA.last_channel_update = MICROS64();
 		CRSF_NORMALIZE();
 	}
 }

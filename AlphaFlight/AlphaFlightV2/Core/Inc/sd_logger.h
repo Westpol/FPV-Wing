@@ -24,7 +24,7 @@
 #define LOG_METADATA_VERSION 1         // Version for forward compatibility
 #define LOG_METADATA_BLOCK_START 100
 #define LOG_METADATA_BLOCK_END 999
-#define LOG_FILES_PER_METADATA_BLOCK 14
+#define LOG_FILES_PER_METADATA_BLOCK 10
 
 #define LOG_DATA_BLOCK_START 1000
 #define LOG_DATA_BLOCK_END 59999999
@@ -63,7 +63,7 @@ typedef struct __attribute__((__packed__)) {
 
     uint8_t log_finished;     // 1 = log completed successfully
 
-    uint8_t log_mode;		  // what data is logged e.g. Gyro, fly by wire, etc.
+    uint64_t log_mode;		  // what data is logged e.g. Gyro, fly by wire, etc.
     uint8_t log_version;	  // which logger version
 
     uint8_t reserved[2];      // Padding / reserved for future use

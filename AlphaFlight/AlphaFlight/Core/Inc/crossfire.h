@@ -16,7 +16,7 @@ typedef struct {
     uint16_t channels[NUM_CHANNELS];
 } CRSF_Data_t;
 
-extern CRSF_Data_t crsf_data;
+extern CRSF_Data_t CRSF_DATA;
 
 void CRSF_Init(UART_HandleTypeDef *huart);
 
