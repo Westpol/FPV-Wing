@@ -12,6 +12,7 @@ uint8_t metadata_block_buffer[512] = {0};
 int fd;
 SD_SUPERBLOCK sd_superblock;
 SD_FILE_METADATA_BLOCK sd_metadata_block;
+SD_FILE_METADATA_CHUNK flight_metadada;
 
 uint32_t crc32_stm32(const uint8_t* data, size_t length) {
     uint32_t crc = 0xFFFFFFFF;
@@ -99,8 +100,8 @@ static int READ_SINGLE_BLOCK(uint8_t* BUFFER, uint32_t BLOCK){
 }
 
 static void DUMP_FLIGHT_TO_BIN(int chosen_flight, const char* filename){
-    const int start_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].start_block;
-    const int end_block = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(chosen_flight)].end_block;
+    const int start_block = flight_metadada.start_block;
+    const int end_block = flight_metadada.end_block;
     uint8_t block_buffer[512] = {0};
     FILE* of = fopen(filename, "wb");
     for(int i = start_block; i <= end_block; i++){
@@ -144,6 +145,7 @@ int INITIALIZE_SD_CARD(const char* PATH, bool ENABLE_BIN_FILE, const char* BIN_F
         return 1;
     }
     memcpy(&sd_metadata_block, &metadata_block_buffer, sizeof(sd_metadata_block));
+    flight_metadada = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(flight_chosen)];
 
     #if VERBOSE_OUTPUT
     printf("Superblock version: %d\nRelative flight number: %d\nMagic number: %08X\n", sd_superblock.version, sd_superblock.relative_flight_num, sd_superblock.magic);
@@ -152,10 +154,10 @@ int INITIALIZE_SD_CARD(const char* PATH, bool ENABLE_BIN_FILE, const char* BIN_F
         printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n", sd_metadata_block.sd_file_metadata_chunk[i].flight_number, sd_metadata_block.sd_file_metadata_chunk[i].active_flag, sd_metadata_block.sd_file_metadata_chunk[i].log_finished, sd_metadata_block.sd_file_metadata_chunk[i].start_block, sd_metadata_block.sd_file_metadata_chunk[i].end_block);
     }
     #endif
-    printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n\n", sd_metadata_block.sd_file_metadata_chunk[flight_chosen].flight_number, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].active_flag, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].log_finished, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].start_block, sd_metadata_block.sd_file_metadata_chunk[flight_chosen].end_block);
+    printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n\n", flight_metadada.flight_number, flight_metadada.active_flag, flight_metadada.log_finished, flight_metadada.start_block, flight_metadada.end_block);
     printf("Active log types:\n");
 
-    uint64_t chosen_log_mode = sd_metadata_block.sd_file_metadata_chunk[flight_chosen].log_mode;
+    uint64_t chosen_log_mode = flight_metadada.log_mode;
     const char* log_types[64];
     log_types[1] = "ONBOARD_SENSORS";
     log_types[2] = "CRSF";
@@ -167,7 +169,7 @@ int INITIALIZE_SD_CARD(const char* PATH, bool ENABLE_BIN_FILE, const char* BIN_F
     printf("\n");
 
     char buff[21];
-    const long int time_unix = sd_metadata_block.sd_file_metadata_chunk[flight_chosen].timestamp_unix;
+    const long int time_unix = flight_metadada.timestamp_unix;
     strftime(buff, 20, "%d.%m.%Y %H:%M:%S", localtime(&time_unix));
     buff[20] = '\0';
     printf("%s\n\n", buff);
