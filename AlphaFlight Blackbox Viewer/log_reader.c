@@ -1,4 +1,5 @@
 #include "log_reader.h"
+#include "logging_structs.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <fcntl.h>
@@ -99,6 +100,55 @@ static int READ_SINGLE_BLOCK(uint8_t* BUFFER, uint32_t BLOCK){
     return 0;
 }
 
+static void PRINT_FLIGHT_DATA(){
+    LOG_ONBOARD_SENSORS_T log_onboard_sensors;
+    LOG_CRSF_T log_crsf;
+    #define START_MAGIC 0x5AC80000
+    #define END_MAGIC ~0x5AC80000
+    uint8_t block_buffer[512];
+    for(int i = flight_metadada.start_block; i <= flight_metadada.end_block; i++){
+        READ_SINGLE_BLOCK(block_buffer, i);
+        uint32_t start_magic = 0;
+        uint32_t end_magic = 0;
+        for(int i = 0; i < 504; i++){
+            start_magic = 0;
+            end_magic = 0;
+            for(int f = 0; f < 4; f++){
+                start_magic |= ((uint32_t)block_buffer[i+f] << ((3-f)*8));
+            }
+            if(start_magic == START_MAGIC){
+                printf("STRUCT FOUND AT INDEX %d\n", i);
+                int struct_length = block_buffer[i + 4];
+                printf("STRUCT LENGTH: %d\n", struct_length);
+                int struct_id = block_buffer[i + 5];
+                printf("STRUCT ID: %d\n", struct_id);
+
+                for(int f = 0; f < 4; f++){
+                    end_magic |= ((uint32_t)block_buffer[i + f + block_buffer[i + 4] - 4] << ((3-f)*8));
+                }
+                printf("END MAGIC: 0x%08X\n\n", end_magic);
+
+                switch(struct_id){
+                    case LOG_TYPE_ONBOARD_SENSORS:
+                    memcpy(&log_onboard_sensors, &block_buffer[i], struct_length);
+                    printf("Onboard Sensors Timestamp: %ld\n", log_onboard_sensors.header.timestamp);
+                    break;
+                    case LOG_TYPE_CRSF:
+                    memcpy(&log_crsf, &block_buffer[i], struct_length);
+                    printf("CRSF Timestamp: %ld\n", log_crsf.header.timestamp);
+                    break;
+                    default:
+                    break;
+                }
+
+                i += block_buffer[i+4] - 1;
+
+                continue;
+            }
+        }
+    }
+}
+
 static void DUMP_FLIGHT_TO_BIN(int chosen_flight, const char* filename){
     const int start_block = flight_metadada.start_block;
     const int end_block = flight_metadada.end_block;
@@ -147,6 +197,9 @@ int INITIALIZE_SD_CARD(const char* PATH, bool ENABLE_BIN_FILE, const char* BIN_F
     memcpy(&sd_metadata_block, &metadata_block_buffer, sizeof(sd_metadata_block));
     flight_metadada = sd_metadata_block.sd_file_metadata_chunk[FLIGHT_NUM_TO_INDEX(flight_chosen)];
 
+
+
+
     #if VERBOSE_OUTPUT
     printf("Superblock version: %d\nRelative flight number: %d\nMagic number: %08X\n", sd_superblock.version, sd_superblock.relative_flight_num, sd_superblock.magic);
     for(int i = 0; i < sd_superblock.relative_flight_num; i++){
@@ -154,15 +207,18 @@ int INITIALIZE_SD_CARD(const char* PATH, bool ENABLE_BIN_FILE, const char* BIN_F
         printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n", sd_metadata_block.sd_file_metadata_chunk[i].flight_number, sd_metadata_block.sd_file_metadata_chunk[i].active_flag, sd_metadata_block.sd_file_metadata_chunk[i].log_finished, sd_metadata_block.sd_file_metadata_chunk[i].start_block, sd_metadata_block.sd_file_metadata_chunk[i].end_block);
     }
     #endif
+
+
+
+
     printf("Flight %d, active flag %d, completion flag %d, start block %d, end block %d\n\n", flight_metadada.flight_number, flight_metadada.active_flag, flight_metadada.log_finished, flight_metadada.start_block, flight_metadada.end_block);
     printf("Active log types:\n");
 
-    uint64_t chosen_log_mode = flight_metadada.log_mode;
     const char* log_types[64];
     log_types[1] = "ONBOARD_SENSORS";
     log_types[2] = "CRSF";
     for(int i = 1; i < 64; i++){
-        if((chosen_log_mode >> i) && 1){
+        if((flight_metadada.log_mode >> i) && 1){
             printf("%s\n", log_types[i]);
         }
     }
@@ -176,7 +232,7 @@ int INITIALIZE_SD_CARD(const char* PATH, bool ENABLE_BIN_FILE, const char* BIN_F
 
     if(PRINT_ENABLE){
         printf("Printing Data...\n");
-        //PRINT_FLIGHT_DATA(flight_chosen);
+        PRINT_FLIGHT_DATA();
         printf("\n\nDone.");
     }
 
