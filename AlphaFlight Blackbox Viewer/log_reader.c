@@ -15,6 +15,8 @@ SD_SUPERBLOCK sd_superblock;
 SD_FILE_METADATA_BLOCK sd_metadata_block;
 SD_FILE_METADATA_CHUNK flight_metadada;
 
+DECODER_T decoder[2] = {{1, sizeof(LOG_ONBOARD_SENSORS_T), copy_struct_onboard_sensors, print_struct_onboard_sensors}, {0, 0, NULL, NULL}};
+
 uint32_t crc32_stm32(const uint8_t* data, size_t length) {
     uint32_t crc = 0xFFFFFFFF;
 
@@ -106,6 +108,7 @@ static void PRINT_FLIGHT_DATA(){
     #define START_MAGIC 0x5AC80000
     #define END_MAGIC ~0x5AC80000
     uint8_t block_buffer[512];
+    uint8_t data[512];
     for(int i = flight_metadada.start_block; i <= flight_metadada.end_block; i++){
         READ_SINGLE_BLOCK(block_buffer, i);
         uint32_t start_magic = 0;
@@ -128,17 +131,8 @@ static void PRINT_FLIGHT_DATA(){
                 }
                 printf("END MAGIC: 0x%08X\n\n", end_magic);
 
-                switch(struct_id){
-                    case LOG_TYPE_ONBOARD_SENSORS:
-                    memcpy(&log_onboard_sensors, &block_buffer[i], struct_length);
-                    printf("Onboard Sensors Timestamp: %ld\n", log_onboard_sensors.header.timestamp);
-                    break;
-                    case LOG_TYPE_CRSF:
-                    memcpy(&log_crsf, &block_buffer[i], struct_length);
-                    printf("CRSF Timestamp: %ld\n", log_crsf.header.timestamp);
-                    break;
-                    default:
-                    break;
+                if(struct_id == 1){
+
                 }
 
                 i += block_buffer[i+4] - 1;

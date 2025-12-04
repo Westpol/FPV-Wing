@@ -57,8 +57,11 @@ typedef struct __attribute__((packed)){
 typedef struct{
 	uint8_t id;
 	uint8_t size;
-	void (*decode)(uint8_t* raw, void* out, uint8_t mode);
+	uint8_t (*decode)(uint8_t* raw, void* out, uint8_t mode);
 	void (*print)(const void* in);
 } DECODER_T;
+
+uint8_t copy_struct_onboard_sensors(const uint8_t* raw, void* data);
+void print_struct_onboard_sensors(const void* data);
 
 #endif
