@@ -1308,19 +1308,13 @@ static void PRINT_DATA(){
 }
 #endif
 
-__attribute__((noinline)) void BAREBONES_DELAY_CYCLES(uint32_t cycles) {
-    __asm volatile (
-        "1: \n"
-        "   subs %0, #1 \n"  // 1 cycle
-        "   bne 1b \n"       // 1-2 cycles depending on pipeline
-        : "+r" (cycles)
-    );
-}
+void delay_100_ms(int delay_hundreds_ms){
+	  for(int i = 0; i < delay_hundreds_ms; i++){
+		  while(!(TIM6->SR & TIM_SR_UIF)){
 
-void BAREBONES_DELAY_MS(uint32_t ms){
-    while (ms--) {
-        BAREBONES_DELAY_CYCLES(108000);	// about how many cycles per milliseconds
-    }
+		  }
+		  TIM6->SR &= ~TIM_SR_UIF;
+	  }
 }
 
 void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
@@ -1328,27 +1322,39 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
+
+  // Enable TIM6 clock (F7 version)
+  RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
+
+  // Configure TIM6 for 100 ms overflow (@108 MHz timer clock)
+  TIM6->PSC = 10799;     // 108 MHz / 10800 = 10 kHz
+  TIM6->ARR = 999;       // 999+1 = 100 ms period
+  TIM6->CNT = 0;
+
+  // Enable counter
+  TIM6->CR1 |= TIM_CR1_CEN;
+
+
   while (1)
   {
-	  const int prescaler = 10;
 	  STATUS_LED_GREEN_OFF();
 	  STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
 		  STATUS_LED_BLUE_ON();
-		  BAREBONES_DELAY_MS(200 / prescaler);
+		  delay_100_ms(2);
 		  STATUS_LED_BLUE_OFF();
-		  BAREBONES_DELAY_MS(500 / prescaler);
+		  delay_100_ms(5);
 	  }
 
-	  BAREBONES_DELAY_MS(800 / prescaler);
+	  delay_100_ms(8);
 
 	  for(uint8_t counter = 0; counter < BLINKS; counter++){
 		  STATUS_LED_GREEN_ON();
-		  BAREBONES_DELAY_MS(200 / prescaler);
+		  delay_100_ms(2);
 		  STATUS_LED_GREEN_OFF();
-		  BAREBONES_DELAY_MS(500 / prescaler);
+		  delay_100_ms(5);
 	  }
-	  BAREBONES_DELAY_MS(1500 / prescaler);
+	  delay_100_ms(15);
   }
   /* USER CODE END Error_Handler_Debug */
 }
@@ -1393,19 +1399,30 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
-  while (1)
-  {
-	  const int prescaler = 10;
+
+  // Enable TIM6 clock (F7 version)
+  RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
+
+  // Configure TIM6 for 100 ms overflow (@108 MHz timer clock)
+  TIM6->PSC = 10799;     // 108 MHz / 10800 = 10 kHz
+  TIM6->ARR = 999;       // 999+1 = 100 ms period
+  TIM6->CNT = 0;
+
+  // Enable counter
+  TIM6->CR1 |= TIM_CR1_CEN;
+
+
+
+  while (1){
 	  STATUS_LED_GREEN_OFF();
 	  STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
 		  STATUS_LED_BLUE_ON();
-		  BAREBONES_DELAY_MS(200 / prescaler);
+		  delay_100_ms(2);
 		  STATUS_LED_BLUE_OFF();
-		  BAREBONES_DELAY_MS(500 / prescaler);
+		  delay_100_ms(5);
 	  }
-
-	  BAREBONES_DELAY_MS(800 / prescaler);
+	  delay_100_ms(8);
   }
   /* USER CODE END Error_Handler_Debug */
 }
