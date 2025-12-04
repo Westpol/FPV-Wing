@@ -54,4 +54,11 @@ typedef struct __attribute__((packed)){
 	log_general_end_t end;
 }LOG_CRSF_T;
 
+typedef struct{
+	uint8_t id;
+	uint8_t size;
+	void (*decode)(uint8_t* raw, void* out, uint8_t mode);
+	void (*print)(const void* in);
+} DECODER_T;
+
 #endif
