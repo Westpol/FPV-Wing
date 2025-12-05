@@ -15,7 +15,7 @@ SD_SUPERBLOCK sd_superblock;
 SD_FILE_METADATA_BLOCK sd_metadata_block;
 SD_FILE_METADATA_CHUNK flight_metadada;
 
-DECODER_T decoder[2] = {{1, sizeof(LOG_ONBOARD_SENSORS_T), copy_struct_onboard_sensors, print_struct_onboard_sensors}, {0, 0, NULL, NULL}};
+DECODER_T decoder[3] = {{0, 0, NULL, NULL}, {1, sizeof(LOG_ONBOARD_SENSORS_T), copy_struct_onboard_sensors, print_struct_onboard_sensors}, {0, 0, NULL, NULL}};
 
 uint32_t crc32_stm32(const uint8_t* data, size_t length) {
     uint32_t crc = 0xFFFFFFFF;
@@ -114,26 +114,31 @@ static void PRINT_FLIGHT_DATA(){
         uint32_t start_magic = 0;
         uint32_t end_magic = 0;
         for(int i = 0; i < 504; i++){
+
             start_magic = 0;
             end_magic = 0;
+
             for(int f = 0; f < 4; f++){
                 start_magic |= ((uint32_t)block_buffer[i+f] << ((3-f)*8));
             }
+
             if(start_magic == START_MAGIC){
-                printf("STRUCT FOUND AT INDEX %d\n", i);
+                //printf("STRUCT FOUND AT INDEX %d\n", i);
                 int struct_length = block_buffer[i + 4];
-                printf("STRUCT LENGTH: %d\n", struct_length);
+                //printf("STRUCT LENGTH: %d\n", struct_length);
                 int struct_id = block_buffer[i + 5];
-                printf("STRUCT ID: %d\n", struct_id);
+                //printf("STRUCT ID: %d\n", struct_id);
 
                 for(int f = 0; f < 4; f++){
                     end_magic |= ((uint32_t)block_buffer[i + f + block_buffer[i + 4] - 4] << ((3-f)*8));
                 }
-                printf("END MAGIC: 0x%08X\n\n", end_magic);
+                //printf("END MAGIC: 0x%08X\n\n", end_magic);
 
                 if(struct_id == 1){
-
+                    decoder[struct_id].decode(&block_buffer[i], &data[0], 1);
+                    decoder[struct_id].print(&data[0]);
                 }
+
 
                 i += block_buffer[i+4] - 1;
 

@@ -58,7 +58,7 @@ typedef struct{
 	uint8_t id;
 	uint8_t size;
 	uint8_t (*decode)(const uint8_t* raw, void* out, uint8_t mode);
-	void (*print)(const void* in);
+	void (*print)(const void* data);
 } DECODER_T;
 
 uint8_t copy_struct_onboard_sensors(const uint8_t* raw, void* data, uint8_t mode);
