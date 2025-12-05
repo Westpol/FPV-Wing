@@ -170,11 +170,15 @@ int INITIALIZE_SD_CARD(const char* PATH, bool ENABLE_BIN_FILE, const char* BIN_F
     memcpy(&sd_superblock, &super_block_buffer, sizeof(sd_superblock));
     
     if(sd_superblock.magic != SUPERBLOCK_MAGIC){
-        perror("Wrong superblock magic number");
+        printf("Wrong superblock magic number\n");
         return 1;
     }
     int minimum_flight_num = sd_superblock.absolute_flight_num - sd_superblock.relative_flight_num;
     int maximum_flight_num = sd_superblock.relative_flight_num - 1;
+    if(sd_superblock.relative_flight_num == 0){
+        printf("No flights on SD card!\n");
+        return 1;
+    }
     printf("Choose between flight number %d and %d: ", minimum_flight_num, maximum_flight_num);
     int flight_chosen;
     while(1){

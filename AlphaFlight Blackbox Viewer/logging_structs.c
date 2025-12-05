@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
-uint8_t copy_struct_onboard_sensors(const uint8_t* raw, void* data){
+uint8_t copy_struct_onboard_sensors(const uint8_t* raw, void* data, uint8_t mode){
     memcpy(data, raw, sizeof(LOG_ONBOARD_SENSORS_T));
 }
 
