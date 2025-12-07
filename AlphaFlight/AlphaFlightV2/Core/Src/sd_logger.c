@@ -36,12 +36,12 @@
 
 static bool last_arm_status = false;
 
+static uint8_t log_buffer_0[2048] __attribute__((aligned(32))) = {0};
 static uint8_t log_buffer_1[2048] __attribute__((aligned(32))) = {0};
-static uint8_t log_buffer_2[2048] __attribute__((aligned(32))) = {0};
 static uint8_t current_buffer = 0;
 static uint16_t buffer_index = 0;
 static uint8_t buffer_block = 0;
-static uint8_t* active_log_buffer = &log_buffer_1[0];
+static uint8_t* active_log_buffer = &log_buffer_0[0];
 
 static uint32_t latest_metadata_block = 0;
 static uint8_t latest_metadata_index = 0;
@@ -65,12 +65,12 @@ static void LOG_FAIL_WITH_ERROR(uint8_t error_code){
 #endif
 }
 
-static uint8_t WRITE_BUFFER_DMA(uint32_t start_block){
+static uint8_t WRITE_BUFFER_DMA(uint8_t* log_buffer, uint32_t start_block){
 
     // Clear D-Cache for DMA consistency
-    SCB_CleanDCache_by_Addr((uint32_t*)((current_buffer == 0) ? log_buffer_1 : log_buffer_2), 2048);
+    SCB_CleanDCache_by_Addr((uint32_t*)log_buffer, 2048);
 
-    if(SD_WRITE_DMA((current_buffer == 0) ? log_buffer_1 : log_buffer_2, start_block, 4) != SD_DMA_TRANSMISSION_STARTED){
+    if(SD_WRITE_DMA(log_buffer, start_block, 4) != SD_DMA_TRANSMISSION_STARTED){
     	return -1;
     }
     return 0; // Success
@@ -197,12 +197,12 @@ void SD_LOGGER_LOOP_CALL(){
 		SD_WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
 
 		STATUS_LED_GREEN_ON();
+		memset(log_buffer_0, 0, sizeof(log_buffer_0));
 		memset(log_buffer_1, 0, sizeof(log_buffer_1));
-		memset(log_buffer_2, 0, sizeof(log_buffer_2));
 		buffer_index = 0;
 		current_buffer = 0;
 		buffer_block = 0;
-		active_log_buffer = log_buffer_1;
+		active_log_buffer = log_buffer_0;
 		return;
 	}
 	// log file while arm_status
@@ -215,7 +215,7 @@ void SD_LOGGER_LOOP_CALL(){
 
 			uint8_t array_length = array_pointer[0];
 
-			if(buffer_index + array_length <= 512 - sizeof(CRC32_BYTE_SIZE)){
+			if(buffer_index + array_length <= 512 - CRC32_BYTE_SIZE){
 				memcpy(active_log_buffer + buffer_index + (512 * buffer_block), array_pointer + 1, array_length);
 				buffer_index += array_length;
 			}
@@ -226,27 +226,22 @@ void SD_LOGGER_LOOP_CALL(){
 				buffer_block += 1;
 				if(buffer_block > 3){
 					// change buffers, write buffer to SD card, write value other buffer
-					if(WRITE_BUFFER_DMA(last_log_block) != 0){
+					if(WRITE_BUFFER_DMA(active_log_buffer, last_log_block) != 0){
 						LOG_FAIL_WITH_ERROR(ERROR_DMA_WRITE);		// conditional executions
 					}
 					last_log_block += 4;
 					DEBUG_PRINT_VERBOSE("Block %d", last_log_block);
 					buffer_block = 0;
 					buffer_index = 0;
-					if(current_buffer == 0){
-						active_log_buffer = &log_buffer_2[0];
-						current_buffer = 1;
-					}
-					else{
-						active_log_buffer = &log_buffer_1[0];
-						current_buffer = 0;
-					}
+
+					active_log_buffer = (current_buffer == 0) ? log_buffer_1 : log_buffer_0;
+					current_buffer = (current_buffer == 0) ? 1 : 0;
+
+					memset(active_log_buffer, 0, sizeof(log_buffer_0));
 
 				}
-				else{		// continue filling the next buffer
-					memcpy(active_log_buffer + buffer_index + (512 * buffer_block), array_pointer + 1, array_length);
-					buffer_index += array_length;
-				}
+				memcpy(active_log_buffer + buffer_index + (512 * buffer_block), array_pointer + 1, array_length);
+				buffer_index += array_length;
 			}
 		}
 	}
