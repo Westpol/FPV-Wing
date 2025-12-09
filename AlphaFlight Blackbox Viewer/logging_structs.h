@@ -2,6 +2,7 @@
 #define LOGGING_STRUCT_H
 
 #include <stdint.h>
+#include <stdio.h>
 
 typedef enum{
 	LOG_TYPE_DISABLE_LOGGING = 0,
@@ -56,15 +57,11 @@ typedef struct __attribute__((packed)){
 
 typedef struct{
 	uint8_t id;
-	uint8_t size;
-	uint8_t (*decode)(const uint8_t* raw, void* out, uint8_t mode);
-	void (*print)(const void* data);
+	uint8_t (*decode)(const uint8_t* raw, uint8_t mode, FILE *file);
 } DECODER_T;
 
-uint8_t copy_struct_onboard_sensors(const uint8_t* raw, void* data, uint8_t mode);
-void print_struct_onboard_sensors(const void* data);
+uint8_t copy_struct_onboard_sensors(const uint8_t* raw, uint8_t mode, FILE *file);
 
-uint8_t copy_struct_crsf(const uint8_t* raw, void* data, uint8_t mode);
-void print_struct_crsf(const void* data);
+uint8_t copy_struct_crsf(const uint8_t* raw, uint8_t mode, FILE *file);
 
 #endif

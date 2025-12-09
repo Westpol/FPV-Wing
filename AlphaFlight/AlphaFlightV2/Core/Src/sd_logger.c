@@ -163,7 +163,7 @@ uint32_t SD_LOGGER_INIT(){
 	// check init
 
 
-	SD_LOGGER_SETUP_CARD();
+	//SD_LOGGER_SETUP_CARD();
 	READ_LATEST_FLIGHT();
 
 	return 0;

@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
+#include "main.h"
 
 uint8_t super_block_buffer[512] = {0};
 uint8_t metadata_block_buffer[512] = {0};
@@ -15,7 +16,7 @@ SD_SUPERBLOCK sd_superblock;
 SD_FILE_METADATA_BLOCK sd_metadata_block;
 SD_FILE_METADATA_CHUNK flight_metadada;
 
-DECODER_T decoder[3] = {{0, 0, NULL, NULL}, {1, sizeof(LOG_ONBOARD_SENSORS_T), copy_struct_onboard_sensors, print_struct_onboard_sensors}, {2, sizeof(LOG_CRSF_T), copy_struct_crsf, print_struct_crsf}};
+DECODER_T decoder[3] = {{0, NULL}, {1, copy_struct_onboard_sensors}, {2, copy_struct_crsf}};
 
 uint32_t crc32_stm32(const uint8_t* data, size_t length) {
     uint32_t crc = 0xFFFFFFFF;
@@ -134,8 +135,7 @@ static void PRINT_FLIGHT_DATA(){
                 }
                 //printf("END MAGIC: 0x%08X\n\n", end_magic);
 
-                decoder[struct_id].decode(&block_buffer[i], &data[0], 1);
-                decoder[struct_id].print(&data[0]);
+                decoder[struct_id].decode(&block_buffer[i], 1, NULL);
 
 
                 i += block_buffer[i+4] - 1;
@@ -146,7 +146,50 @@ static void PRINT_FLIGHT_DATA(){
     }
 }
 
-static void DUMP_FLIGHT_TO_BIN(int chosen_flight, const char* filename){
+static void EXPORT_FLIGHT(FILE *file){
+    LOG_ONBOARD_SENSORS_T log_onboard_sensors;
+    LOG_CRSF_T log_crsf;
+    #define START_MAGIC 0x5AC80000
+    #define END_MAGIC ~0x5AC80000
+    uint8_t block_buffer[512];
+    uint8_t data[512];
+    for(int i = flight_metadada.start_block; i <= flight_metadada.end_block; i++){
+        READ_SINGLE_BLOCK(block_buffer, i);
+        uint32_t start_magic = 0;
+        uint32_t end_magic = 0;
+        for(int i = 0; i < 504; i++){
+
+            start_magic = 0;
+            end_magic = 0;
+
+            for(int f = 0; f < 4; f++){
+                start_magic |= ((uint32_t)block_buffer[i+f] << ((3-f)*8));
+            }
+
+            if(start_magic == START_MAGIC){
+                //printf("STRUCT FOUND AT INDEX %d\n", i);
+                int struct_length = block_buffer[i + 4];
+                //printf("STRUCT LENGTH: %d\n", struct_length);
+                int struct_id = block_buffer[i + 5];
+                //printf("STRUCT ID: %d\n", struct_id);
+
+                for(int f = 0; f < 4; f++){
+                    end_magic |= ((uint32_t)block_buffer[i + f + block_buffer[i + 4] - 4] << ((3-f)*8));
+                }
+                //printf("END MAGIC: 0x%08X\n\n", end_magic);
+
+                decoder[struct_id].decode(&block_buffer[i], 2, file);
+
+
+                i += block_buffer[i+4] - 1;
+
+                continue;
+            }
+        }
+    }
+}
+
+static void DUMP_FLIGHT_TO_BIN(const char* filename){
     const int start_block = flight_metadada.start_block;
     const int end_block = flight_metadada.end_block;
     uint8_t block_buffer[512] = {0};
@@ -239,13 +282,16 @@ int INITIALIZE_SD_CARD(const char* PATH, bool ENABLE_BIN_FILE, const char* BIN_F
 
     if(ENABLE_BIN_FILE){
         printf("\n\nDumping data to %s...\n", BIN_FILENAME);
-        DUMP_FLIGHT_TO_BIN(flight_chosen, BIN_FILENAME);
+        DUMP_FLIGHT_TO_BIN(BIN_FILENAME);
         printf("Done.\n");
     }
 
     if(ENABLE_CSV_FILE){
         printf("\nExporting to %s...\n", CSV_FILENAME);
-        //EXPORT_FLIGHT(flight_chosen);
+        FILE *csv_file = fopen(CSV_FILENAME, "w");
+        fprintf(csv_file, "HEADER\n");
+        EXPORT_FLIGHT(csv_file);
+        fclose(csv_file);
         printf("Done.\n");
     }
 
