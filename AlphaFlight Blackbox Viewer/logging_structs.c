@@ -4,7 +4,6 @@
 #include "main.h"
 
 uint8_t copy_struct_onboard_sensors(const uint8_t* raw, uint8_t mode, FILE *file){
-    char csv_line_buffer[4096] = {0};
     LOG_ONBOARD_SENSORS_T log = {0};
     memcpy(&log, raw, sizeof(log));
     switch(mode){
@@ -13,8 +12,7 @@ uint8_t copy_struct_onboard_sensors(const uint8_t* raw, uint8_t mode, FILE *file
         break;
 
         case 2:
-            sprintf(csv_line_buffer, "%d,%ld\n", log.header.log_type, log.header.timestamp);
-            fprintf(file, csv_line_buffer);
+            fprintf(file, "%d,%ld\n", log.header.log_type, log.header.timestamp);
         break;
 
         default:
@@ -24,7 +22,6 @@ uint8_t copy_struct_onboard_sensors(const uint8_t* raw, uint8_t mode, FILE *file
 }
 
 uint8_t copy_struct_crsf(const uint8_t* raw, uint8_t mode, FILE *file){
-    char csv_line_buffer[4096] = {0};
     LOG_CRSF_T log = {0};
     memcpy(&log, raw, sizeof(log));
     switch(mode){
@@ -33,8 +30,7 @@ uint8_t copy_struct_crsf(const uint8_t* raw, uint8_t mode, FILE *file){
         break;
 
         case 2:
-            sprintf(csv_line_buffer, "%d,%ld\n", log.header.log_type, log.header.timestamp);
-            fprintf(file, csv_line_buffer);
+            fprintf(file, "%d,%ld\n", log.header.log_type, log.header.timestamp);
         break;
 
         default:

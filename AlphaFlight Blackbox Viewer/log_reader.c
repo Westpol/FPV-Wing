@@ -104,13 +104,10 @@ static int READ_SINGLE_BLOCK(uint8_t* BUFFER, uint32_t BLOCK){
 }
 
 static void PRINT_FLIGHT_DATA(){
-    LOG_ONBOARD_SENSORS_T log_onboard_sensors;
-    LOG_CRSF_T log_crsf;
     #define START_MAGIC 0x5AC80000
     #define END_MAGIC ~0x5AC80000
     uint8_t block_buffer[512];
-    uint8_t data[512];
-    for(int i = flight_metadada.start_block; i <= flight_metadada.end_block; i++){
+    for(uint32_t i = flight_metadada.start_block; i <= flight_metadada.end_block; i++){
         READ_SINGLE_BLOCK(block_buffer, i);
         uint32_t start_magic = 0;
         uint32_t end_magic = 0;
@@ -125,7 +122,7 @@ static void PRINT_FLIGHT_DATA(){
 
             if(start_magic == START_MAGIC){
                 //printf("STRUCT FOUND AT INDEX %d\n", i);
-                int struct_length = block_buffer[i + 4];
+                //int struct_length = block_buffer[i + 4];
                 //printf("STRUCT LENGTH: %d\n", struct_length);
                 int struct_id = block_buffer[i + 5];
                 //printf("STRUCT ID: %d\n", struct_id);
@@ -147,13 +144,10 @@ static void PRINT_FLIGHT_DATA(){
 }
 
 static void EXPORT_FLIGHT(FILE *file){
-    LOG_ONBOARD_SENSORS_T log_onboard_sensors;
-    LOG_CRSF_T log_crsf;
     #define START_MAGIC 0x5AC80000
     #define END_MAGIC ~0x5AC80000
     uint8_t block_buffer[512];
-    uint8_t data[512];
-    for(int i = flight_metadada.start_block; i <= flight_metadada.end_block; i++){
+    for(uint32_t i = flight_metadada.start_block; i <= flight_metadada.end_block; i++){
         READ_SINGLE_BLOCK(block_buffer, i);
         uint32_t start_magic = 0;
         uint32_t end_magic = 0;
@@ -168,7 +162,7 @@ static void EXPORT_FLIGHT(FILE *file){
 
             if(start_magic == START_MAGIC){
                 //printf("STRUCT FOUND AT INDEX %d\n", i);
-                int struct_length = block_buffer[i + 4];
+                //int struct_length = block_buffer[i + 4];
                 //printf("STRUCT LENGTH: %d\n", struct_length);
                 int struct_id = block_buffer[i + 5];
                 //printf("STRUCT ID: %d\n", struct_id);
