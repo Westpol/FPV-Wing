@@ -15,7 +15,7 @@ SD_SUPERBLOCK sd_superblock;
 SD_FILE_METADATA_BLOCK sd_metadata_block;
 SD_FILE_METADATA_CHUNK flight_metadada;
 
-DECODER_T decoder[3] = {{0, 0, NULL, NULL}, {1, sizeof(LOG_ONBOARD_SENSORS_T), copy_struct_onboard_sensors, print_struct_onboard_sensors}, {0, 0, NULL, NULL}};
+DECODER_T decoder[3] = {{0, 0, NULL, NULL}, {1, sizeof(LOG_ONBOARD_SENSORS_T), copy_struct_onboard_sensors, print_struct_onboard_sensors}, {2, sizeof(LOG_CRSF_T), copy_struct_crsf, print_struct_crsf}};
 
 uint32_t crc32_stm32(const uint8_t* data, size_t length) {
     uint32_t crc = 0xFFFFFFFF;
@@ -134,10 +134,8 @@ static void PRINT_FLIGHT_DATA(){
                 }
                 //printf("END MAGIC: 0x%08X\n\n", end_magic);
 
-                if(struct_id == 1){
-                    decoder[struct_id].decode(&block_buffer[i], &data[0], 1);
-                    decoder[struct_id].print(&data[0]);
-                }
+                decoder[struct_id].decode(&block_buffer[i], &data[0], 1);
+                decoder[struct_id].print(&data[0]);
 
 
                 i += block_buffer[i+4] - 1;

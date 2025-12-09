@@ -15,6 +15,16 @@ extern CRC_HandleTypeDef hcrc;
 
 static volatile bool dma_busy = false;
 
+static volatile uint32_t dma_buffer[2048] = {0};
+
+typedef struct{
+	uint8_t block_count;
+	uint32_t write_block;
+	void* buffer_pointer;
+}dma_buffer_register_t;
+
+static dma_buffer_register_t buffer_register[SD_DMA_BUFFER_REG_MAX_ENTRIES] = {0};
+
 static void LOG_FAIL_WITH_ERROR(uint8_t error_code){
 #if DEBUG_ENDABLED
 	ERROR_HANDLER_BLINKS(error_code);
@@ -138,6 +148,13 @@ SD_DMA_STATUS SD_WRITE_DMA(uint8_t* data_array, uint32_t block, uint32_t num_blo
     dma_busy = true;
 
 	return SD_DMA_TRANSMISSION_STARTED;
+}
+
+bool SD_DMA_CHECK_IF_BUFFER_IS_FREE(const void* buffer_address){
+	for(int i = 0; i < SD_DMA_BUFFER_REG_MAX_ENTRIES; i++){
+		if(buffer_address == buffer_register[i].buffer_pointer)return false;
+	}
+	return true;
 }
 
 bool SD_DMA_BUSY(void){

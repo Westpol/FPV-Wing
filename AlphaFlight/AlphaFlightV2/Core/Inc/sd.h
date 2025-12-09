@@ -46,5 +46,6 @@ void VERIFY_CRC32(const void* data, size_t size, uint32_t expected_crc);
 #define BLOCK_SIZE     512
 #define CRC32_BYTE_SIZE 4
 #define TIMEOUT_MS     1000
+#define SD_DMA_BUFFER_REG_MAX_ENTRIES 10
 
 #endif /* INC_SD_H_ */

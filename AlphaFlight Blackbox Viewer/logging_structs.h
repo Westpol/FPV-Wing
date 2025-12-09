@@ -64,4 +64,7 @@ typedef struct{
 uint8_t copy_struct_onboard_sensors(const uint8_t* raw, void* data, uint8_t mode);
 void print_struct_onboard_sensors(const void* data);
 
+uint8_t copy_struct_crsf(const uint8_t* raw, void* data, uint8_t mode);
+void print_struct_crsf(const void* data);
+
 #endif
