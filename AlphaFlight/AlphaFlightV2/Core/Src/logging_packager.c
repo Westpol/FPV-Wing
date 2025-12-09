@@ -39,7 +39,7 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t TOPIC, uint64_t TIMESTAMP){
 		log_onboard_sensors.header.log_struct_length = sizeof(log_onboard_sensors);
 		log_onboard_sensors.header.log_type = LOG_TYPE_ONBOARD_SENSORS;
 		log_onboard_sensors.header.log_version = LOG_VERSION;
-		log_onboard_sensors.header.timestamp = timestamp;
+		log_onboard_sensors.header.timestamp = (uint32_t)timestamp;
 
 		log_onboard_sensors.gyro_quaternion_values[0] = ONBOARD_SENSORS.gyro.q_angle[0];
 		log_onboard_sensors.gyro_quaternion_values[1] = ONBOARD_SENSORS.gyro.q_angle[1];
@@ -50,6 +50,10 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t TOPIC, uint64_t TIMESTAMP){
 		log_onboard_sensors.gyro_z_rad = ONBOARD_SENSORS.gyro.gyro.z;
 		log_onboard_sensors.gyro_pitch_angle = ONBOARD_SENSORS.gyro.pitch_angle;
 		log_onboard_sensors.gyro_roll_angle = ONBOARD_SENSORS.gyro.roll_angle;
+
+		log_onboard_sensors.accel_x = ONBOARD_SENSORS.accel.accel.x;
+		log_onboard_sensors.accel_y = ONBOARD_SENSORS.accel.accel.y;
+		log_onboard_sensors.accel_z = ONBOARD_SENSORS.accel.accel.z;
 
 		log_onboard_sensors.baro_height = ONBOARD_SENSORS.barometer.height;
 		log_onboard_sensors.baro_pressure = ONBOARD_SENSORS.barometer.pressure;
@@ -69,12 +73,12 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t TOPIC, uint64_t TIMESTAMP){
 		log_crsf.header.log_struct_length = sizeof(log_crsf);
 		log_crsf.header.log_type = LOG_TYPE_CRSF;
 		log_crsf.header.log_version = LOG_VERSION;
-		log_crsf.header.timestamp = timestamp;
+		log_crsf.header.timestamp = (uint32_t)timestamp;
 
 		for(int i = 0; i < 16; i++){
 			log_crsf.channel_raw[i] = CRSF_DATA.channel_raw[i];
 		}
-		log_crsf.last_channel_update = CRSF_DATA.last_channel_update;
+		log_crsf.last_channel_update = (uint32_t)CRSF_DATA.last_channel_update;
 		log_crsf.rssi = CRSF_DATA.rssi;
 
 		log_crsf.end.end_magic = LOG_FRAME_END_MAGIC;

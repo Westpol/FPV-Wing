@@ -10,9 +10,9 @@
 
 #include "stdint.h"
 
-#define LOG_FRAME_BASE_MAGIC 0xC85A
-#define LOG_FRAME_START_MAGIC LOG_FRAME_BASE_MAGIC
-#define LOG_FRAME_END_MAGIC ~LOG_FRAME_BASE_MAGIC
+#define LOG_FRAME_BASE_MAGIC ((uint16_t)0xC85A)
+#define LOG_FRAME_START_MAGIC ((uint16_t)LOG_FRAME_BASE_MAGIC)
+#define LOG_FRAME_END_MAGIC ((uint16_t)~LOG_FRAME_BASE_MAGIC)
 #define LOG_BUFFER_SIZE 256
 #define LOG_VERSION 1
 
@@ -23,15 +23,15 @@ typedef enum{
 }LOG_TYPES;
 
 typedef struct __attribute__((packed)){
-	uint32_t start_magic;
+	uint16_t start_magic;
 	uint8_t log_struct_length;
 	uint8_t log_type;
 	uint8_t log_version;
-	uint64_t timestamp;
+	uint32_t timestamp;
 }log_general_header_t;
 
 typedef struct __attribute__((packed)){
-	uint32_t end_magic;
+	uint16_t end_magic;
 }log_general_end_t;
 
 typedef struct __attribute__((packed)){
@@ -40,6 +40,9 @@ typedef struct __attribute__((packed)){
 	float gyro_x_rad;
 	float gyro_y_rad;
 	float gyro_z_rad;
+	float accel_x;
+	float accel_y;
+	float accel_z;
 	float gyro_pitch_angle;
 	float gyro_roll_angle;
 	float gyro_quaternion_values[4];
@@ -61,7 +64,7 @@ typedef struct __attribute__((packed)){
 	log_general_header_t header;
 
 	uint16_t channel_raw[16];
-	uint64_t last_channel_update;
+	uint32_t last_channel_update;
 	uint16_t rssi;
 
 	log_general_end_t end;

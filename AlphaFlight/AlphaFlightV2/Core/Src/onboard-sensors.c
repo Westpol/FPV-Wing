@@ -326,9 +326,9 @@ static void ACCEL_CONVERT_DATA(){
 	raw_data.accel_x_raw = ((int16_t)accel_rx[2] << 8) | accel_rx[1];
 	raw_data.accel_y_raw = ((int16_t)accel_rx[4] << 8) | accel_rx[3];
 	raw_data.accel_z_raw = ((int16_t)accel_rx[6] << 8) | accel_rx[5];
-	ONBOARD_SENSORS.accel.accel.x = (float)raw_data.accel_x_raw / 32768 * 1000 * 4 * 1.5;
-	ONBOARD_SENSORS.accel.accel.y = (float)raw_data.accel_y_raw / 32768 * 1000 * 4 * 1.5;
-	ONBOARD_SENSORS.accel.accel.z = (float)raw_data.accel_z_raw / 32768 * 1000 * 4 * 1.5;
+	ONBOARD_SENSORS.accel.accel.x = (float)raw_data.accel_x_raw / 32768.0 * 1000.0 * 4.0 * 1.5;
+	ONBOARD_SENSORS.accel.accel.y = (float)raw_data.accel_y_raw / 32768.0 * 1000.0 * 4.0 * 1.5;
+	ONBOARD_SENSORS.accel.accel.z = (float)raw_data.accel_z_raw / 32768.0 * 1000.0 * 4.0 * 1.5;
 
 	ONBOARD_SENSORS.accel.accel_filtered.x = (1.0f - alpha_values.accel_alpha) * ONBOARD_SENSORS.accel.accel_filtered.x + alpha_values.accel_alpha * ONBOARD_SENSORS.accel.accel.x;
 	ONBOARD_SENSORS.accel.accel_filtered.y = (1.0f - alpha_values.accel_alpha) * ONBOARD_SENSORS.accel.accel_filtered.y + alpha_values.accel_alpha * ONBOARD_SENSORS.accel.accel.y;
