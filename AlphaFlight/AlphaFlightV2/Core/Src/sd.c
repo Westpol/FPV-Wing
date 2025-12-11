@@ -42,9 +42,9 @@ uint32_t CALCULATE_CRC32_HW(const void *data, size_t length)
 {
     const uint8_t *bytes = (const uint8_t *)data;
     uint32_t word;
-    uint32_t crc;
+    uint32_t crc_final;
 
-    __HAL_CRC_DR_RESET(&hcrc);
+    hcrc.Instance->CR = CRC_CR_RESET;
 
     // process all full words
     while (length >= 4) {
@@ -61,8 +61,8 @@ uint32_t CALCULATE_CRC32_HW(const void *data, size_t length)
         hcrc.Instance->DR = __REV(word); // zero-padded, byte-swapped
     }
 
-    crc = hcrc.Instance->DR;
-    return __RBIT(crc) ^ 0xFFFFFFFF;
+    crc_final = hcrc.Instance->DR;
+    return crc_final;
 }
 
 

@@ -18,16 +18,16 @@ SD_FILE_METADATA_CHUNK flight_metadada;
 
 DECODER_T decoder[3] = {{0, NULL}, {1, copy_struct_onboard_sensors}, {2, copy_struct_crsf}};
 
-uint32_t crc32_stm32(const uint8_t* data, size_t length) {
+uint32_t crc32_stm32(const uint8_t* data, int length)
+{
     uint32_t crc = 0xFFFFFFFF;
 
     size_t i = 0;
-    while (i + 4 <= length) {
-        // LSB-first loading (little-endian word)
-        uint32_t word = ((uint32_t)data[i]) |
-                        ((uint32_t)data[i + 1] << 8) |
-                        ((uint32_t)data[i + 2] << 16) |
-                        ((uint32_t)data[i + 3] << 24);
+    while (length >= 4) {
+        uint32_t word = data[i] | (data[i+1] << 8) | (data[i+2] << 16) | (data[i+3] << 24);
+        // simulate __REV(word)
+        word = ((word & 0xFF) << 24) | ((word & 0xFF00) << 8) | ((word & 0xFF0000) >> 8) | ((word & 0xFF000000) >> 24);
+
         crc ^= word;
 
         for (int b = 0; b < 32; b++) {
@@ -38,15 +38,19 @@ uint32_t crc32_stm32(const uint8_t* data, size_t length) {
         }
 
         i += 4;
+        length -= 4;
     }
 
-    // Handle remaining bytes (pad with zeroes)
-    if (i < length) {
+    if (length > 0) {
         uint32_t word = 0;
-        for (int j = 0; i < length; ++i, ++j) {
-            word |= ((uint32_t)data[i]) << (j * 8);  // LSB-first
-        }
+        for (int j = 0; j < length; j++)
+            word |= data[i+j] << (8 * j); // little-endian into lower bytes
+
+        // simulate __REV(word)
+        word = ((word & 0xFF) << 24) | ((word & 0xFF00) << 8) | ((word & 0xFF0000) >> 8) | ((word & 0xFF000000) >> 24);
+
         crc ^= word;
+
         for (int b = 0; b < 32; b++) {
             if (crc & 0x80000000)
                 crc = (crc << 1) ^ 0x04C11DB7;
@@ -55,8 +59,10 @@ uint32_t crc32_stm32(const uint8_t* data, size_t length) {
         }
     }
 
-    return crc;
+    return crc; // this is exactly what hardware would output in DR
 }
+
+
 
 static uint32_t FLIGHT_NUM_TO_BLOCK(uint32_t relative_flight_num){
 	uint32_t block = 0;
