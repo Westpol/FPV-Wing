@@ -255,12 +255,12 @@ void CRSF_SEND_TELEMETRY(uint8_t TELEMETRY_TYPE){
 	if(TELEMETRY_TYPE == 0x02){		// GPS standard
 		#define payload_length_gps_simple 16
 
-	    int32_t latitude = (int32_t)(gps_data.lat * 10000000.0f);       // degree / 10`000`000
-	    int32_t longitude = (int32_t)(gps_data.lon * 10000000.0f);      // degree / 10`000`000
-	    uint16_t groundspeed = (uint16_t)(gps_data.gspeed * 100.0f);   // km/h / 100
-	    uint16_t heading = (uint16_t)(gps_data.heading * 100.0f);       // degree / 100
-	    uint16_t altitude = (uint16_t)(gps_data.altitude + 1000.0f);      // meter - 1000m offset
-	    uint8_t satellites = gps_data.numSV;     // # of sats in view
+	    int32_t latitude = GPS_DATA.lat_int;       // degree / 10`000`000
+	    int32_t longitude = GPS_DATA.lon_int;      // degree / 10`000`000
+	    uint16_t groundspeed = (uint16_t)(GPS_DATA.gspeed * 100.0f);   // km/h / 100
+	    uint16_t heading = (uint16_t)(GPS_DATA.heading * 100.0f);       // degree / 100
+	    uint16_t altitude = (uint16_t)(GPS_DATA.altitude + 1000.0f);      // meter - 1000m offset
+	    uint8_t satellites = GPS_DATA.numSV;     // # of sats in view
 	    uint8_t payload_data[payload_length_gps_simple] = {0};
 
 	    payload_data[0] = TELEMETRY_TYPE;

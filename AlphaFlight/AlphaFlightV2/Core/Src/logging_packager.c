@@ -31,6 +31,7 @@ static uint8_t logging_buffer[LOG_BUFFER_SIZE] = {0};
 
 LOG_ONBOARD_SENSORS_T log_onboard_sensors = {0};
 LOG_CRSF_T log_crsf = {0};
+LOG_GPS_T log_gps = {0};
 
 uint8_t* LOGGING_PACKER_BY_MODE(uint16_t TOPIC, uint64_t TIMESTAMP){
 
@@ -84,6 +85,19 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t TOPIC, uint64_t TIMESTAMP){
 		log_crsf.end.end_magic = LOG_FRAME_END_MAGIC;
 	}
 
+	void snapshot_gps(uint64_t timestamp){
+			log_gps.header.start_magic = LOG_FRAME_START_MAGIC;
+			log_gps.header.log_struct_length = sizeof(log_crsf);
+			log_gps.header.log_type = LOG_TYPE_CRSF;
+			log_gps.header.log_version = LOG_VERSION;
+			log_gps.header.timestamp = (uint32_t)timestamp;
+
+			log_gps.lat = GPS_DATA.lat_int;
+			log_gps.lon = GPS_DATA.lon_int;
+
+			log_gps.end.end_magic = LOG_FRAME_END_MAGIC;
+		}
+
 	switch (TOPIC) {
 		case LOG_TYPE_DISABLE_LOGGING:		// default
 			break;
@@ -100,6 +114,12 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t TOPIC, uint64_t TIMESTAMP){
 			memcpy(&logging_buffer[1], &log_crsf, sizeof(log_crsf));
 			logging_buffer[0] = sizeof(log_crsf);
 
+			break;
+		case LOG_TYPE_GPS:
+			snapshot_gps(TIMESTAMP);
+
+			memcpy(&logging_buffer[1], &log_gps, sizeof(log_gps));
+			logging_buffer[0] = sizeof(log_gps);
 			break;
 		default:
 			break;

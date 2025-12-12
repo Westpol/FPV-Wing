@@ -57,21 +57,23 @@ typedef struct __attribute__((packed)){
     uint16_t magAcc;     // 1e-2 deg
 } GPS_NAV_PVT;
 
-typedef struct __attribute__((packed)){
+typedef struct {
 	uint32_t unix_timestamp;
-	double lat;
-	double lon;
-	double gspeed;      // m/s
-	double altitude;      // MSL, in meters
-	double heading;     // deg
-	double velN;        // m/s
-	double velE;        // m/s
-	double velD;        // m/s
+	float lat;
+	float lon;
+    int32_t  lon_int;        // 1e-7 deg
+    int32_t  lat_int;        // 1e-7 deg
+	float gspeed;      // m/s
+	float altitude;      // MSL, in meters
+	float heading;     // deg
+	float velN;        // m/s
+	float velE;        // m/s
+	float velD;        // m/s
 	uint8_t fix_type;
 	uint8_t numSV;
 	uint32_t hAcc;   // horizontal accuracy
 	uint32_t vAcc;   // vertical accuracy
-} GPS_DATA;
+} GPS_DATA_T;
 
 typedef struct{
 	uint64_t parser_position;
@@ -86,6 +88,6 @@ void GPS_INIT(UART_HandleTypeDef *UARTx, DMA_HandleTypeDef *UART_DMAx);
 void GPS_PARSE_BUFFER(void);
 void GPS_OVERFLOW_INCREMENT(void);
 
-extern GPS_DATA gps_data;
+extern GPS_DATA_T GPS_DATA;
 
 #endif /* INC_M10_GPS_H_ */

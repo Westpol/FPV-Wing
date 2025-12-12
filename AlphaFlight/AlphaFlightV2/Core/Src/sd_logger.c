@@ -189,7 +189,7 @@ void SD_LOGGER_LOOP_CALL(){
 
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].log_version = LOG_VERSION;
 		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].log_mode = log_mode;
-		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].timestamp_unix = gps_data.unix_timestamp;
+		sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].timestamp_unix = GPS_DATA.unix_timestamp;
 
 		DEBUG_PRINT_VERBOSE("Current: Metadata block: %d\r\nFlight num: %d\r\nStart block: %d\r\nEnd block: %d", latest_metadata_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].flight_number, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].start_block, sd_file_metadata_block.sd_file_metadata_chunk[current_metadata_index].end_block);
 

@@ -16,7 +16,7 @@ static uint32_t buffer_wrap_around_count = 0;
 __attribute__((aligned(32))) static uint8_t dma_buffer[GPS_BUFFER_SIZE] = {0};
 
 static GPS_PARSE_STRUCT parse_struct = {0};
-GPS_DATA gps_data = {0};
+GPS_DATA_T GPS_DATA = {0};
 GPS_NAV_PVT gps_nav_pvt = {0};
 
 static bool UBX_ChecksumValid(uint8_t *ubx, uint16_t payload_len) {
@@ -68,19 +68,23 @@ static uint32_t GPS_DATETIME_TO_UNIX(uint16_t year, uint8_t month, uint8_t day,
 }
 
 static void GPS_CONVERT(){
-	gps_data.unix_timestamp = GPS_DATETIME_TO_UNIX(gps_nav_pvt.year, gps_nav_pvt.month, gps_nav_pvt.day, gps_nav_pvt.hour, gps_nav_pvt.min, gps_nav_pvt.sec);
-	gps_data.lat = (double)gps_nav_pvt.lat * 0.0000001;
-	gps_data.lon = (double)gps_nav_pvt.lon * 0.0000001;
-	gps_data.gspeed = (double)gps_nav_pvt.gSpeed / 1000.0;
-	gps_data.altitude = (double)gps_nav_pvt.hMSL / 1000.0;
-	gps_data.heading = (double)gps_nav_pvt.heading * 0.00001;
-	gps_data.velN = (double)gps_nav_pvt.velN / 1000.0;
-	gps_data.velE = (double)gps_nav_pvt.velE / 1000.0;
-	gps_data.velD = (double)gps_nav_pvt.velD / 1000.0;
-	gps_data.numSV = gps_nav_pvt.numSV;
-	gps_data.hAcc = gps_nav_pvt.hAcc;
-	gps_data.vAcc = gps_nav_pvt.vAcc;
-	gps_data.fix_type = gps_nav_pvt.fixType;
+	GPS_DATA.unix_timestamp = GPS_DATETIME_TO_UNIX(gps_nav_pvt.year, gps_nav_pvt.month, gps_nav_pvt.day, gps_nav_pvt.hour, gps_nav_pvt.min, gps_nav_pvt.sec);
+	GPS_DATA.lat = (float)gps_nav_pvt.lat * 0.0000001;
+	GPS_DATA.lon = (float)gps_nav_pvt.lon * 0.0000001;
+
+	GPS_DATA.lat_int = gps_nav_pvt.lat;
+	GPS_DATA.lon_int = gps_nav_pvt.lon;
+
+	GPS_DATA.gspeed = (float)gps_nav_pvt.gSpeed / 1000.0;
+	GPS_DATA.altitude = (float)gps_nav_pvt.hMSL / 1000.0;
+	GPS_DATA.heading = (float)gps_nav_pvt.heading * 0.00001;
+	GPS_DATA.velN = (float)gps_nav_pvt.velN / 1000.0;
+	GPS_DATA.velE = (float)gps_nav_pvt.velE / 1000.0;
+	GPS_DATA.velD = (float)gps_nav_pvt.velD / 1000.0;
+	GPS_DATA.numSV = gps_nav_pvt.numSV;
+	GPS_DATA.hAcc = gps_nav_pvt.hAcc;
+	GPS_DATA.vAcc = gps_nav_pvt.vAcc;
+	GPS_DATA.fix_type = gps_nav_pvt.fixType;
 }
 
 static void GPS_DECODE(){
