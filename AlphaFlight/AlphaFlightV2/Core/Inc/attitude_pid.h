@@ -48,6 +48,8 @@ void FC_PID_DIRECT_CONTROL();
 void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt);
 void FC_PID_ANGLE_MODE(uint32_t dt);
 
+extern FLY_BY_WIRE_PID_VALUES attitude_pid_values;
+
 // debug
 void FC_PID_PRINT_CURRENT_SERVO_POINTS();
 

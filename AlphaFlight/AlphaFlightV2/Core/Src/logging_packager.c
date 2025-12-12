@@ -23,8 +23,6 @@
 
 #define SET_FLAG_COND(flags, bit, cond) ((flags) = ((flags) & ~(1U << (bit))) | ((!!(cond)) << (bit)))
 
-extern GPS_NAV_PVT gps_nav_pvt;
-extern FLY_BY_WIRE_PID_VALUES attitude_pid_values;
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
 
 static uint8_t logging_buffer[LOG_BUFFER_SIZE] = {0};

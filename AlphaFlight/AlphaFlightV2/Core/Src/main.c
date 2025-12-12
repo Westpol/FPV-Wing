@@ -125,9 +125,7 @@ static void PRINT_DATA(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-extern GPS_NAV_PVT gps_nav_pvt;
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
-extern FLY_BY_WIRE_PID_VALUES attitude_pid_values;
 extern FLY_BY_WIRE_PID fbw_pid_settings;
 extern bool arm_status;
 /* USER CODE END 0 */
