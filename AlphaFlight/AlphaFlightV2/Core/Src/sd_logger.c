@@ -126,7 +126,7 @@ static void READ_LATEST_FLIGHT(){
 	DEBUG_PRINT_VERBOSE("Metadata magic number: 0x%08X correct!", sd_file_metadata_block.magic);
 
 
-	if(latest_metadata_index < LOG_FILES_PER_METADATA_BLOCK){
+	if(latest_metadata_index < LOG_FILES_PER_METADATA_BLOCK - 1){
 		sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index + 1].start_block = sd_file_metadata_block.sd_file_metadata_chunk[latest_metadata_index].end_block + 1;
 		current_metadata_index = latest_metadata_index + 1;
 	}
