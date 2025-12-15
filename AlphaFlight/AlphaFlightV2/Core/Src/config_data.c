@@ -10,6 +10,7 @@
 
 #include "main.h"
 #include "flight_state.h"
+#include "load_config.h"
 
 config_data_t CONFIG_DATA = {0};
 config_data_t config_data_backup = {0};
@@ -32,4 +33,8 @@ void CONFIG_DATA_COMPARE_TO_BACKUP(){
 			memcpy(&CONFIG_DATA, &config_data_backup, sizeof(config_data_t));
 		}
 	}
+}
+
+uint8_t CONFIG_DATA_AVAILABLE(){
+	return CONFIG_WAS_READ();
 }
