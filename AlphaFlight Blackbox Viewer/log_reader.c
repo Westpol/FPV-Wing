@@ -16,7 +16,11 @@ SD_SUPERBLOCK sd_superblock;
 SD_FILE_METADATA_BLOCK sd_metadata_block;
 SD_FILE_METADATA_CHUNK flight_metadada;
 
-DECODER_T decoder[3] = {{0, NULL}, {1, copy_struct_onboard_sensors}, {2, copy_struct_crsf}};
+DECODER_T decoder[] = {{LOG_TYPE_DISABLE_LOGGING, NULL}, {LOG_TYPE_ONBOARD_SENSORS, copy_struct_onboard_sensors}, {LOG_TYPE_CRSF, copy_struct_crsf}, {LOG_TYPE_GPS, copy_struct_gps}, {LOG_TYPE_PID, copy_struct_pid}};
+
+
+#define START_MAGIC ((uint16_t)0xC85A)
+#define END_MAGIC ~((uint16_t)0xC85A)
 
 uint32_t crc32_stm32(const uint8_t* data, int length)
 {
@@ -110,38 +114,32 @@ static int READ_SINGLE_BLOCK(uint8_t* BUFFER, uint32_t BLOCK){
 }
 
 static void PRINT_FLIGHT_DATA(){
-    #define START_MAGIC 0x5AC80000
-    #define END_MAGIC ~0x5AC80000
     uint8_t block_buffer[512];
     for(uint32_t i = flight_metadada.start_block; i <= flight_metadada.end_block; i++){
         READ_SINGLE_BLOCK(block_buffer, i);
-        uint32_t start_magic = 0;
-        uint32_t end_magic = 0;
+        uint16_t start_magic = 0;
+        uint16_t end_magic = 0;
         for(int i = 0; i < 504; i++){
 
             start_magic = 0;
             end_magic = 0;
 
-            for(int f = 0; f < 4; f++){
-                start_magic |= ((uint32_t)block_buffer[i+f] << ((3-f)*8));
-            }
+            start_magic = ((uint16_t)block_buffer[i+1] << 8) | (uint16_t)block_buffer[i];
 
             if(start_magic == START_MAGIC){
-                //printf("STRUCT FOUND AT INDEX %d\n", i);
+                printf("STRUCT FOUND AT INDEX %d\n", i);
                 //int struct_length = block_buffer[i + 4];
                 //printf("STRUCT LENGTH: %d\n", struct_length);
-                int struct_id = block_buffer[i + 5];
+                int struct_id = block_buffer[i + 3];
                 //printf("STRUCT ID: %d\n", struct_id);
 
-                for(int f = 0; f < 4; f++){
-                    end_magic |= ((uint32_t)block_buffer[i + f + block_buffer[i + 4] - 4] << ((3-f)*8));
-                }
-                //printf("END MAGIC: 0x%08X\n\n", end_magic);
+                end_magic = ((uint16_t)block_buffer[i + block_buffer[i + 2] - 2 + 1] << 8) | ((uint16_t)block_buffer[i + block_buffer[i + 2] - 2]);
+                printf("END MAGIC: 0x%08X\n\n", end_magic);
 
                 decoder[struct_id].decode(&block_buffer[i], 1, NULL);
 
 
-                i += block_buffer[i+4] - 1;
+                i += block_buffer[i+2] - 1;
 
                 continue;
             }
@@ -150,38 +148,32 @@ static void PRINT_FLIGHT_DATA(){
 }
 
 static void EXPORT_FLIGHT(FILE *file){
-    #define START_MAGIC 0x5AC80000
-    #define END_MAGIC ~0x5AC80000
     uint8_t block_buffer[512];
     for(uint32_t i = flight_metadada.start_block; i <= flight_metadada.end_block; i++){
         READ_SINGLE_BLOCK(block_buffer, i);
-        uint32_t start_magic = 0;
-        uint32_t end_magic = 0;
+        uint16_t start_magic = 0;
+        uint16_t end_magic = 0;
         for(int i = 0; i < 504; i++){
 
             start_magic = 0;
             end_magic = 0;
 
-            for(int f = 0; f < 4; f++){
-                start_magic |= ((uint32_t)block_buffer[i+f] << ((3-f)*8));
-            }
+            start_magic = ((uint16_t)block_buffer[i+1] << 8) | (uint16_t)block_buffer[i];
 
             if(start_magic == START_MAGIC){
-                //printf("STRUCT FOUND AT INDEX %d\n", i);
+                printf("STRUCT FOUND AT INDEX %d\n", i);
                 //int struct_length = block_buffer[i + 4];
                 //printf("STRUCT LENGTH: %d\n", struct_length);
-                int struct_id = block_buffer[i + 5];
+                int struct_id = block_buffer[i + 3];
                 //printf("STRUCT ID: %d\n", struct_id);
 
-                for(int f = 0; f < 4; f++){
-                    end_magic |= ((uint32_t)block_buffer[i + f + block_buffer[i + 4] - 4] << ((3-f)*8));
-                }
-                //printf("END MAGIC: 0x%08X\n\n", end_magic);
+                end_magic = ((uint16_t)block_buffer[i + block_buffer[i + 2] - 2 + 1] << 8) | ((uint16_t)block_buffer[i + block_buffer[i + 2] - 2]);
+                printf("END MAGIC: 0x%08X\n\n", end_magic);
 
                 decoder[struct_id].decode(&block_buffer[i], 2, file);
 
 
-                i += block_buffer[i+4] - 1;
+                i += block_buffer[i+2] - 1;
 
                 continue;
             }
@@ -261,6 +253,8 @@ int INITIALIZE_SD_CARD(const char* PATH, bool ENABLE_BIN_FILE, const char* BIN_F
     const char* log_types[64];
     log_types[1] = "ONBOARD_SENSORS";
     log_types[2] = "CRSF";
+    log_types[3] = "GPS";
+    log_types[4] = "PID";
     for(int i = 1; i < 64; i++){
         if((flight_metadada.log_mode >> i) && 1){
             printf("%s\n", log_types[i]);

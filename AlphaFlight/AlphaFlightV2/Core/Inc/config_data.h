@@ -43,14 +43,22 @@ typedef struct{
 }config_data_internal_pid_t;
 
 typedef struct{
+	float b[4];
+	float k_i;
+	float k_p;
+}config_data_internal_mahony_values_t;
+
+typedef struct{
 	config_data_internal_crsf_t crossfire;
 	config_data_internal_sd_logger_setup_t logger;
 	config_data_internal_pid_t pid;
+	config_data_internal_mahony_values_t mahony;
 }config_data_t;
 
 extern config_data_t CONFIG_DATA;
 
 void CONFIG_DATA_BACKUP_DATA();
 void CONFIG_DATA_COMPARE_TO_BACKUP();
+uint8_t CONFIG_DATA_AVAILABLE();
 
 #endif /* INC_CONFIG_DATA_H_ */

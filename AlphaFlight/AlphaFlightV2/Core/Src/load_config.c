@@ -26,6 +26,7 @@ SD_LOGGER_CONFIG_DATA sd_logger_config_data;
 CONFIG_HEADER config_header;
 CRSF_CHANNELS_CONFIG_DATA crsf_channels_config_data;
 PID_VALUES_CONFIG_DATA pid_values_config_data;
+MAHONY_VALUES_CONFIG_DATA mahony_values_config_data;
 
 uint8_t config_been_read = 0;
 
@@ -73,14 +74,14 @@ static void CONFIG_SET_STANDARD_VALUES(){
 		sd_logger_config_data.magic_start = magic;		// sd logger setup
 		sd_logger_config_data.magic_end = ~magic;
 		magic = next_magic(magic);
-		sd_logger_config_data.log_mode = (1 << 0) | (1 << LOG_TYPE_ONBOARD_SENSORS) | (1 << LOG_TYPE_CRSF);
+		sd_logger_config_data.log_mode = (1 << 0) | (1 << LOG_TYPE_ONBOARD_SENSORS) | (1 << LOG_TYPE_CRSF) | (1 << LOG_TYPE_GPS) | (1 << LOG_TYPE_PID);
 
 		INCREASE_INDEX_NEXT_STRUCT(sizeof(sd_logger_config_data), sizeof(crsf_channels_config_data), &block_index_pos, &block);
 		sd_logger_config_data.index_next_datastruct = block_index_pos;
 		sd_logger_config_data.block_num_next_datastruct = block;
 
 
-		crsf_channels_config_data.magic_start = magic;
+		crsf_channels_config_data.magic_start = magic;		// CRSF Setup
 		crsf_channels_config_data.magic_end = ~magic;
 		magic = next_magic(magic);
 		crsf_channels_config_data.throttle = 0;
@@ -93,13 +94,14 @@ static void CONFIG_SET_STANDARD_VALUES(){
 		crsf_channels_config_data.index_next_datastruct = block_index_pos;
 		crsf_channels_config_data.block_num_next_datastruct = block;
 
-		pid_values_config_data.magic_start = magic;
+
+		pid_values_config_data.magic_start = magic;		// pid values Setup
 		pid_values_config_data.magic_end = ~magic;
 		magic = next_magic(magic);
 
 		pid_values_config_data.pitch_p = 1;
-		pid_values_config_data.pitch_i = 1;
-		pid_values_config_data.pitch_d = 1;
+		pid_values_config_data.pitch_i = 0.5;
+		pid_values_config_data.pitch_d = 2;
 		pid_values_config_data.pitch_d_filter = 1;
 		pid_values_config_data.pitch_feed_forward = 1;
 		pid_values_config_data.pitch_i_limit = 0.3;
@@ -107,17 +109,32 @@ static void CONFIG_SET_STANDARD_VALUES(){
 		pid_values_config_data.pitch_multiplier = 1;
 
 		pid_values_config_data.roll_p = 1;
-		pid_values_config_data.roll_i = 1;
-		pid_values_config_data.roll_d = 1;
+		pid_values_config_data.roll_i = 0.5;
+		pid_values_config_data.roll_d = 2;
 		pid_values_config_data.roll_d_filter = 1;
 		pid_values_config_data.roll_feed_forward = 1;
 		pid_values_config_data.roll_i_limit = 0.3;
 		pid_values_config_data.roll_i_zone = 0.3;
 		pid_values_config_data.roll_multiplier = 1;
 
-		INCREASE_INDEX_NEXT_STRUCT(sizeof(pid_values_config_data), 0, &block_index_pos, &block);
+		INCREASE_INDEX_NEXT_STRUCT(sizeof(pid_values_config_data), sizeof(mahony_values_config_data), &block_index_pos, &block);
 		pid_values_config_data.index_next_datastruct = block_index_pos;
 		pid_values_config_data.block_num_next_datastruct = block;
+
+
+		mahony_values_config_data.magic_start = magic;		// mahony setup
+		mahony_values_config_data.magic_end = ~magic;
+		magic = next_magic(magic);
+
+		mahony_values_config_data.b[0] = 0;
+		mahony_values_config_data.b[1] = 0;
+		mahony_values_config_data.b[2] = 0;
+		mahony_values_config_data.k_i = -0.05;
+		mahony_values_config_data.k_p = 0.5;
+
+		INCREASE_INDEX_NEXT_STRUCT(sizeof(mahony_values_config_data), 0, &block_index_pos, &block);
+		mahony_values_config_data.index_next_datastruct = block_index_pos;
+		mahony_values_config_data.block_num_next_datastruct = block;
 	}
 
 }
@@ -160,6 +177,12 @@ static void CONFIG_SET_CONFIG_DATA_STRUCT(){
 	CONFIG_DATA.pid.pitch.i_zone = pid_values_config_data.pitch_i_zone;
 	CONFIG_DATA.pid.pitch.multiplier = pid_values_config_data.pitch_multiplier;
 	CONFIG_DATA.pid.pitch.p = pid_values_config_data.pitch_p;
+
+	CONFIG_DATA.mahony.b[0] = mahony_values_config_data.b[0];
+	CONFIG_DATA.mahony.b[1] = mahony_values_config_data.b[1];
+	CONFIG_DATA.mahony.b[2] = mahony_values_config_data.b[2];
+	CONFIG_DATA.mahony.k_i = mahony_values_config_data.k_i;
+	CONFIG_DATA.mahony.k_p = mahony_values_config_data.k_p;
 	CONFIG_DATA_BACKUP_DATA();
 }
 
@@ -199,6 +222,14 @@ void CONFIG_READ(){
 	if(pid_values_config_data.block_num_next_datastruct != block){
 		SD_READ_BLOCK(block_data, pid_values_config_data.block_num_next_datastruct);
 		block = pid_values_config_data.block_num_next_datastruct;
+	}
+
+	memcpy(&mahony_values_config_data, &block_data[pid_values_config_data.index_next_datastruct], sizeof(mahony_values_config_data));
+	if(!(mahony_values_config_data.magic_start == magic && mahony_values_config_data.magic_end == ~magic)) ERROR_HANDLER_BLINKS(6);
+	magic = next_magic(magic);
+	if(mahony_values_config_data.block_num_next_datastruct != block){
+		SD_READ_BLOCK(block_data, pid_values_config_data.block_num_next_datastruct);
+		block = mahony_values_config_data.block_num_next_datastruct;
 	}
 
 	CONFIG_SET_CONFIG_DATA_STRUCT();
@@ -243,6 +274,14 @@ void CONFIG_WRITE(){
 			SD_WRITE_BLOCK(block_byte_array, 508, block);
 			memset(block_byte_array, 0, sizeof(block_byte_array));
 			block = pid_values_config_data.block_num_next_datastruct;
+		}
+
+	memcpy(&block_byte_array[index], &mahony_values_config_data, sizeof(mahony_values_config_data));
+		index = mahony_values_config_data.index_next_datastruct;
+		if(mahony_values_config_data.block_num_next_datastruct != block){
+			SD_WRITE_BLOCK(block_byte_array, 508, block);
+			memset(block_byte_array, 0, sizeof(block_byte_array));
+			block = mahony_values_config_data.block_num_next_datastruct;
 		}
 
 	SD_WRITE_BLOCK(block_byte_array, sizeof(block_byte_array), block);

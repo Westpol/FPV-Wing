@@ -56,6 +56,9 @@ typedef struct{
 	accel_t accel;
 	barometer_t barometer;
 	vbat_t vbat;
+	// TEMPORARY
+	float ex;
+	float ey;
 }onboard_sensors_t;
 //-------------------------------- generating onboard_sensors struct -------------------------------
 

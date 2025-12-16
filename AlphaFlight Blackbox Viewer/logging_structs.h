@@ -8,6 +8,8 @@ typedef enum{
 	LOG_TYPE_DISABLE_LOGGING = 0,
 	LOG_TYPE_ONBOARD_SENSORS = 1,
 	LOG_TYPE_CRSF = 2,
+	LOG_TYPE_GPS = 3,
+	LOG_TYPE_PID = 4
 }LOG_TYPES;
 
 typedef struct __attribute__((packed)){
@@ -58,6 +60,41 @@ typedef struct __attribute__((packed)){
 	log_general_end_t end;
 }LOG_CRSF_T;
 
+typedef struct __attribute__((packed)){
+	log_general_header_t header;
+
+	int32_t lat;
+	int32_t lon;
+	float gspeed;
+	float altitude;
+	float heading;
+	float velN;        // m/s
+	float velE;        // m/s
+	float velD;        // m/s
+	uint8_t numSV;
+	uint8_t fix_type;
+
+	log_general_end_t end;
+}LOG_GPS_T;
+
+typedef struct __attribute__((packed)){
+	log_general_header_t header;
+
+	float pitch_error;
+	float pitch_d_correction;
+	float pitch_integral;
+	float pitch_pid_correction;
+	float pitch_setpoint;
+
+	float roll_error;
+	float roll_d_error;
+	float roll_integral;
+	float roll_pid_correction;
+	float roll_setpoint;
+
+	log_general_end_t end;
+}LOG_PID_T;
+
 typedef struct{
 	uint8_t id;
 	uint8_t (*decode)(const uint8_t* raw, uint8_t mode, FILE *file);
@@ -66,5 +103,9 @@ typedef struct{
 uint8_t copy_struct_onboard_sensors(const uint8_t* raw, uint8_t mode, FILE *file);
 
 uint8_t copy_struct_crsf(const uint8_t* raw, uint8_t mode, FILE *file);
+
+uint8_t copy_struct_gps(const uint8_t* raw, uint8_t mode, FILE *file);
+
+uint8_t copy_struct_pid(const uint8_t* raw, uint8_t mode, FILE *file);
 
 #endif

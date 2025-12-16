@@ -6,11 +6,12 @@
  */
 #include "onboard-sensors.h"
 #include "debug.h"
-#include "math.h"
-#include "stdbool.h"
+#include <math.h>
+#include <stdbool.h>
 #include "time-utils.h"
 #include "main.h"
 #include "utils.h"
+#include "config_data.h"
 
 onboard_sensors_t ONBOARD_SENSORS = {0};
 
@@ -86,6 +87,8 @@ static uint8_t accel_rx[7] = {0};
 static uint8_t baro_rx[7] = {0};
 uint64_t baro_last_vs_update_time = 0;
 
+static float mahony_b[3];
+
 __attribute__((optimize("O0"))) static void read_address(GPIO_TypeDef *DEVICE_GPIOx, uint16_t DEVICE_PIN, uint8_t reg, uint8_t *rxbuffer, uint8_t readLength){
 	reg |= READ_BYTE;
 	DEVICE_GPIOx->BSRR = (DEVICE_PIN << 16);
@@ -143,7 +146,7 @@ static int8_t BMI_GYRO_INIT_DATA_READY_PIN_ENABLED(){
 	return 0;
 }
 
-static int8_t BMI_ACCEL_INIT(){
+static int8_t bmi_accel_init(){
 	uint8_t rx_buffer[2] = {0};
 
 	read_address(accel_cs_port, accel_cs_pin, 0x00, rx_buffer, 2);
@@ -183,7 +186,7 @@ static int8_t BMI_ACCEL_INIT(){
 	return 0;
 }
 
-static int8_t BMP_BARO_INIT(){
+static int8_t bmp_baro_init(){
 
 	uint8_t rx_buffer[2] = {0};
 	read_address(baro_cs_port, baro_cs_pin, 0x00, rx_buffer, 2);
@@ -236,6 +239,15 @@ static int8_t BMP_BARO_INIT(){
 int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_PIN, GPIO_TypeDef *ACCEL_PORT, uint16_t ACCEL_PIN, GPIO_TypeDef *BARO_PORT, uint16_t BARO_PIN){
 	ONBOARD_SENSORS.gyro.q_angle[0] = 1;
 
+	if(CONFIG_DATA_AVAILABLE()){
+		mahony_b[0] = CONFIG_DATA.mahony.b[0];
+		mahony_b[1] = CONFIG_DATA.mahony.b[1];
+		mahony_b[2] = CONFIG_DATA.mahony.b[2];
+	}
+	else{
+		return 1;
+	}
+
 	sensor_spi = HSPIx;
 	gyro_cs_port = GYRO_PORT;
 	gyro_cs_pin = GYRO_PIN;
@@ -258,9 +270,9 @@ int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_P
 
 	int16_t return_code_sum = 0;
 	DEBUG_PRINT_VERBOSE("INIT Accel");
-	return_code_sum += BMI_ACCEL_INIT();
+	return_code_sum += bmi_accel_init();
 	DEBUG_PRINT_VERBOSE("INIT Baro");
-	return_code_sum += BMP_BARO_INIT();
+	return_code_sum += bmp_baro_init();
 	DEBUG_PRINT_VERBOSE("INIT Gyro");
 	return_code_sum += BMI_GYRO_INIT_DATA_READY_PIN_ENABLED();
 	if(return_code_sum == 0){
@@ -271,7 +283,7 @@ int8_t SENSORS_INIT(SPI_TypeDef *HSPIx, GPIO_TypeDef *GYRO_PORT, uint16_t GYRO_P
 	}
 }
 
-static float BMP_COMPENSATE_TEMPERATURE(uint32_t uncomp_temp, Baro_Calibration *calib_data){
+static float bmp_compensate_temperature(uint32_t uncomp_temp, Baro_Calibration *calib_data){
 	float partial_data1;
 	float partial_data2;
 	partial_data1 = (float)(uncomp_temp - calib_data->par_t1);
@@ -283,7 +295,7 @@ static float BMP_COMPENSATE_TEMPERATURE(uint32_t uncomp_temp, Baro_Calibration *
 	return calib_data->t_lin;
 }
 
-static float BMP_COMPENSATE_PRESSURE(uint32_t uncomp_press, Baro_Calibration *calib_data){
+static float bmp_compensate_pressure(uint32_t uncomp_press, Baro_Calibration *calib_data){
 	/* Variable to store the compensated pressure */
 	float comp_press;
 	/* Temporary variables used for compensation */
@@ -310,7 +322,7 @@ static float BMP_COMPENSATE_PRESSURE(uint32_t uncomp_press, Baro_Calibration *ca
 	return comp_press;
 }
 
-static void GYRO_CONVERT_DATA(){
+static void gyro_convert_data(){
 	raw_data.gyro_x_raw = ((int16_t)gyro_rx[1] << 8) | gyro_rx[0];
 	raw_data.gyro_y_raw = ((int16_t)gyro_rx[3] << 8) | gyro_rx[2];
 	raw_data.gyro_z_raw = ((int16_t)gyro_rx[5] << 8) | gyro_rx[4];
@@ -322,7 +334,7 @@ static void GYRO_CONVERT_DATA(){
 	ONBOARD_SENSORS.gyro.gyro.z = (float)raw_data.gyro_z_raw * scale;
 }
 
-static void ACCEL_CONVERT_DATA(){
+static void accel_convert_data(){
 	raw_data.accel_x_raw = ((int16_t)accel_rx[2] << 8) | accel_rx[1];
 	raw_data.accel_y_raw = ((int16_t)accel_rx[4] << 8) | accel_rx[3];
 	raw_data.accel_z_raw = ((int16_t)accel_rx[6] << 8) | accel_rx[5];
@@ -336,17 +348,17 @@ static void ACCEL_CONVERT_DATA(){
 }
 
 #define BARO_PRESSURE_ALPHA 0.3f
-static void BARO_CONVERT_DATA(){
+static void baro_convert_data(){
 	raw_data.baro_temp_raw = ((uint32_t)baro_rx[6] << 16) | ((uint32_t)baro_rx[5] << 8) | baro_rx[4];
 	raw_data.baro_pressure_raw = ((uint32_t)baro_rx[3] << 16) | ((uint32_t)baro_rx[2] << 8) | baro_rx[1];
-	ONBOARD_SENSORS.barometer.temperature = BMP_COMPENSATE_TEMPERATURE(raw_data.baro_temp_raw, &baro_calibration);
-	ONBOARD_SENSORS.barometer.pressure = BMP_COMPENSATE_PRESSURE(raw_data.baro_pressure_raw, &baro_calibration);
+	ONBOARD_SENSORS.barometer.temperature = bmp_compensate_temperature(raw_data.baro_temp_raw, &baro_calibration);
+	ONBOARD_SENSORS.barometer.pressure = bmp_compensate_pressure(raw_data.baro_pressure_raw, &baro_calibration);
 
 	ONBOARD_SENSORS.barometer.pressure_filtered = (1.0f - BARO_PRESSURE_ALPHA) * ONBOARD_SENSORS.barometer.pressure_filtered + BARO_PRESSURE_ALPHA * ONBOARD_SENSORS.barometer.pressure;
 }
 
 #define vertical_speed_lowpass_alpha 0.3f
-static void BARO_CALCULATE_HEIGHT(){
+static void baro_calculate_height(){
 	float last_height = ONBOARD_SENSORS.barometer.height;
 	ONBOARD_SENSORS.barometer.height = (ONBOARD_SENSORS.barometer.pressure_base - ONBOARD_SENSORS.barometer.pressure_filtered) / 12.015397;
 	uint64_t now = MICROS64();
@@ -361,157 +373,137 @@ static void BARO_CALCULATE_HEIGHT(){
 
 void GYRO_READ(){
 	read_address(gyro_cs_port, gyro_cs_pin, 0x02, gyro_rx, 6);
-	GYRO_CONVERT_DATA();
+	gyro_convert_data();
 }
 
 void ACCEL_READ(){
 	read_address(accel_cs_port, accel_cs_pin, 0x12, accel_rx, 7);
-	ACCEL_CONVERT_DATA();
+	accel_convert_data();
 }
 
 void BARO_READ(){
 	read_address(baro_cs_port, baro_cs_pin, 0x04, baro_rx, 7);
-	BARO_CONVERT_DATA();
-	BARO_CALCULATE_HEIGHT();
+	baro_convert_data();
+	baro_calculate_height();
 }
 
 void GYRO_INTEGRATE_EXACT() {
+	//========================== Timing =================================
     uint64_t now = MICROS64();
     float dt = (now - last_integration_us) * 1e-6f;
     last_integration_us = now;
+    if (dt <= 0.0f || dt > 0.01f) return; // <10 ms = timing fault
 
+
+    //========================== Variables =================================
     float wx = ONBOARD_SENSORS.gyro.gyro.x;
     float wy = ONBOARD_SENSORS.gyro.gyro.y;
     float wz = ONBOARD_SENSORS.gyro.gyro.z;
 
-    // Magnitude of rotation vector
-    float theta = sqrtf(wx*wx + wy*wy + wz*wz) * dt;
+    float ax = ONBOARD_SENSORS.accel.accel.x;
+    float ay = ONBOARD_SENSORS.accel.accel.y;
+    float az = ONBOARD_SENSORS.accel.accel.z;
 
-    float q_delta[4];
+
+    //========================== Accelerometer normalization =================================
+    float norm = ax*ax + ay*ay + az*az;
+
+    if (norm > 1e-6f){   // accel invalid, skip stuff
+		norm = 1.0f / sqrtf(norm);
+		ax *= norm;
+		ay *= norm;
+		az *= norm;
+    }
 
 
-	float half_theta = 0.5f * theta;
-	float sin_half = sinf(half_theta);
-	float k = sin_half / (theta);
+    //========================== Extract gravitation from quaternion =================================
+    float q0 = ONBOARD_SENSORS.gyro.q_angle[0];
+    float q1 = ONBOARD_SENSORS.gyro.q_angle[1];
+    float q2 = ONBOARD_SENSORS.gyro.q_angle[2];
+    float q3 = ONBOARD_SENSORS.gyro.q_angle[3];
 
-	q_delta[0] = cosf(half_theta);
-	q_delta[1] = wx * dt * k;
-	q_delta[2] = wy * dt * k;
-	q_delta[3] = wz * dt * k;
+    float gx = 2.0f * (q1*q3 - q0*q2);
+    float gy = 2.0f * (q0*q1 + q2*q3);
+    float gz = q0*q0 - q1*q1 - q2*q2 + q3*q3;
 
-    // q <- q ⊗ q_delta
+    gz = -gz;
+    gx = -gx;
+    gy = -gy;
+
+
+    //========================== Compute attitude error =================================
+    float ex = (gy * az - gz * ay);
+    float ey = (gz * ax - gx * az);
+    ONBOARD_SENSORS.ex = ex;	// save error for debug problems
+    ONBOARD_SENSORS.ey = ey;
+
+
+    //========================== integrate error correction =================================
+    mahony_b[0] += CONFIG_DATA.mahony.k_i * ex * dt;
+    mahony_b[1] += CONFIG_DATA.mahony.k_i * ey * dt;
+
+
+    //========================== correct gyro measurements =================================
+    float accel_trust = fabsf(gz);
+
+    wx = wx - mahony_b[0] + CONFIG_DATA.mahony.k_p * ex * accel_trust;
+    wy = wy - mahony_b[1] + CONFIG_DATA.mahony.k_p * ey * accel_trust;
+
+
+    //========================== Exact gyro integration =================================
+    // rotation magnitude
+    float omega_mag = sqrtf(wx*wx + wy*wy + wz*wz);
+
+    float dq[4];
+
+    if (omega_mag > 1e-6f) {
+        float theta = omega_mag * dt;
+        float half_theta = 0.5f * theta;
+
+        float sin_ht = sinf(half_theta);
+        float cos_ht = cosf(half_theta);
+
+        float inv_omega = 1.0f / omega_mag;
+
+        dq[0] = cos_ht;
+        dq[1] = wx * inv_omega * sin_ht;
+        dq[2] = wy * inv_omega * sin_ht;
+        dq[3] = wz * inv_omega * sin_ht;
+    } else {
+        // extremely small rotation → identity
+        dq[0] = 1.0f;
+        dq[1] = 0.0f;
+        dq[2] = 0.0f;
+        dq[3] = 0.0f;
+    }
+
+
+    //========================== Apply and normalize new quaternion =================================
     float q_new[4];
-    UTIL_QUATERNION_PRODUCT(ONBOARD_SENSORS.gyro.q_angle, q_delta, q_new);
+    UTIL_QUATERNION_PRODUCT(dq, ONBOARD_SENSORS.gyro.q_angle, q_new);
 
-    // Normalize
-    float norm = sqrtf(q_new[0]*q_new[0] + q_new[1]*q_new[1] +
-                       q_new[2]*q_new[2] + q_new[3]*q_new[3]);
-    for (int i = 0; i < 4; i++)
-        ONBOARD_SENSORS.gyro.q_angle[i] = q_new[i] / norm;
+    norm = q_new[0]*q_new[0] + q_new[1]*q_new[1] +
+           q_new[2]*q_new[2] + q_new[3]*q_new[3];
 
-    // Convert to Euler
-    float *q = ONBOARD_SENSORS.gyro.q_angle;
-
-    ONBOARD_SENSORS.gyro.pitch_angle =
-        -asinf(2*(q[0]*q[2] - q[3]*q[1]));
-
-    ONBOARD_SENSORS.gyro.roll_angle =
-        atan2f(2*(q[0]*q[1] + q[2]*q[3]),
-               1 - 2*(q[1]*q[1] + q[2]*q[2]));
-}
+    if (norm > 0.0f) {
+        norm = 1.0f / sqrtf(norm);
+        q_new[0] *= norm;
+        q_new[1] *= norm;
+        q_new[2] *= norm;
+        q_new[3] *= norm;
+    }
 
 
-/*void GYRO_INTEGRATE_EXACT() {
-    uint64_t now = MICROS64();
-    uint64_t delta_t_us = now - last_integration_us;
-    last_integration_us = now;
-    float delta_t_s = (float)delta_t_us / 1000000.0f;
-
-    // Angular velocity (rad/s)
-    float wx = ONBOARD_SENSORS.gyro.gyro.x;
-    float wy = ONBOARD_SENSORS.gyro.gyro.y;
-    float wz = ONBOARD_SENSORS.gyro.gyro.z;
-
-    float q_x[4] = {cosf(wx / 2), sinf(wx / 2), 0, 0};
-    float q_y[4] = {cosf(wy / 2), 0, sinf(wy / 2), 0};
-    float q_z[4] = {cosf(wz / 2), 0, 0, sinf(wz / 2)};
-
-    float q_total[4];
-
-    UTIL_QUATERNION_PRODUCT(q_y, q_x, q_total);
-    UTIL_QUATERNION_PRODUCT(q_z, q_total, q_total);
-
-    float norm = sqrtf(q_total[0]*q_total[0] + q_total[1]*q_total[1] + q_total[2]*q_total[2] + q_total[3]*q_total[3]);
-    for(int i = 0; i < 4; i++) q_total[i] /= norm;
-
-    UTIL_QUATERNION_PRODUCT(ONBOARD_SENSORS.gyro.q_angle, q_total, ONBOARD_SENSORS.gyro.q_angle);
-
-    norm = sqrtf(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[0] + ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2] + ONBOARD_SENSORS.gyro.q_angle[3]*ONBOARD_SENSORS.gyro.q_angle[3]);
-    for(int i = 0; i < 4; i++) ONBOARD_SENSORS.gyro.q_angle[i] /= norm;
+    //========================== Store new quaternion =================================
+    ONBOARD_SENSORS.gyro.q_angle[0] = q_new[0];
+    ONBOARD_SENSORS.gyro.q_angle[1] = q_new[1];
+    ONBOARD_SENSORS.gyro.q_angle[2] = q_new[2];
+    ONBOARD_SENSORS.gyro.q_angle[3] = q_new[3];
 
 
-    // Convert to Euler angles
-    ONBOARD_SENSORS.gyro.pitch_angle = -asinf(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[2] - ONBOARD_SENSORS.gyro.q_angle[3]*ONBOARD_SENSORS.gyro.q_angle[1]));
-    ONBOARD_SENSORS.gyro.roll_angle = atan2f(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[3]), 1 - 2*(ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2]));
-}*/
-
-
-#define FUSION_RATE_HZ 200.0f
-#define MAX_DEG_PER_SEC 3.0f
-const float correction_angle = (MAX_DEG_PER_SEC * (M_PI/180.0f)) / FUSION_RATE_HZ; // ≈ 8.7266e-5
-void GYRO_FUSION(){
-	float ax = ONBOARD_SENSORS.accel.accel.x;
-	float ay = ONBOARD_SENSORS.accel.accel.y;
-	float az = ONBOARD_SENSORS.accel.accel.z;
-	float norm = sqrtf(ax*ax + ay*ay + az*az);
-	ax /= norm; ay /= norm; az /= norm;
-
-	float vx = 2*(ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[3] - ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[2]);
-	float vy = 2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[3]);
-	float vz = ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[0] - ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] - ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2] + ONBOARD_SENSORS.gyro.q_angle[3]*ONBOARD_SENSORS.gyro.q_angle[3];
-
-	float ex = (ay*vz - az*vy);
-	float ey = (az*vx - ax*vz);
-	float ez = (ax*vy - ay*vx);
-
-	// remove yaw component: project error onto plane perpendicular to gravity (v)
-	float dot_ev = ex*vx + ey*vy + ez*vz;  // projection of e onto v
-	ex -= dot_ev * vx;
-	ey -= dot_ev * vy;
-	ez -= dot_ev * vz;
-
-
-	float err_norm = sqrtf(ex*ex + ey*ey + ez*ez);
-	if(err_norm > 1e-6f){  // avoid division by zero
-	    ex /= err_norm;
-	    ey /= err_norm;
-	    ez /= err_norm;
-	}
-
-	float angle = correction_angle;         // tiny rotation
-	float half_angle = angle * 0.5f;
-
-	float qs = cosf(half_angle);
-	float qx = ex * sinf(half_angle);
-	float qy = ey * sinf(half_angle);
-	float qz = ez * sinf(half_angle);
-
-	float w = ONBOARD_SENSORS.gyro.q_angle[0];
-	float x = ONBOARD_SENSORS.gyro.q_angle[1];
-	float y = ONBOARD_SENSORS.gyro.q_angle[2];
-	float z = ONBOARD_SENSORS.gyro.q_angle[3];
-
-	ONBOARD_SENSORS.gyro.q_angle[0] = qs*w - qx*x - qy*y - qz*z;  // new w
-	ONBOARD_SENSORS.gyro.q_angle[1] = qs*x + qx*w + qy*z - qz*y;  // new x
-	ONBOARD_SENSORS.gyro.q_angle[2] = qs*y - qx*z + qy*w + qz*x;  // new y
-	ONBOARD_SENSORS.gyro.q_angle[3] = qs*z + qx*y - qy*x + qz*w;  // new z
-
-	float norm_q = sqrtf(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[0] + ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2] + ONBOARD_SENSORS.gyro.q_angle[3]*ONBOARD_SENSORS.gyro.q_angle[3]);
-	ONBOARD_SENSORS.gyro.q_angle[0] /= norm_q;
-	ONBOARD_SENSORS.gyro.q_angle[1] /= norm_q;
-	ONBOARD_SENSORS.gyro.q_angle[2] /= norm_q;
-	ONBOARD_SENSORS.gyro.q_angle[3] /= norm_q;
-
+    //======================== Convert to Euler angles ==============================
+	ONBOARD_SENSORS.gyro.pitch_angle = -asinf(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[2] - ONBOARD_SENSORS.gyro.q_angle[3]*ONBOARD_SENSORS.gyro.q_angle[1]));
+	ONBOARD_SENSORS.gyro.roll_angle = atan2f(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[3]), 1 - 2*(ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2]));
 }
 
 
@@ -530,7 +522,7 @@ void BARO_SET_BASE_PRESSURE(){
 	}
 }
 
-static uint32_t BATTERY_READ_SAMPLE(){
+static uint32_t battery_read_sample(){
 	HAL_ADC_Start(&hadc1);
 	    if(HAL_ADC_PollForConversion(&hadc1, 10) == HAL_OK){
 	        return HAL_ADC_GetValue(&hadc1); // 12-bit value: 0–4095
@@ -541,7 +533,7 @@ static uint32_t BATTERY_READ_SAMPLE(){
 #define BAT_NEW_SAMPLE_ALPHA_VALUE 0.01f
 #define BAT_VOLTAGE_DIVIDER_SCALING 11.062138728f
 void BATTERY_UPDATE(void){
-	uint32_t current_battery_value = BATTERY_READ_SAMPLE();
+	uint32_t current_battery_value = battery_read_sample();
 	float voltage = ((float)current_battery_value / 4095.0f) * 3.3f * BAT_VOLTAGE_DIVIDER_SCALING;
 	ONBOARD_SENSORS.vbat.vbat = ONBOARD_SENSORS.vbat.vbat * (1.0f - BAT_NEW_SAMPLE_ALPHA_VALUE) + voltage * BAT_NEW_SAMPLE_ALPHA_VALUE;
 	ONBOARD_SENSORS.vbat.vbat_raw = current_battery_value;

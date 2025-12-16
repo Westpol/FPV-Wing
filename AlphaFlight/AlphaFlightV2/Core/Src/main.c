@@ -227,7 +227,7 @@ int main(void)
   progress_counter = 8;
 
   SD_LOGGER_INIT();
-  const uint16_t logging_frequency = 50;
+  const uint16_t logging_frequency = 30;
 
   progress_counter = 9;
 
@@ -237,7 +237,6 @@ int main(void)
   SCHEDULER_ADD_TASK(GYRO_READ, HZ_TO_DELTA_T_US(1000));		// 1 kHz
   SCHEDULER_ADD_TASK(GYRO_INTEGRATE_EXACT, HZ_TO_DELTA_T_US(1000));	// 1 kHz
   SCHEDULER_ADD_TASK(ACCEL_READ, HZ_TO_DELTA_T_US(200));		// 250 Hz
-  //SCHEDULER_ADD_TASK(GYRO_FUSION, HZ_TO_DELTA_T_US(200));	// 500 Hz
   SCHEDULER_ADD_TASK(BARO_READ, HZ_TO_DELTA_T_US(25));		// 25 Hz
   SCHEDULER_ADD_TASK(CRSF_PARSE_BUFFER, HZ_TO_DELTA_T_US(100));	// 100 Hz
   SCHEDULER_ADD_TASK(FC_SANITY_CHECK, HZ_TO_DELTA_T_US(100));		// 100 Hz
@@ -247,7 +246,7 @@ int main(void)
   SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, HZ_TO_DELTA_T_US(25));	// 25 Hz
   SCHEDULER_ADD_TASK(SD_LOGGER_LOOP_CALL, HZ_TO_DELTA_T_US(logging_frequency));
   SCHEDULER_ADD_TASK(CRSF_HANDLE_TELEMETRY, HZ_TO_DELTA_T_US(50));	// 5 Hz
-  //SCHEDULER_ADD_TASK(USB_CHECK_FOR_CONNECTION, HZ_TO_DELTA_T_US(10));
+  SCHEDULER_ADD_TASK(USB_CHECK_FOR_CONNECTION, HZ_TO_DELTA_T_US(10));
   SCHEDULER_ADD_TASK(CONFIG_DATA_COMPARE_TO_BACKUP, HZ_TO_DELTA_T_US(10));
   //SCHEDULER_ADD_TASK(FC_PID_PRINT_CURRENT_SERVO_POINTS, 100000);
   SCHEDULER_ADD_TASK(USAGE_STAT_END_OF_SCHEDULER_CALL, HZ_TO_DELTA_T_US(1000));
@@ -256,7 +255,7 @@ int main(void)
   #endif
   TIME_UTILS_MICROS_TIM_START(&htim5);
 
-  //USB_INIT();
+  USB_INIT();
 
   SCHEDULER_INIT();	// MICROS ONLY WORKS WHEN THIS IS ENABLED
 
@@ -1298,11 +1297,12 @@ static void PRINT_DATA(){
 	//USB_PRINTLN("Executed at: %lu%lu  |  GPS Sats: %d  |   GPS Timestamp: %ld  |  GPS Year: %d  |  GPS Month: %d  |  GPS Day: %d  |  GPS Fix Tag: %d  |  GPS sats: %d  |  GPS Lat: %f", (uint32_t)(MICROS64() >> 32), (uint32_t)(MICROS64() & 0xFFFFFFFF), gps_data.numSV, gps_data.unix_timestamp, gps_nav_pvt.year, gps_nav_pvt.month, gps_nav_pvt.day, gps_data.fix_type, gps_data.numSV, gps_data.lat);
 	//USB_PRINTLN("Angle Gyro X: %f  |  Setpoint Angle X: %f  |  Throttle: %f  |  CRSF Pitch: %f  |  CRSF Roll: %f", imu_data.angle_y_fused, fly_by_wire_setpoints.pitch_angle, crsf_data.channel_norm[CRSF_CHANNEL_THROTTLE], crsf_data.channel_norm[CRSF_CHANNEL_PITCH], crsf_data.channel_norm[CRSF_CHANNEL_ROLL]);
 	//USB_PRINTLN("lat: %f  |  lon: %f  |  altitude: %f  |  gspeed: %f  |  heading: %f  |  num sats: %d  |  vbat: %f  |  vbat raw: %d  |  Accel X: %f", gps_data.lat, gps_data.lon, gps_data.altitude, gps_data.gspeed, gps_data.heading, gps_data.numSV, imu_data.vbat, imu_data.vbat_raw, imu_data.accel_x);	// GPS
-	USB_PRINTLN("Pitch angle: %f  |  Roll angle: %f  |  CPU usage avrg 1s: %.1f%%  |  CPU max usage 1s: %.1f%%  |  Time: %ld", UTIL_DEGREES(ONBOARD_SENSORS.gyro.pitch_angle), UTIL_DEGREES(ONBOARD_SENSORS.gyro.roll_angle), USAGE_STAT_GET_AVRG_1S() / 10.0f, USAGE_STAT_GET_MAX_LOOP_TIME_1S() / 10.0f, MICROS64());
+	//USB_PRINTLN("Pitch angle: %f  |  Roll angle: %f  |  CPU usage avrg 1s: %.1f%%  |  CPU max usage 1s: %.1f%%  |  Time: %ld", UTIL_DEGREES(ONBOARD_SENSORS.gyro.pitch_angle), UTIL_DEGREES(ONBOARD_SENSORS.gyro.roll_angle), USAGE_STAT_GET_AVRG_1S() / 10.0f, USAGE_STAT_GET_MAX_LOOP_TIME_1S() / 10.0f, MICROS64());
 	//USB_PRINTLN("%f, %f", UTIL_DEGREES(attitude_pid_values.pitch_error), UTIL_DEGREES(attitude_pid_values.roll_error));
 	//USB_PRINTLN("w:%f, x:%f, y:%f, z:%f, y-axis directly integrated:%f", q[0], q[1], q[2], q[3], imu_data.pitch_angle);
 	//USB_PRINTLN("pitch_err:%f, roll_err:%f", attitude_pid.pitch_error, attitude_pid.roll_error);
 	//USB_PRINTLN("pitch:%f,roll:%f", ONBOARD_SENSORS.gyro.gyro.y, ONBOARD_SENSORS.gyro.gyro.x);
+	USB_PRINTLN("Angle: | pitch: %f roll: %f | Accel | x: %f y: %f z: %f | Errors: | ex: %f ey: %f", UTIL_DEGREES(ONBOARD_SENSORS.gyro.pitch_angle), UTIL_DEGREES(ONBOARD_SENSORS.gyro.roll_angle), ONBOARD_SENSORS.accel.accel.x, ONBOARD_SENSORS.accel.accel.y, ONBOARD_SENSORS.accel.accel.z, ONBOARD_SENSORS.ex, ONBOARD_SENSORS.ey);
 }
 #endif
 
@@ -1339,7 +1339,7 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
 	  STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
 		  STATUS_LED_BLUE_ON();
-		  delay_100_ms(2);
+		  delay_100_ms(1);
 		  STATUS_LED_BLUE_OFF();
 		  delay_100_ms(5);
 	  }
@@ -1348,7 +1348,7 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
 
 	  for(uint8_t counter = 0; counter < BLINKS; counter++){
 		  STATUS_LED_GREEN_ON();
-		  delay_100_ms(2);
+		  delay_100_ms(1);
 		  STATUS_LED_GREEN_OFF();
 		  delay_100_ms(5);
 	  }
@@ -1416,7 +1416,7 @@ void Error_Handler(void)
 	  STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
 		  STATUS_LED_BLUE_ON();
-		  delay_100_ms(2);
+		  delay_100_ms(1);
 		  STATUS_LED_BLUE_OFF();
 		  delay_100_ms(5);
 	  }

@@ -84,6 +84,18 @@ typedef struct __attribute((packed)){
 	uint32_t magic_end;
 }PID_VALUES_CONFIG_DATA;
 
+typedef struct __attribute((packed)){
+	uint32_t magic_start;
+	uint16_t index_next_datastruct;
+	uint32_t block_num_next_datastruct;
+
+	float b[4];
+	float k_i;
+	float k_p;
+
+	uint32_t magic_end;
+}MAHONY_VALUES_CONFIG_DATA;
+
 void LOAD_CONFIG_INIT();
 void CONFIG_WRITE();
 void CONFIG_READ();
