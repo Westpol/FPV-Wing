@@ -392,7 +392,7 @@ void GYRO_INTEGRATE_EXACT() {
     uint64_t now = MICROS64();
     float dt = (now - last_integration_us) * 1e-6f;
     last_integration_us = now;
-    if (dt <= 0.0f || dt > 0.0005f) return; // >0.5 ms = timing fault
+    if (dt <= 0.0f || dt > 0.01f) return; // <10 ms = timing fault
 
 
     //========================== Variables =================================
@@ -404,70 +404,106 @@ void GYRO_INTEGRATE_EXACT() {
     float ay = ONBOARD_SENSORS.accel.accel.y;
     float az = ONBOARD_SENSORS.accel.accel.z;
 
-    float k_i = CONFIG_DATA.mahony.k_i;
-    float k_p = CONFIG_DATA.mahony.k_p;
-
-    float q_old[4] = {ONBOARD_SENSORS.gyro.q_angle[0], ONBOARD_SENSORS.gyro.q_angle[1], ONBOARD_SENSORS.gyro.q_angle[2], ONBOARD_SENSORS.gyro.q_angle[3]};
-
 
     //========================== Accelerometer normalization =================================
     float norm = ax*ax + ay*ay + az*az;
-    if (norm < 1e-6f) return;   // accel invalid
 
-    norm = 1.0f / sqrtf(norm);
-    ax *= norm;
-    ay *= norm;
-    az *= norm;
+    if (norm > 1e-6f){   // accel invalid, skip stuff
+		norm = 1.0f / sqrtf(norm);
+		ax *= norm;
+		ay *= norm;
+		az *= norm;
+    }
 
 
     //========================== Extract gravitation from quaternion =================================
-    float q0 = q_old[0];
-    float q1 = q_old[1];
-    float q2 = q_old[2];
-    float q3 = q_old[3];
+    float q0 = ONBOARD_SENSORS.gyro.q_angle[0];
+    float q1 = ONBOARD_SENSORS.gyro.q_angle[1];
+    float q2 = ONBOARD_SENSORS.gyro.q_angle[2];
+    float q3 = ONBOARD_SENSORS.gyro.q_angle[3];
 
     float gx = 2.0f * (q1*q3 - q0*q2);
     float gy = 2.0f * (q0*q1 + q2*q3);
     float gz = q0*q0 - q1*q1 - q2*q2 + q3*q3;
 
+    gz = -gz;
+    gx = -gx;
+    gy = -gy;
+
 
     //========================== Compute attitude error =================================
-    float ex = (ay * gz - az * gy);
-    float ey = (az * gx - ax * gz);
-    float ez = (ax * gy - ay * gx);
+    float ex = (gy * az - gz * ay);
+    float ey = (gz * ax - gx * az);
+    ONBOARD_SENSORS.ex = ex;	// save error for debug problems
+    ONBOARD_SENSORS.ey = ey;
 
 
     //========================== integrate error correction =================================
-    mahony_b[0] += k_i * ex * dt;
-    mahony_b[1] += k_i * ey * dt;
-    mahony_b[2] += k_i * ez * dt;
+    mahony_b[0] += CONFIG_DATA.mahony.k_i * ex * dt;
+    mahony_b[1] += CONFIG_DATA.mahony.k_i * ey * dt;
 
 
     //========================== correct gyro measurements =================================
-    wx = wx - mahony_b[0] + k_p * ex;
-    wy = wy - mahony_b[1] + k_p * ey;
-    wz = wz - mahony_b[2] + k_p * ez;
+    float accel_trust = fabsf(gz);
+
+    wx = wx - mahony_b[0] + CONFIG_DATA.mahony.k_p * ex * accel_trust;
+    wy = wy - mahony_b[1] + CONFIG_DATA.mahony.k_p * ey * accel_trust;
 
 
+    //========================== Exact gyro integration =================================
+    // rotation magnitude
+    float omega_mag = sqrtf(wx*wx + wy*wy + wz*wz);
 
-    //========================== Normalize Gyro =================================
-    norm = q0*q0 + q1*q1 + q2*q2 + q3*q3;
-    if(norm != 0){
-		norm = 1.0f / sqrtf(norm);
+    float dq[4];
 
-		q0 *= norm;
-		q1 *= norm;
-		q2 *= norm;
-		q3 *= norm;
+    if (omega_mag > 1e-6f) {
+        float theta = omega_mag * dt;
+        float half_theta = 0.5f * theta;
+
+        float sin_ht = sinf(half_theta);
+        float cos_ht = cosf(half_theta);
+
+        float inv_omega = 1.0f / omega_mag;
+
+        dq[0] = cos_ht;
+        dq[1] = wx * inv_omega * sin_ht;
+        dq[2] = wy * inv_omega * sin_ht;
+        dq[3] = wz * inv_omega * sin_ht;
+    } else {
+        // extremely small rotation → identity
+        dq[0] = 1.0f;
+        dq[1] = 0.0f;
+        dq[2] = 0.0f;
+        dq[3] = 0.0f;
     }
 
+
+    //========================== Apply and normalize new quaternion =================================
+    float q_new[4];
+    UTIL_QUATERNION_PRODUCT(dq, ONBOARD_SENSORS.gyro.q_angle, q_new);
+
+    norm = q_new[0]*q_new[0] + q_new[1]*q_new[1] +
+           q_new[2]*q_new[2] + q_new[3]*q_new[3];
+
+    if (norm > 0.0f) {
+        norm = 1.0f / sqrtf(norm);
+        q_new[0] *= norm;
+        q_new[1] *= norm;
+        q_new[2] *= norm;
+        q_new[3] *= norm;
+    }
+
+
     //========================== Store new quaternion =================================
-    ONBOARD_SENSORS.gyro.q_angle[0] = q0;
-    ONBOARD_SENSORS.gyro.q_angle[1] = q1;
-    ONBOARD_SENSORS.gyro.q_angle[2] = q2;
-    ONBOARD_SENSORS.gyro.q_angle[3] = q3;
+    ONBOARD_SENSORS.gyro.q_angle[0] = q_new[0];
+    ONBOARD_SENSORS.gyro.q_angle[1] = q_new[1];
+    ONBOARD_SENSORS.gyro.q_angle[2] = q_new[2];
+    ONBOARD_SENSORS.gyro.q_angle[3] = q_new[3];
 
 
+    //======================== Convert to Euler angles ==============================
+	ONBOARD_SENSORS.gyro.pitch_angle = -asinf(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[2] - ONBOARD_SENSORS.gyro.q_angle[3]*ONBOARD_SENSORS.gyro.q_angle[1]));
+	ONBOARD_SENSORS.gyro.roll_angle = atan2f(2*(ONBOARD_SENSORS.gyro.q_angle[0]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[3]), 1 - 2*(ONBOARD_SENSORS.gyro.q_angle[1]*ONBOARD_SENSORS.gyro.q_angle[1] + ONBOARD_SENSORS.gyro.q_angle[2]*ONBOARD_SENSORS.gyro.q_angle[2]));
 }
 
 

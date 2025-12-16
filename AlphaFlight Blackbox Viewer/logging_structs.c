@@ -38,3 +38,39 @@ uint8_t copy_struct_crsf(const uint8_t* raw, uint8_t mode, FILE *file){
     }
     return 1;
 }
+
+uint8_t copy_struct_gps(const uint8_t* raw, uint8_t mode, FILE *file){
+    LOG_GPS_T log = {0};
+    memcpy(&log, raw, sizeof(log));
+    switch(mode){
+        case 1:
+            printf("%d,%d,%d\n", log.header.log_type, log.header.log_version, log.header.timestamp);
+        break;
+
+        case 2:
+            fprintf(file, "%d,%d\n", log.header.log_type, log.header.timestamp);
+        break;
+
+        default:
+        break;
+    }
+    return 1;
+}
+
+uint8_t copy_struct_pid(const uint8_t* raw, uint8_t mode, FILE *file){
+    LOG_PID_T log = {0};
+    memcpy(&log, raw, sizeof(log));
+    switch(mode){
+        case 1:
+            printf("%d,%d,%d\n", log.header.log_type, log.header.log_version, log.header.timestamp);
+        break;
+
+        case 2:
+            fprintf(file, "%d,%d\n", log.header.log_type, log.header.timestamp);
+        break;
+
+        default:
+        break;
+    }
+    return 1;
+}

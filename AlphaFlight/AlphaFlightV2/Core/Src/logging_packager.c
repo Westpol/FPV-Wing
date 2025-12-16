@@ -24,12 +24,14 @@
 #define SET_FLAG_COND(flags, bit, cond) ((flags) = ((flags) & ~(1U << (bit))) | ((!!(cond)) << (bit)))
 
 extern FLY_BY_WIRE_SETPOINTS fly_by_wire_setpoints;
+extern FLY_BY_WIRE_PID_VALUES attitude_pid_values;
 
 static uint8_t logging_buffer[LOG_BUFFER_SIZE] = {0};
 
 LOG_ONBOARD_SENSORS_T log_onboard_sensors = {0};
 LOG_CRSF_T log_crsf = {0};
 LOG_GPS_T log_gps = {0};
+LOG_PID_T log_pid = {0};
 
 uint8_t* LOGGING_PACKER_BY_MODE(uint16_t TOPIC, uint64_t TIMESTAMP){
 
@@ -85,15 +87,43 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t TOPIC, uint64_t TIMESTAMP){
 
 	void snapshot_gps(uint64_t timestamp){
 			log_gps.header.start_magic = LOG_FRAME_START_MAGIC;
-			log_gps.header.log_struct_length = sizeof(log_crsf);
-			log_gps.header.log_type = LOG_TYPE_CRSF;
+			log_gps.header.log_struct_length = sizeof(log_gps);
+			log_gps.header.log_type = LOG_TYPE_GPS;
 			log_gps.header.log_version = LOG_VERSION;
 			log_gps.header.timestamp = (uint32_t)timestamp;
 
 			log_gps.lat = GPS_DATA.lat_int;
 			log_gps.lon = GPS_DATA.lon_int;
+			log_gps.altitude = GPS_DATA.altitude;
+			log_gps.fix_type = GPS_DATA.fix_type;
+			log_gps.gspeed = GPS_DATA.gspeed;
+			log_gps.heading = GPS_DATA.heading;
+			log_gps.numSV = GPS_DATA.numSV;
+			log_gps.velD = GPS_DATA.velD;
+			log_gps.velN = GPS_DATA.velN;
+			log_gps.velE = GPS_DATA.velE;
 
 			log_gps.end.end_magic = LOG_FRAME_END_MAGIC;
+		}
+
+	void snapshot_pid(uint64_t timestamp){
+			log_pid.header.start_magic = LOG_FRAME_START_MAGIC;
+			log_pid.header.log_struct_length = sizeof(log_pid);
+			log_pid.header.log_type = LOG_TYPE_PID;
+			log_pid.header.log_version = LOG_VERSION;
+			log_pid.header.timestamp = (uint32_t)timestamp;
+
+			log_pid.pitch_error = attitude_pid_values.pitch_error;
+			log_pid.pitch_integral = attitude_pid_values.pitch_error_accumulated;
+			log_pid.pitch_pid_correction = attitude_pid_values.pitch_pid_correction;
+			log_pid.pitch_setpoint = fly_by_wire_setpoints.pitch_angular_velocity;
+
+			log_pid.roll_error = attitude_pid_values.roll_error;
+			log_pid.roll_integral = attitude_pid_values.roll_error_accumulated;
+			log_pid.roll_pid_correction = attitude_pid_values.roll_pid_correction;
+			log_pid.roll_setpoint = fly_by_wire_setpoints.roll_angular_velocity;
+
+			log_pid.end.end_magic = LOG_FRAME_END_MAGIC;
 		}
 
 	switch (TOPIC) {
@@ -118,6 +148,12 @@ uint8_t* LOGGING_PACKER_BY_MODE(uint16_t TOPIC, uint64_t TIMESTAMP){
 
 			memcpy(&logging_buffer[1], &log_gps, sizeof(log_gps));
 			logging_buffer[0] = sizeof(log_gps);
+			break;
+		case LOG_TYPE_PID:
+			snapshot_pid(TIMESTAMP);
+
+			memcpy(&logging_buffer[1], &log_pid, sizeof(log_pid));
+			logging_buffer[0] = sizeof(log_pid);
 			break;
 		default:
 			break;

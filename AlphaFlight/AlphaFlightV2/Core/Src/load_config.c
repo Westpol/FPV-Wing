@@ -74,7 +74,7 @@ static void CONFIG_SET_STANDARD_VALUES(){
 		sd_logger_config_data.magic_start = magic;		// sd logger setup
 		sd_logger_config_data.magic_end = ~magic;
 		magic = next_magic(magic);
-		sd_logger_config_data.log_mode = (1 << 0) | (1 << LOG_TYPE_ONBOARD_SENSORS) | (1 << LOG_TYPE_CRSF);
+		sd_logger_config_data.log_mode = (1 << 0) | (1 << LOG_TYPE_ONBOARD_SENSORS) | (1 << LOG_TYPE_CRSF) | (1 << LOG_TYPE_GPS) | (1 << LOG_TYPE_PID);
 
 		INCREASE_INDEX_NEXT_STRUCT(sizeof(sd_logger_config_data), sizeof(crsf_channels_config_data), &block_index_pos, &block);
 		sd_logger_config_data.index_next_datastruct = block_index_pos;
@@ -100,8 +100,8 @@ static void CONFIG_SET_STANDARD_VALUES(){
 		magic = next_magic(magic);
 
 		pid_values_config_data.pitch_p = 1;
-		pid_values_config_data.pitch_i = 1;
-		pid_values_config_data.pitch_d = 1;
+		pid_values_config_data.pitch_i = 0.5;
+		pid_values_config_data.pitch_d = 2;
 		pid_values_config_data.pitch_d_filter = 1;
 		pid_values_config_data.pitch_feed_forward = 1;
 		pid_values_config_data.pitch_i_limit = 0.3;
@@ -109,8 +109,8 @@ static void CONFIG_SET_STANDARD_VALUES(){
 		pid_values_config_data.pitch_multiplier = 1;
 
 		pid_values_config_data.roll_p = 1;
-		pid_values_config_data.roll_i = 1;
-		pid_values_config_data.roll_d = 1;
+		pid_values_config_data.roll_i = 0.5;
+		pid_values_config_data.roll_d = 2;
 		pid_values_config_data.roll_d_filter = 1;
 		pid_values_config_data.roll_feed_forward = 1;
 		pid_values_config_data.roll_i_limit = 0.3;
@@ -129,8 +129,8 @@ static void CONFIG_SET_STANDARD_VALUES(){
 		mahony_values_config_data.b[0] = 0;
 		mahony_values_config_data.b[1] = 0;
 		mahony_values_config_data.b[2] = 0;
-		mahony_values_config_data.k_i = 0.3;
-		mahony_values_config_data.k_p = 1;
+		mahony_values_config_data.k_i = -0.05;
+		mahony_values_config_data.k_p = 0.5;
 
 		INCREASE_INDEX_NEXT_STRUCT(sizeof(mahony_values_config_data), 0, &block_index_pos, &block);
 		mahony_values_config_data.index_next_datastruct = block_index_pos;
