@@ -388,10 +388,14 @@ void BARO_READ(){
 }
 
 void GYRO_INTEGRATE_EXACT() {
+	//========================== Timing =================================
     uint64_t now = MICROS64();
     float dt = (now - last_integration_us) * 1e-6f;
     last_integration_us = now;
+    if (dt <= 0.0f || dt > 0.0005f) return; // >0.5 ms = timing fault
 
+
+    //========================== Variables =================================
     float wx = ONBOARD_SENSORS.gyro.gyro.x;
     float wy = ONBOARD_SENSORS.gyro.gyro.y;
     float wz = ONBOARD_SENSORS.gyro.gyro.z;
@@ -404,6 +408,65 @@ void GYRO_INTEGRATE_EXACT() {
     float k_p = CONFIG_DATA.mahony.k_p;
 
     float q_old[4] = {ONBOARD_SENSORS.gyro.q_angle[0], ONBOARD_SENSORS.gyro.q_angle[1], ONBOARD_SENSORS.gyro.q_angle[2], ONBOARD_SENSORS.gyro.q_angle[3]};
+
+
+    //========================== Accelerometer normalization =================================
+    float norm = ax*ax + ay*ay + az*az;
+    if (norm < 1e-6f) return;   // accel invalid
+
+    norm = 1.0f / sqrtf(norm);
+    ax *= norm;
+    ay *= norm;
+    az *= norm;
+
+
+    //========================== Extract gravitation from quaternion =================================
+    float q0 = q_old[0];
+    float q1 = q_old[1];
+    float q2 = q_old[2];
+    float q3 = q_old[3];
+
+    float gx = 2.0f * (q1*q3 - q0*q2);
+    float gy = 2.0f * (q0*q1 + q2*q3);
+    float gz = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+
+
+    //========================== Compute attitude error =================================
+    float ex = (ay * gz - az * gy);
+    float ey = (az * gx - ax * gz);
+    float ez = (ax * gy - ay * gx);
+
+
+    //========================== integrate error correction =================================
+    mahony_b[0] += k_i * ex * dt;
+    mahony_b[1] += k_i * ey * dt;
+    mahony_b[2] += k_i * ez * dt;
+
+
+    //========================== correct gyro measurements =================================
+    wx = wx - mahony_b[0] + k_p * ex;
+    wy = wy - mahony_b[1] + k_p * ey;
+    wz = wz - mahony_b[2] + k_p * ez;
+
+
+
+    //========================== Normalize Gyro =================================
+    norm = q0*q0 + q1*q1 + q2*q2 + q3*q3;
+    if(norm != 0){
+		norm = 1.0f / sqrtf(norm);
+
+		q0 *= norm;
+		q1 *= norm;
+		q2 *= norm;
+		q3 *= norm;
+    }
+
+    //========================== Store new quaternion =================================
+    ONBOARD_SENSORS.gyro.q_angle[0] = q0;
+    ONBOARD_SENSORS.gyro.q_angle[1] = q1;
+    ONBOARD_SENSORS.gyro.q_angle[2] = q2;
+    ONBOARD_SENSORS.gyro.q_angle[3] = q3;
+
 
 }
 

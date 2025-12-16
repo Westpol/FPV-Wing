@@ -246,7 +246,7 @@ int main(void)
   SCHEDULER_ADD_TASK(GPS_PARSE_BUFFER, HZ_TO_DELTA_T_US(25));	// 25 Hz
   SCHEDULER_ADD_TASK(SD_LOGGER_LOOP_CALL, HZ_TO_DELTA_T_US(logging_frequency));
   SCHEDULER_ADD_TASK(CRSF_HANDLE_TELEMETRY, HZ_TO_DELTA_T_US(50));	// 5 Hz
-  //SCHEDULER_ADD_TASK(USB_CHECK_FOR_CONNECTION, HZ_TO_DELTA_T_US(10));
+  SCHEDULER_ADD_TASK(USB_CHECK_FOR_CONNECTION, HZ_TO_DELTA_T_US(10));
   SCHEDULER_ADD_TASK(CONFIG_DATA_COMPARE_TO_BACKUP, HZ_TO_DELTA_T_US(10));
   //SCHEDULER_ADD_TASK(FC_PID_PRINT_CURRENT_SERVO_POINTS, 100000);
   SCHEDULER_ADD_TASK(USAGE_STAT_END_OF_SCHEDULER_CALL, HZ_TO_DELTA_T_US(1000));
@@ -255,7 +255,7 @@ int main(void)
   #endif
   TIME_UTILS_MICROS_TIM_START(&htim5);
 
-  //USB_INIT();
+  USB_INIT();
 
   SCHEDULER_INIT();	// MICROS ONLY WORKS WHEN THIS IS ENABLED
 
@@ -1338,7 +1338,7 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
 	  STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
 		  STATUS_LED_BLUE_ON();
-		  delay_100_ms(2);
+		  delay_100_ms(1);
 		  STATUS_LED_BLUE_OFF();
 		  delay_100_ms(5);
 	  }
@@ -1347,7 +1347,7 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
 
 	  for(uint8_t counter = 0; counter < BLINKS; counter++){
 		  STATUS_LED_GREEN_ON();
-		  delay_100_ms(2);
+		  delay_100_ms(1);
 		  STATUS_LED_GREEN_OFF();
 		  delay_100_ms(5);
 	  }
@@ -1415,7 +1415,7 @@ void Error_Handler(void)
 	  STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
 		  STATUS_LED_BLUE_ON();
-		  delay_100_ms(2);
+		  delay_100_ms(1);
 		  STATUS_LED_BLUE_OFF();
 		  delay_100_ms(5);
 	  }

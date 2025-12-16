@@ -129,12 +129,12 @@ static void CONFIG_SET_STANDARD_VALUES(){
 		mahony_values_config_data.b[0] = 0;
 		mahony_values_config_data.b[1] = 0;
 		mahony_values_config_data.b[2] = 0;
-		mahony_values_config_data.k_i = 0;
-		mahony_values_config_data.k_p = 0;
+		mahony_values_config_data.k_i = 0.3;
+		mahony_values_config_data.k_p = 1;
 
 		INCREASE_INDEX_NEXT_STRUCT(sizeof(mahony_values_config_data), 0, &block_index_pos, &block);
-		pid_values_config_data.index_next_datastruct = block_index_pos;
-		pid_values_config_data.block_num_next_datastruct = block;
+		mahony_values_config_data.index_next_datastruct = block_index_pos;
+		mahony_values_config_data.block_num_next_datastruct = block;
 	}
 
 }
@@ -225,7 +225,7 @@ void CONFIG_READ(){
 	}
 
 	memcpy(&mahony_values_config_data, &block_data[pid_values_config_data.index_next_datastruct], sizeof(mahony_values_config_data));
-	if(!(mahony_values_config_data.magic_start == magic && mahony_values_config_data.magic_end == ~magic)) ERROR_HANDLER_BLINKS(5);
+	if(!(mahony_values_config_data.magic_start == magic && mahony_values_config_data.magic_end == ~magic)) ERROR_HANDLER_BLINKS(6);
 	magic = next_magic(magic);
 	if(mahony_values_config_data.block_num_next_datastruct != block){
 		SD_READ_BLOCK(block_data, pid_values_config_data.block_num_next_datastruct);
@@ -274,6 +274,14 @@ void CONFIG_WRITE(){
 			SD_WRITE_BLOCK(block_byte_array, 508, block);
 			memset(block_byte_array, 0, sizeof(block_byte_array));
 			block = pid_values_config_data.block_num_next_datastruct;
+		}
+
+	memcpy(&block_byte_array[index], &mahony_values_config_data, sizeof(mahony_values_config_data));
+		index = mahony_values_config_data.index_next_datastruct;
+		if(mahony_values_config_data.block_num_next_datastruct != block){
+			SD_WRITE_BLOCK(block_byte_array, 508, block);
+			memset(block_byte_array, 0, sizeof(block_byte_array));
+			block = mahony_values_config_data.block_num_next_datastruct;
 		}
 
 	SD_WRITE_BLOCK(block_byte_array, sizeof(block_byte_array), block);

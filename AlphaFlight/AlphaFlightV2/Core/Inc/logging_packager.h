@@ -20,7 +20,8 @@ typedef enum{
 	LOG_TYPE_DISABLE_LOGGING = 0,
 	LOG_TYPE_ONBOARD_SENSORS = 1,
 	LOG_TYPE_CRSF = 2,
-	LOG_TYPE_GPS = 3
+	LOG_TYPE_GPS = 3,
+	LOG_TYPE_PID = 4
 }LOG_TYPES;
 
 typedef struct __attribute__((packed)){
@@ -87,6 +88,24 @@ typedef struct __attribute__((packed)){
 
 	log_general_end_t end;
 }LOG_GPS_T;
+
+typedef struct __attribute__((packed)){
+	log_general_header_t header;
+
+	float pitch_error;
+	float pitch_d_correction;
+	float pitch_integral;
+	float pitch_pid_correction;
+	float pitch_setpoint;
+
+	float roll_error;
+	float roll_d_error;
+	float roll_integral;
+	float roll_pid_correction;
+	float roll_setpoint;
+
+	log_general_end_t end;
+}LOG_PID_T;
 
 uint8_t* LOGGING_PACKER_BY_MODE(uint16_t MODE, uint64_t TIMESTAMP);
 
