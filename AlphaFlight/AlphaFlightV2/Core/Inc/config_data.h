@@ -19,7 +19,12 @@ typedef struct{
 }config_data_internal_crsf_channels_t;
 
 typedef struct{
+	uint8_t enabled;
+}config_data_internal_crsf_telemetry_t;
+
+typedef struct{
 	config_data_internal_crsf_channels_t channels;
+	config_data_internal_crsf_telemetry_t telemetry;
 }config_data_internal_crsf_t;
 
 typedef struct{

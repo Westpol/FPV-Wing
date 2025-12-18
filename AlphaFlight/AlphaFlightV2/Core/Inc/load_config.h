@@ -28,6 +28,7 @@ typedef struct __attribute((packed)){
 	uint32_t magic_start;
 	uint16_t index_next_datastruct;		// sizeof(GYRO_CONFIG)
 	uint32_t block_num_next_datastruct;
+
 	int8_t x_direction;
 	int8_t y_direction;
 	int8_t z_direction;
@@ -35,6 +36,7 @@ typedef struct __attribute((packed)){
 	float gyro_y_filter;
 	float gyro_z_filter;
 	uint16_t gyro_polling_rate;
+
 	uint32_t magic_end;
 }GYRO_CONFIG_DATA;
 
@@ -42,7 +44,9 @@ typedef struct __attribute((packed)){
 	uint32_t magic_start;
 	uint16_t index_next_datastruct;
 	uint32_t block_num_next_datastruct;
+
 	uint64_t log_mode;
+
 	uint32_t magic_end;
 }SD_LOGGER_CONFIG_DATA;
 
@@ -50,11 +54,15 @@ typedef struct __attribute((packed)){
 	uint32_t magic_start;
 	uint16_t index_next_datastruct;
 	uint32_t block_num_next_datastruct;
+
 	uint8_t throttle;
 	uint8_t roll;
 	uint8_t pitch;
 	uint8_t arm_switch;
 	uint8_t mode_switch;
+
+	uint8_t telemetry_enabled;
+
 	uint32_t magic_end;
 }CRSF_CHANNELS_CONFIG_DATA;
 

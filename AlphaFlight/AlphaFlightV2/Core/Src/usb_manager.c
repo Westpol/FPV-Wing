@@ -15,6 +15,7 @@
 #include "main.h"
 #include "debug.h"
 #include "load_config.h"
+#include "cli_get_set.h"
 
 uint8_t cdc_buffer[APP_RX_DATA_SIZE] = {0};
 static uint8_t clear_buffer[64];
@@ -28,7 +29,7 @@ bool exit_command_line_config = false;
 typedef struct{
 	uint8_t mode_point;
 	uint8_t parting_indexes[4];
-	uint8_t strings[5][32];
+	char strings[5][32];
 
 	uint8_t command;
 	uint8_t topic;
@@ -158,12 +159,31 @@ void USB_DECODE_COMMAND(uint32_t length){	// set commands / variables here
 			}
 		}
 	}
+
+	if(message_decoder.mode_point == 2){
+		uint8_t basic_commands = 1;
+		const char *command[] = {"get"};
+
+		for(int i = 0; i < basic_commands; i++){
+			if(strcmp((const char*)message_decoder.strings[0], command[i]) != 0) continue;
+
+			switch(i){
+			case 0:
+				if(!CLI_PROCESS_GET_COMMAND(message_decoder.strings[1])){
+					USB_PRINTLN("Command not found!");
+				}
+				break;
+			default:
+				break;
+			}
+		}
+	}
 }
 
 
 void USB_DECODE_MESSAGE(uint32_t length){		// gets called every time usb message is recieved
 	if(usb_config_mode_enabled == false){		// if USB configurator is not connected / enabled
-		const char expected[] = "START_COMMUNICATION";
+		const char expected[] = "start";
 		uint32_t expected_len = sizeof(expected) - 1;
 		if(length >= expected_len){
 			if(memcmp(cdc_buffer, expected, expected_len) == 0){

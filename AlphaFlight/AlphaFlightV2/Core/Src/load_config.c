@@ -90,6 +90,8 @@ static void CONFIG_SET_STANDARD_VALUES(){
 		crsf_channels_config_data.arm_switch = 11;
 		crsf_channels_config_data.mode_switch = 5;
 
+		crsf_channels_config_data.telemetry_enabled = 1;
+
 		INCREASE_INDEX_NEXT_STRUCT(sizeof(crsf_channels_config_data), sizeof(pid_values_config_data), &block_index_pos, &block);
 		crsf_channels_config_data.index_next_datastruct = block_index_pos;
 		crsf_channels_config_data.block_num_next_datastruct = block;
@@ -161,6 +163,7 @@ static void CONFIG_SET_CONFIG_DATA_STRUCT(){
 	CONFIG_DATA.crossfire.channels.pitch = crsf_channels_config_data.pitch;
 	CONFIG_DATA.crossfire.channels.arm_switch = crsf_channels_config_data.arm_switch;
 	CONFIG_DATA.crossfire.channels.mode_switch = crsf_channels_config_data.mode_switch;
+	CONFIG_DATA.crossfire.telemetry.enabled = crsf_channels_config_data.telemetry_enabled;
 
 	CONFIG_DATA.pid.roll.d_filter = pid_values_config_data.roll_d_filter;
 	CONFIG_DATA.pid.roll.feed_forward = pid_values_config_data.roll_feed_forward;
