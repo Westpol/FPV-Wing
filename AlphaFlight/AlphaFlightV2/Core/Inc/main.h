@@ -106,8 +106,6 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS);
 #define CS_EXT_3_GPIO_Port GPIOB
 #define CS_EXT_2_Pin LL_GPIO_PIN_4
 #define CS_EXT_2_GPIO_Port GPIOB
-#define CS_EXT_1_Pin LL_GPIO_PIN_5
-#define CS_EXT_1_GPIO_Port GPIOB
 #define RGB_B_Pin LL_GPIO_PIN_8
 #define RGB_B_GPIO_Port GPIOB
 #define RGB_G_Pin LL_GPIO_PIN_9
