@@ -29,6 +29,7 @@ void SCHEDULER_ADD_TASK(task_func_t task_func, uint32_t period){	// add tasks in
 		tasks[task_count].period = period;
 		tasks[task_count].time_last_execute = current_time;
 		tasks[task_count].time_to_execute = period;
+		tasks[task_count].cpu_usage = 0;
 		task_count++;
 	}
 	else{
@@ -60,6 +61,8 @@ void SCHEDULER_UPDATE(){
 			tasks[i].time_last_execute = current_time;
 			tasks[i].time_to_execute += tasks[i].period;
 			tasks[i].task_func();
+			uint32_t delta_t = MICROS64() - current_time;
+			tasks[i].cpu_usage = 0.01f * delta_t + (0.99f * tasks[i].cpu_usage);
 			break;
 		}
 	}

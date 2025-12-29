@@ -21,6 +21,7 @@ typedef struct{
 	uint32_t period;
 	uint64_t time_last_execute;
 	uint64_t time_to_execute;
+	float cpu_usage;
 }task_t;
 
 void SCHEDULER_INIT();
