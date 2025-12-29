@@ -62,7 +62,7 @@ void SCHEDULER_UPDATE(){
 			tasks[i].time_to_execute += tasks[i].period;
 			tasks[i].task_func();
 			uint32_t delta_t = MICROS64() - current_time;
-			tasks[i].cpu_usage = 0.01f * delta_t + (0.99f * tasks[i].cpu_usage);
+			tasks[i].cpu_usage = 0.1f * delta_t + (0.1f * tasks[i].cpu_usage);
 			break;
 		}
 	}
