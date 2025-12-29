@@ -17,3 +17,6 @@ AlphaFlight Documentation/preamble.tex
 AlphaFlight/AlphaFlightV2/AlphaFlightV2 Debug.launch
 /AlphaFlight Blackbox Viewer/build
 /AlphaFlight/crc_check
+AlphaFlight/AlphaFlight/.project
+AlphaFlight/AlphaFlight/.cproject
+AlphaFlight/AlphaFlight/.mxproject
