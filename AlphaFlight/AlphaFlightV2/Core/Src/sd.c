@@ -93,22 +93,22 @@ SD_STATUS SD_READ_BLOCK(uint8_t* data_storage, uint32_t block){
 	}
 
 	uint32_t block_crc32 = ((uint32_t)read_buffer[511] << 24) | ((uint32_t)read_buffer[510] << 16) | ((uint32_t)read_buffer[509] << 8)  | ((uint32_t)read_buffer[508]);
-	VERIFY_CRC32(read_buffer, BLOCK_SIZE - CRC32_BYTE_SIZE, block_crc32);
-	memcpy(data_storage, read_buffer, BLOCK_SIZE);
+	VERIFY_CRC32(read_buffer, BLOCK_DATA_SIZE, block_crc32);
+	memcpy(data_storage, read_buffer, BLOCK_DATA_SIZE);
 
 	return SD_OK;
 }
 
 SD_STATUS SD_WRITE_BLOCK(uint8_t* data_array, uint32_t data_length_bytes, uint32_t block){
 
-	if (data_length_bytes > BLOCK_SIZE - CRC32_BYTE_SIZE) {
+	if (data_length_bytes > BLOCK_DATA_SIZE) {
 		LOG_FAIL_WITH_ERROR(SD_ERROR_BLOCK_LIMIT_REACHED); // Too much data
 		return SD_ERROR_BLOCK_LIMIT_REACHED;
 	}
 
 	uint8_t single_write_buffer[BLOCK_SIZE] = {0};
 	memcpy(single_write_buffer, data_array, data_length_bytes);
-	uint32_t crc32 = CALCULATE_CRC32_HW(single_write_buffer, BLOCK_SIZE - CRC32_BYTE_SIZE);
+	uint32_t crc32 = CALCULATE_CRC32_HW(single_write_buffer, BLOCK_DATA_SIZE);
 	single_write_buffer[508] = (crc32 >> 0);
 	single_write_buffer[509] = (crc32 >> 8);
 	single_write_buffer[510] = (crc32 >> 16);

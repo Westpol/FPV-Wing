@@ -12,23 +12,16 @@
 
 #define CONFIG_WRITE_STANDARD_ENABLED 1
 #define CONFIG_START_BLOCK 60
+#define CONFIG_BLOCKS_RESERVED 30
 
-#define START_MAGIC 0xA3D7BC49
+#define START_MAGIC (uint32_t)0xA3D7BC49
 
 typedef struct __attribute((packed)){
-	uint32_t magic_start;
-	uint16_t index_next_datastruct;
-	uint32_t block_num_next_datastruct;
-	uint16_t num_config_blocks;
+	uint32_t config_length;
 	uint8_t version;
-	uint32_t magic_end;
-}CONFIG_HEADER;
+}CONFIG_HEADER_T;
 
 typedef struct __attribute((packed)){
-	uint32_t magic_start;
-	uint16_t index_next_datastruct;		// sizeof(GYRO_CONFIG)
-	uint32_t block_num_next_datastruct;
-
 	int8_t x_direction;
 	int8_t y_direction;
 	int8_t z_direction;
@@ -36,41 +29,27 @@ typedef struct __attribute((packed)){
 	float gyro_y_filter;
 	float gyro_z_filter;
 	uint16_t gyro_polling_rate;
-
-	uint32_t magic_end;
-}GYRO_CONFIG_DATA;
+}GYRO_CONFIG_DATA_T;
 
 typedef struct __attribute((packed)){
-	uint32_t magic_start;
-	uint16_t index_next_datastruct;
-	uint32_t block_num_next_datastruct;
-
 	uint64_t log_mode;
-
-	uint32_t magic_end;
-}SD_LOGGER_CONFIG_DATA;
+}SD_LOGGER_CONFIG_DATA_T;
 
 typedef struct __attribute((packed)){
-	uint32_t magic_start;
-	uint16_t index_next_datastruct;
-	uint32_t block_num_next_datastruct;
-
 	uint8_t throttle;
 	uint8_t roll;
 	uint8_t pitch;
 	uint8_t arm_switch;
 	uint8_t mode_switch;
-
-	uint8_t telemetry_enabled;
-
-	uint32_t magic_end;
-}CRSF_CHANNELS_CONFIG_DATA;
+}CRSF_CHANNELS_T;
 
 typedef struct __attribute((packed)){
-	uint32_t magic_start;
-	uint16_t index_next_datastruct;
-	uint32_t block_num_next_datastruct;
+	CRSF_CHANNELS_T channels;
 
+	uint8_t telemetry_enabled;
+}CRSF_CONFIG_DATA_T;
+
+typedef struct __attribute((packed)){
 	float roll_p;
 	float roll_i;
 	float roll_i_limit;
@@ -88,21 +67,24 @@ typedef struct __attribute((packed)){
 	float pitch_d_filter;
 	float pitch_multiplier;
 	float pitch_feed_forward;
-
-	uint32_t magic_end;
-}PID_VALUES_CONFIG_DATA;
+}PID_VALUES_CONFIG_DATA_T;
 
 typedef struct __attribute((packed)){
-	uint32_t magic_start;
-	uint16_t index_next_datastruct;
-	uint32_t block_num_next_datastruct;
-
 	float b[4];
 	float k_i;
 	float k_p;
+}MAHONY_VALUES_CONFIG_DATA_T;
 
+typedef struct __attribute((packed)){
+	uint32_t magic_start;
+	CONFIG_HEADER_T config_header;
+	GYRO_CONFIG_DATA_T gyro_config;
+	SD_LOGGER_CONFIG_DATA_T sd_logger_config;
+	CRSF_CONFIG_DATA_T crsf_config;
+	PID_VALUES_CONFIG_DATA_T pid_values_config;
+	MAHONY_VALUES_CONFIG_DATA_T mahony_config;
 	uint32_t magic_end;
-}MAHONY_VALUES_CONFIG_DATA;
+}CONFIG_PACKED_T;
 
 void LOAD_CONFIG_INIT();
 void CONFIG_WRITE();
