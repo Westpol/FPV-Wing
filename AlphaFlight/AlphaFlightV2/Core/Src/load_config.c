@@ -38,7 +38,7 @@ static void CONFIG_SET_STANDARD_VALUES(){
 		config_packed.magic_end = ~START_MAGIC;
 
 		config_packed.config_header.config_length = sizeof(config_packed);
-		config_packed.config_header.version = 1;
+		config_packed.config_header.version = CONFIG_VERSION;
 
 
 		config_packed.sd_logger_config.log_mode = (1 << 0) | (1 << LOG_TYPE_ONBOARD_SENSORS) | (1 << LOG_TYPE_CRSF) | (1 << LOG_TYPE_GPS) | (1 << LOG_TYPE_PID);
@@ -152,6 +152,7 @@ void CONFIG_READ(){
 	}
 
 	if(config_packed.magic_start != START_MAGIC || config_packed.magic_end != ~START_MAGIC) ERROR_HANDLER_BLINKS(6);
+	if(config_packed.config_header.version != CONFIG_VERSION) ERROR_HANDLER_BLINKS(7);
 
 	CONFIG_SET_CONFIG_DATA_STRUCT();
 	config_been_read = 1;
