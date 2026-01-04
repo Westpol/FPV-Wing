@@ -22,11 +22,12 @@ typedef struct{
 	uint64_t time_last_execute;
 	uint64_t time_to_execute;
 	float cpu_usage;
+	char name[32];
 }task_t;
 
 void SCHEDULER_INIT();
 void SCHEDULER_CHECK_EXECUTION_DELAY();
-void SCHEDULER_ADD_TASK(task_func_t task_func, uint32_t period);
+void SCHEDULER_ADD_TASK(const task_func_t task_func, const uint32_t period, const char* name);
 void SCHEDULER_UPDATE(void);
 
 #define HZ_TO_DELTA_T_US(HZ) ((uint32_t)(1000000U / (HZ)))

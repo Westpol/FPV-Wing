@@ -6,7 +6,7 @@
  */
 
 #include <stdbool.h>
-#include <time_utils.h>
+#include "time_utils.h"
 
 static TIM_HandleTypeDef *htim = NULL;
 static volatile uint32_t timer_high = 0;

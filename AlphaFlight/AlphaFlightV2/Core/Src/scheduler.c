@@ -5,6 +5,8 @@
  *      Author: benno
  */
 
+#include <string.h>
+
 #include "scheduler.h"
 #include "time-utils.h"
 #include "main.h"
@@ -23,14 +25,21 @@ void SCHEDULER_INIT(){
 	}
 }
 
-void SCHEDULER_ADD_TASK(task_func_t task_func, uint32_t period){	// add tasks in order of importance, tasks get checked/executed in the order that they were added
+void SCHEDULER_ADD_TASK(const task_func_t task_func, const uint32_t period, const char* name){	// add tasks in order of importance, tasks get checked/executed in the order that they were added
 	if((task_count < MAX_TASKS) && period >= MIN_TASK_DELAY){
 		tasks[task_count].task_func = task_func;
 		tasks[task_count].period = period;
 		tasks[task_count].time_last_execute = current_time;
 		tasks[task_count].time_to_execute = period;
 		tasks[task_count].cpu_usage = 0;
-		task_count++;
+		for(int i = 0; i < 32; i++){
+			if(name[i] == '\0'){
+				memcpy(tasks[task_count].name, name, i + 1);
+				task_count++;
+				return;
+			}
+		}
+		ERROR_HANDLER_BLINKS(2);
 	}
 	else{
 		ERROR_HANDLER_BLINKS(1);
