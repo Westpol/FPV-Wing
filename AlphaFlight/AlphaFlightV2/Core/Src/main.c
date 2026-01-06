@@ -43,6 +43,7 @@
 #include "qmc5883.h"
 #include "usb_manager.h"
 #include "config_data.h"
+#include "dshot.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -77,7 +78,7 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim5;
 TIM_HandleTypeDef htim10;
 TIM_HandleTypeDef htim12;
-DMA_HandleTypeDef hdma_tim1_ch1;
+DMA_HandleTypeDef hdma_tim1_up;
 
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart1;
@@ -228,12 +229,15 @@ int main(void)
 
   progress_counter = 9;
 
+  DSHOT_SET_THROTTLE(0, 0);
+
   progress_counter = 10;
   //SCHEDULER_ADD_TASK(SCHEDULER_CHECK_EXECUTION_DELAY, 40000);		// 25 Hz
   SCHEDULER_ADD_TASK(USAGE_STAT_START_OF_SCHEDULER_CALL, HZ_TO_DELTA_T_US(1000), "Scheduler start");
   SCHEDULER_ADD_TASK(GYRO_READ, HZ_TO_DELTA_T_US(1000), "Gyro read");		// 1 kHz
   SCHEDULER_ADD_TASK(GYRO_INTEGRATE_EXACT, HZ_TO_DELTA_T_US(1000), "gyro integration");	// 1 kHz
   SCHEDULER_ADD_TASK(ACCEL_READ, HZ_TO_DELTA_T_US(200), "Accelerometer");		// 250 Hz
+  SCHEDULER_ADD_TASK(DSHOT_SEND_FRAME, HZ_TO_DELTA_T_US(100), "DSHOT send Motor frame");
   SCHEDULER_ADD_TASK(BARO_READ, HZ_TO_DELTA_T_US(25), "Barometer");		// 25 Hz
   SCHEDULER_ADD_TASK(CRSF_PARSE_BUFFER, HZ_TO_DELTA_T_US(100), "CRSF buffer parse");	// 100 Hz
   SCHEDULER_ADD_TASK(FC_SANITY_CHECK, HZ_TO_DELTA_T_US(100), "FC sanity check");		// 100 Hz
@@ -587,9 +591,9 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 215;
+  htim1.Init.Prescaler = 0;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 19999;
+  htim1.Init.Period = 360;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
@@ -615,7 +619,7 @@ static void MX_TIM1_Init(void)
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
   sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
@@ -1101,9 +1105,9 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream6_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
-  /* DMA2_Stream3_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+  /* DMA2_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream5_IRQn);
   /* DMA2_Stream6_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
@@ -1361,8 +1365,7 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
   TIM6->CR1 |= TIM_CR1_CEN;
 
 
-  while (1)
-  {
+  while (1){
 	  UTIL_STATUS_LED_GREEN_OFF();
 	  UTIL_STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
@@ -1447,6 +1450,7 @@ void Error_Handler(void)
 		  UTIL_STATUS_LED_BLUE_OFF();
 		  delay_100_ms(5);
 	  }
+
 	  delay_100_ms(8);
   }
   /* USER CODE END Error_Handler_Debug */

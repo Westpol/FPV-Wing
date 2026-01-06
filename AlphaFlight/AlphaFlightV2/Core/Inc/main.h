@@ -112,7 +112,8 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS);
 #define RGB_G_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
-
+extern TIM_HandleTypeDef htim1;
+extern DMA_HandleTypeDef hdma_tim1_up;
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

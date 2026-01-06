@@ -22,6 +22,7 @@
 #include "stm32f7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "dshot.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,7 +59,7 @@
 extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 extern DMA_HandleTypeDef hdma_sdmmc1_tx;
 extern SD_HandleTypeDef hsd1;
-extern DMA_HandleTypeDef hdma_tim1_ch1;
+extern DMA_HandleTypeDef hdma_tim1_up;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim10;
 extern DMA_HandleTypeDef hdma_uart4_rx;
@@ -257,7 +258,6 @@ void DMA1_Stream6_IRQHandler(void)
 void TIM1_UP_TIM10_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
-
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   HAL_TIM_IRQHandler(&htim10);
@@ -329,20 +329,6 @@ void UART4_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles DMA2 stream3 global interrupt.
-  */
-void DMA2_Stream3_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA2_Stream3_IRQn 0 */
-
-  /* USER CODE END DMA2_Stream3_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_tim1_ch1);
-  /* USER CODE BEGIN DMA2_Stream3_IRQn 1 */
-
-  /* USER CODE END DMA2_Stream3_IRQn 1 */
-}
-
-/**
   * @brief This function handles USB On The Go FS global interrupt.
   */
 void OTG_FS_IRQHandler(void)
@@ -354,6 +340,20 @@ void OTG_FS_IRQHandler(void)
   /* USER CODE BEGIN OTG_FS_IRQn 1 */
 
   /* USER CODE END OTG_FS_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA2 stream5 global interrupt.
+  */
+void DMA2_Stream5_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA2_Stream5_IRQn 0 */
+	DSHOT_DMA_TRANSFER_COMPLETED();
+  /* USER CODE END DMA2_Stream5_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_tim1_up);
+  /* USER CODE BEGIN DMA2_Stream5_IRQn 1 */
+
+  /* USER CODE END DMA2_Stream5_IRQn 1 */
 }
 
 /**
