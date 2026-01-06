@@ -9,7 +9,6 @@
 #include "math.h"
 #include "utils.h"
 #include "time-utils.h"
-#include "debug.h"
 #include "servo.h"
 #include "flight_control.h"
 #include "onboard-sensors.h"

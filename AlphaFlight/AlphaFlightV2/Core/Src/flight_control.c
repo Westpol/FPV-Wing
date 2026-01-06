@@ -10,7 +10,6 @@
 #include "utils.h"
 #include "stdbool.h"
 #include "attitude_pid.h"
-#include "debug.h"
 #include "sd_logger.h"
 #include "m10-gps.h"
 #include "onboard-sensors.h"

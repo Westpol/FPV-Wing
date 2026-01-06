@@ -13,9 +13,9 @@
 #include "usbd_cdc.h"
 #include "time-utils.h"
 #include "main.h"
-#include "debug.h"
 #include "load_config.h"
 #include "cli_get_set.h"
+#include "utils.h"
 
 uint8_t cdc_buffer[APP_RX_DATA_SIZE] = {0};
 static uint8_t clear_buffer[64];
@@ -221,8 +221,8 @@ void USB_CHECK_FOR_CONNECTION(){		// logic while USB connection is established
 
 				// USB Mode default config
 
-				STATUS_LED_BLUE_OFF();
-				STATUS_LED_GREEN_OFF();
+				UTIL_STATUS_LED_BLUE_OFF();
+				UTIL_STATUS_LED_GREEN_OFF();
 
 				// USB mode default config
 
@@ -230,7 +230,7 @@ void USB_CHECK_FOR_CONNECTION(){		// logic while USB connection is established
 					//USB LOGIC HERE
 
 					if(led_delay < MICROS64_USB()){
-						STATUS_LED_GREEN_TOGGLE();
+						UTIL_STATUS_LED_GREEN_TOGGLE();
 						led_delay = MICROS64_USB() + 500 * 1000;
 					}
 
@@ -244,7 +244,7 @@ void USB_CHECK_FOR_CONNECTION(){		// logic while USB connection is established
 					}
 				}
 
-				STATUS_LED_GREEN_OFF();
+				UTIL_STATUS_LED_GREEN_OFF();
 				TIME_UTILS_CONTINUE_MICROS64();
 				usb_config_mode_enabled = false;
 			}

@@ -25,6 +25,13 @@ void UTIL_USB_PRINT(const char *format, ...);
 void UTIL_USB_PRINT_HEX(uint8_t *data, uint32_t len);
 void UTIL_USB_PRINT_RAW(const char* message, uint32_t len);
 
+void UTIL_STATUS_LED_GREEN_ON();
+void UTIL_STATUS_LED_GREEN_OFF();
+void UTIL_STATUS_LED_GREEN_TOGGLE();
+
+void UTIL_STATUS_LED_BLUE_ON();
+void UTIL_STATUS_LED_BLUE_OFF();
+void UTIL_STATUS_LED_BLUE_TOGGLE();
 
 #define USB_PRINT_BUFFER_SIZE 2096
 

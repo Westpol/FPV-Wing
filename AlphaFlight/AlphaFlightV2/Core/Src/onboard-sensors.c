@@ -5,9 +5,10 @@
  *      Author: benno
  */
 #include "onboard-sensors.h"
-#include "debug.h"
+
 #include <math.h>
 #include <stdbool.h>
+
 #include "time-utils.h"
 #include "main.h"
 #include "utils.h"

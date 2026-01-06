@@ -10,6 +10,11 @@
 #include <math.h>
 #include <stdbool.h>
 
+static bool green_toggle = false;
+static bool blue_toggle = false;
+
+extern volatile unsigned char progress_counter;
+
 //============================== Quaternion math ===============================================
 void UTIL_QUATERNION_PRODUCT(const float* q1,const float* q2, float* q3){		// calculates q1*q2, saves value in q3
 	float q_new[4];
@@ -117,3 +122,49 @@ void UTIL_USB_PRINT_HEX(uint8_t *data, uint32_t len) {
     CDC_Transmit_FS((uint8_t *)buffer, strlen(buffer));
 }
 //=============================== USB functions ================================================
+
+//============================ Status LED control ==============================================
+
+void UTIL_STATUS_LED_GREEN_ON(){
+	GPIOB->BSRR |= GPIO_PIN_9 << 16;
+	green_toggle = true;
+}
+
+void UTIL_STATUS_LED_GREEN_OFF(){
+	GPIOB->BSRR |= GPIO_PIN_9;
+	green_toggle = false;
+}
+
+void UTIL_STATUS_LED_GREEN_TOGGLE(){
+	if(green_toggle){
+		GPIOB->BSRR |= GPIO_PIN_9;
+		green_toggle = false;
+	}
+	else{
+		GPIOB->BSRR |= GPIO_PIN_9 << 16;
+		green_toggle = true;
+	}
+}
+
+void UTIL_STATUS_LED_BLUE_ON(){
+	GPIOB->BSRR |= GPIO_PIN_8 << 16;
+	blue_toggle = true;
+}
+
+void UTIL_STATUS_LED_BLUE_OFF(){
+	GPIOB->BSRR |= GPIO_PIN_8;
+	blue_toggle = false;
+}
+
+void UTIL_STATUS_LED_BLUE_TOGGLE(){
+	if(blue_toggle){
+		GPIOB->BSRR |= GPIO_PIN_8;
+		blue_toggle = false;
+	}
+	else{
+		GPIOB->BSRR |= GPIO_PIN_8 << 16;
+		blue_toggle = true;
+	}
+}
+
+//============================ Status LED control ==============================================

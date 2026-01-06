@@ -12,7 +12,6 @@
 
 #include "sd.h"
 
-#include "debug.h"
 #include "main.h"
 #include "config_data.h"
 #include "logging_packager.h"

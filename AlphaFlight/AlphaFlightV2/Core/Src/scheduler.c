@@ -66,7 +66,7 @@ void SCHEDULER_CHECK_EXECUTION_DELAY(){
 void SCHEDULER_UPDATE(){
 	current_time = MICROS64();
 	for(int i = 0; i < task_count; i++){
-		if(current_time - tasks[i].time_to_execute >= 0){
+		if((int32_t)(current_time - tasks[i].time_to_execute) >= 0){
 			tasks[i].time_last_execute = current_time;
 			tasks[i].time_to_execute += tasks[i].period;
 			tasks[i].task_func();

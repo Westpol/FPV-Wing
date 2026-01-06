@@ -10,8 +10,9 @@
 
 // I2C address: 0x0D
 #include "qmc5883.h"
+
 #include "stm32f7xx_hal.h"
-#include "debug.h"
+#include "utils.h"
 
 #define QMC5883_ADDR (0x0D << 1)  // 7-bit address shifted left for HAL
 #define QMC5883_CHIP_ID_REG 0x0D

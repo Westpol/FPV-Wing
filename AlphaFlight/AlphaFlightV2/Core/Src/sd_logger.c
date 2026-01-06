@@ -23,7 +23,7 @@
  */
 
 #include "sd_logger.h"
-#include "debug.h"
+
 #include "stm32f7xx_hal.h"
 #include "main.h"
 #include "logging_packager.h"
@@ -33,6 +33,7 @@
 #include "sd.h"
 #include "config_data.h"
 #include "time-utils.h"
+#include "utils.h"
 
 static bool last_arm_status = false;
 
@@ -196,7 +197,7 @@ void SD_LOGGER_LOOP_CALL(){
 		SD_WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
 		SD_WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
 
-		STATUS_LED_GREEN_ON();
+		UTIL_STATUS_LED_GREEN_ON();
 		memset(log_buffer_0, 0, sizeof(log_buffer_0));
 		memset(log_buffer_1, 0, sizeof(log_buffer_1));
 		buffer_index = 0;
@@ -257,7 +258,7 @@ void SD_LOGGER_LOOP_CALL(){
 		SD_WRITE_BLOCK((uint8_t*)&sd_superblock, sizeof(sd_superblock), SUPERBLOCK_BLOCK);
 		SD_WRITE_BLOCK((uint8_t*)&sd_file_metadata_block, sizeof(sd_file_metadata_block), latest_metadata_block);
 		last_arm_status = false;
-		STATUS_LED_GREEN_OFF();
+		UTIL_STATUS_LED_GREEN_OFF();
 		return;
 	}
 }

@@ -25,11 +25,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <math.h>
-#include "debug.h"
+#include <stdbool.h>
+
 #include "onboard-sensors.h"
 #include "crossfire.h"
 #include "servo.h"
-#include "stdbool.h"
 #include "scheduler.h"
 #include "m10-gps.h"
 #include "time-utils.h"
@@ -1363,21 +1363,21 @@ void ERROR_HANDLER_BLINKS(unsigned char BLINKS)
 
   while (1)
   {
-	  STATUS_LED_GREEN_OFF();
-	  STATUS_LED_BLUE_OFF();
+	  UTIL_STATUS_LED_GREEN_OFF();
+	  UTIL_STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
-		  STATUS_LED_BLUE_ON();
+		  UTIL_STATUS_LED_BLUE_ON();
 		  delay_100_ms(1);
-		  STATUS_LED_BLUE_OFF();
+		  UTIL_STATUS_LED_BLUE_OFF();
 		  delay_100_ms(5);
 	  }
 
 	  delay_100_ms(8);
 
 	  for(uint8_t counter = 0; counter < BLINKS; counter++){
-		  STATUS_LED_GREEN_ON();
+		  UTIL_STATUS_LED_GREEN_ON();
 		  delay_100_ms(1);
-		  STATUS_LED_GREEN_OFF();
+		  UTIL_STATUS_LED_GREEN_OFF();
 		  delay_100_ms(5);
 	  }
 	  delay_100_ms(15);
@@ -1439,12 +1439,12 @@ void Error_Handler(void)
 
 
   while (1){
-	  STATUS_LED_GREEN_OFF();
-	  STATUS_LED_BLUE_OFF();
+	  UTIL_STATUS_LED_GREEN_OFF();
+	  UTIL_STATUS_LED_BLUE_OFF();
 	  for(uint8_t counter = 0; counter < progress_counter; counter++){
-		  STATUS_LED_BLUE_ON();
+		  UTIL_STATUS_LED_BLUE_ON();
 		  delay_100_ms(1);
-		  STATUS_LED_BLUE_OFF();
+		  UTIL_STATUS_LED_BLUE_OFF();
 		  delay_100_ms(5);
 	  }
 	  delay_100_ms(8);

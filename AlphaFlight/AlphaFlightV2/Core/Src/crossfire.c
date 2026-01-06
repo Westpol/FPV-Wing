@@ -6,15 +6,17 @@
  */
 
 #include "crossfire.h"
-#include "debug.h"
+
 #include <stdbool.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "time-utils.h"
 #include "main.h"
 #include "m10-gps.h"
 #include "flight_state.h"
 #include "onboard-sensors.h"
-#include <math.h>
-#include <stdlib.h>
 #include "config_data.h"
 
 static UART_HandleTypeDef *crsf_uart;
