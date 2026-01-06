@@ -30,7 +30,7 @@ uint8_t config_been_read = 0;
 }*/
 
 
-#ifdef CONFIG_WRITE_STANDARD_ENABLED
+#if CONFIG_WRITE_STANDARD_ENABLED
 static void CONFIG_SET_STANDARD_VALUES(){
 	if(config_been_read == 0){
 		config_packed.magic_start = START_MAGIC;
@@ -83,7 +83,7 @@ static void CONFIG_SET_STANDARD_VALUES(){
 
 
 void LOAD_CONFIG_INIT(){
-#ifdef CONFIG_WRITE_STANDARD_ENABLED
+#if CONFIG_WRITE_STANDARD_ENABLED
 	CONFIG_SET_STANDARD_VALUES();
 	CONFIG_WRITE();
 #endif

@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-#define CONFIG_WRITE_STANDARD_ENABLED 0
+#define CONFIG_WRITE_STANDARD_ENABLED 1
 #define CONFIG_START_BLOCK 60
 #define CONFIG_BLOCKS_RESERVED 30
 #define CONFIG_VERSION 1
@@ -84,6 +84,7 @@ typedef struct __attribute((packed)){
 	CRSF_CONFIG_DATA_T crsf_config;
 	PID_VALUES_CONFIG_DATA_T pid_values_config;
 	MAHONY_VALUES_CONFIG_DATA_T mahony_config;
+	//uint8_t padding_over_512[512];
 	uint32_t magic_end;
 }CONFIG_PACKED_T;
 
