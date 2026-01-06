@@ -25,7 +25,7 @@ void MAGNETOMETER_READ_BLOCKING(){
     	x = (uint16_t)(data_buffer[1] << 8) | data_buffer[0];
     	y = (uint16_t)(data_buffer[3] << 8) | data_buffer[2];
     	z = (uint16_t)(data_buffer[5] << 8) | data_buffer[4];
-        USB_PRINTLN_BLOCKING("\n%d %d %d\n", x, y, z);
+        UTIL_USB_PRINTLN_BLOCKING("\n%d %d %d\n", x, y, z);
     }
 }
 

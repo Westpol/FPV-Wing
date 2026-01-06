@@ -103,6 +103,10 @@ void UTIL_USB_PRINT(const char *format, ...) {
     CDC_Transmit_FS((uint8_t *)message, len);
 }
 
+void UTIL_USB_PRINT_RAW(const char* message, uint32_t len) {
+    CDC_Transmit_FS((uint8_t *)message, len);
+}
+
 void UTIL_USB_PRINT_HEX(uint8_t *data, uint32_t len) {
     char buffer[512]; // 3 chars per byte + \r\n + null terminator
     char *ptr = buffer;

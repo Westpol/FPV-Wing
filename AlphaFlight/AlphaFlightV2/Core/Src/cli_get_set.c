@@ -8,7 +8,7 @@
 #include "cli_get_set.h"
 #include <string.h>
 #include "main.h"
-#include "debug.h"
+#include "utils.h"
 #include "config_data.h"
 
 uint8_t CLI_PROCESS_GET_COMMAND(const char* get_type){
@@ -19,19 +19,19 @@ uint8_t CLI_PROCESS_GET_COMMAND(const char* get_type){
 
 		switch(i){
 		case 0:
-			USB_PRINTLN("pid roll i");
+			UTIL_USB_PRINTLN("pid roll i");
 			break;
 		case 1:
-			USB_PRINTLN("crsf telemetry %d", CONFIG_DATA.crossfire.telemetry.enabled);
+			UTIL_USB_PRINTLN("crsf telemetry %d", CONFIG_DATA.crossfire.telemetry.enabled);
 			break;
 		case 2:
-			USB_PRINTLN("gyro roll");
+			UTIL_USB_PRINTLN("gyro roll");
 			break;
 		case 3:
-			USB_PRINTLN("filter roll");
+			UTIL_USB_PRINTLN("filter roll");
 			break;
 		case 4:
-			USB_PRINTLN("logger mode %d", CONFIG_DATA.logger.log_mode);
+			UTIL_USB_PRINTLN("logger mode %d", CONFIG_DATA.logger.log_mode);
 			break;
 		default:
 			ERROR_HANDLER_BLINKS(5);

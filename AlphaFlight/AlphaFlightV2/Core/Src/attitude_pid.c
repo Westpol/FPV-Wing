@@ -105,6 +105,6 @@ void FC_PID_FLY_BY_WIRE_WITHOUT_LIMITS(uint32_t dt){
 }
 
 void FC_PID_PRINT_CURRENT_SERVO_POINTS(){
-	USB_PRINTLN("%d, %d, %d, %f", current_servo_points.servo_left, current_servo_points.motor, current_servo_points.servo_right, CRSF_DATA.channel_norm[5]);
+	UTIL_USB_PRINTLN("%d, %d, %d, %f", current_servo_points.servo_left, current_servo_points.motor, current_servo_points.servo_right, CRSF_DATA.channel_norm[5]);
 	//USB_PRINTLN("FBW Pitch: %f, FBW Roll: %f", fly_by_wire_setpoints->pitch_angle, fly_by_wire_setpoints->roll_angle);
 }

@@ -21,7 +21,7 @@ typedef struct{
 	uint32_t period;
 	uint64_t time_last_execute;
 	uint64_t time_to_execute;
-	float cpu_usage;
+	float cpu_usage_us;
 	char name[32];
 }task_t;
 

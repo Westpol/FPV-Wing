@@ -146,7 +146,7 @@ void USB_DECODE_COMMAND(uint32_t length){	// set commands / variables here
 					USBD_CDC_TransmitPacket(&hUsbDeviceFS);
 					break;
 				case SIMPLE_COMMAND_EXIT:
-					USB_PRINTLN_BLOCKING("exiting command line configuration...");
+					UTIL_USB_PRINTLN_BLOCKING("exiting command line configuration...");
 					usb_config_mode_enabled = false;
 					exit_command_line_config = true;
 					return;
@@ -170,7 +170,7 @@ void USB_DECODE_COMMAND(uint32_t length){	// set commands / variables here
 			switch(i){
 			case 0:
 				if(!CLI_PROCESS_GET_COMMAND(message_decoder.strings[1])){
-					USB_PRINTLN("Command not found!");
+					UTIL_USB_PRINTLN("Command not found!");
 				}
 				break;
 			default:
@@ -187,7 +187,7 @@ void USB_DECODE_MESSAGE(uint32_t length){		// gets called every time usb message
 		uint32_t expected_len = sizeof(expected) - 1;
 		if(length >= expected_len){
 			if(memcmp(cdc_buffer, expected, expected_len) == 0){
-				USB_PRINTLN_BLOCKING("GREAT SUCCESS!");
+				UTIL_USB_PRINTLN_BLOCKING("GREAT SUCCESS!");
 				enter_usb_mode_next_loop = true;
 			}
 			else{

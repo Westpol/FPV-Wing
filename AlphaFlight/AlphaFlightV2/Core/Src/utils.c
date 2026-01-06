@@ -6,8 +6,11 @@
  */
 
 #include "utils.h"
+#include "usbd_cdc_if.h"
 #include <math.h>
+#include <stdbool.h>
 
+//============================== Quaternion math ===============================================
 void UTIL_QUATERNION_PRODUCT(const float* q1,const float* q2, float* q3){		// calculates q1*q2, saves value in q3
 	float q_new[4];
 	q_new[0] = q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2] - q1[3]*q2[3];
@@ -17,7 +20,9 @@ void UTIL_QUATERNION_PRODUCT(const float* q1,const float* q2, float* q3){		// ca
 
 	q3[0] = q_new[0]; q3[1] = q_new[1]; q3[2] = q_new[2]; q3[3] = q_new[3];
 }
+//============================== Quaternion math ===============================================
 
+//================================ general math ================================================
 float UTIL_MAX_F(float value, float min){
 	if(value <= min){
 		return min;
@@ -39,3 +44,76 @@ float UTIL_RADIANS(float degrees){
 float UTIL_DEGREES(float radians){
 	return radians * (180.0f / (float)M_PI);
 }
+//================================ general math ================================================
+
+//=============================== USB functions ================================================
+void UTIL_USB_PRINTLN(const char *format, ...){
+    char message[USB_PRINT_BUFFER_SIZE];
+    va_list args;
+    va_start(args, format);
+    int len = vsnprintf(message, sizeof(message) - 2, format, args);  // Reserve space for \r\n
+    va_end(args);
+
+    // Ensure there's space to append "\r\n"
+    if (len > 0 && len < (USB_PRINT_BUFFER_SIZE - 2)) {
+        message[len] = '\r';
+        message[len + 1] = '\n';
+        message[len + 2] = '\0'; // Null-terminate the string
+        len += 2;
+    }
+
+    CDC_Transmit_FS((uint8_t *)message, len);
+}
+
+void UTIL_USB_PRINTLN_BLOCKING(const char *format, ...){
+	char message[USB_PRINT_BUFFER_SIZE];
+	    va_list args;
+	    va_start(args, format);
+	    int len = vsnprintf(message, sizeof(message) - 2, format, args);  // Reserve space for \r\n
+	    va_end(args);
+
+	    // Ensure there's space to append "\r\n"
+	    if (len > 0 && len < (USB_PRINT_BUFFER_SIZE - 2)) {
+	        message[len] = '\r';
+	        message[len + 1] = '\n';
+	        message[len + 2] = '\0'; // Null-terminate the string
+	        len += 2;
+	    }
+
+	    uint32_t start = HAL_GetTick();
+	    while (CDC_Transmit_FS((uint8_t *)message, len) == USBD_BUSY) {
+	        if (HAL_GetTick() - start > 100) break; // Timeout after 100ms
+	    }
+}
+
+void UTIL_USB_PRINT(const char *format, ...) {
+    char message[USB_PRINT_BUFFER_SIZE];
+    va_list args;
+    va_start(args, format);
+    int len = vsnprintf(message, sizeof(message) - 2, format, args);  // Reserve space for \r\n
+    va_end(args);
+
+    // Ensure there's space to append "\r\n"
+    if (len > 0 && len < (USB_PRINT_BUFFER_SIZE - 2)) {
+        message[len] = '\0';
+    }
+
+    CDC_Transmit_FS((uint8_t *)message, len);
+}
+
+void UTIL_USB_PRINT_RAW(const char* message, uint32_t len) {
+    CDC_Transmit_FS((uint8_t *)message, len);
+}
+
+void UTIL_USB_PRINT_HEX(uint8_t *data, uint32_t len) {
+    char buffer[512]; // 3 chars per byte + \r\n + null terminator
+    char *ptr = buffer;
+
+    for (uint8_t i = 0; i < len; i++) {
+        ptr += sprintf(ptr, "%02X ", data[i]);
+    }
+
+    ptr += sprintf(ptr, "\r\n");  // Append \r\n at the end
+    CDC_Transmit_FS((uint8_t *)buffer, strlen(buffer));
+}
+//=============================== USB functions ================================================

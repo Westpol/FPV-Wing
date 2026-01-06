@@ -1329,7 +1329,8 @@ static void PRINT_DATA(){
 	//USB_PRINTLN("w:%f, x:%f, y:%f, z:%f, y-axis directly integrated:%f", q[0], q[1], q[2], q[3], imu_data.pitch_angle);
 	//USB_PRINTLN("pitch_err:%f, roll_err:%f", attitude_pid.pitch_error, attitude_pid.roll_error);
 	//USB_PRINTLN("pitch:%f,roll:%f", ONBOARD_SENSORS.gyro.gyro.y, ONBOARD_SENSORS.gyro.gyro.x);
-	USB_PRINTLN("Angle: | pitch: %f roll: %f | Accel | x: %f y: %f z: %f | Errors: | ex: %f ey: %f", UTIL_DEGREES(ONBOARD_SENSORS.gyro.pitch_angle), UTIL_DEGREES(ONBOARD_SENSORS.gyro.roll_angle), ONBOARD_SENSORS.accel.accel.x, ONBOARD_SENSORS.accel.accel.y, ONBOARD_SENSORS.accel.accel.z, ONBOARD_SENSORS.ex, ONBOARD_SENSORS.ey);
+	//USB_PRINTLN("Angle: | pitch: %f roll: %f | Accel | x: %f y: %f z: %f | Errors: | ex: %f ey: %f", UTIL_DEGREES(ONBOARD_SENSORS.gyro.pitch_angle), UTIL_DEGREES(ONBOARD_SENSORS.gyro.roll_angle), ONBOARD_SENSORS.accel.accel.x, ONBOARD_SENSORS.accel.accel.y, ONBOARD_SENSORS.accel.accel.z, ONBOARD_SENSORS.ex, ONBOARD_SENSORS.ey);
+	//UTIL_USB_PRINT_RAW((char*) 0, 0);
 }
 #endif
 

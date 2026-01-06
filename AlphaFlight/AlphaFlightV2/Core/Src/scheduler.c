@@ -21,7 +21,7 @@ void SCHEDULER_INIT(){
 	current_time = MICROS64();
 	for(int i = 0; i < task_count; i++){
 		tasks[i].time_last_execute = current_time;
-		tasks[i].time_to_execute = current_time + tasks[i].period;
+		tasks[i].time_to_execute = tasks[i].time_last_execute + tasks[i].period;
 	}
 }
 
@@ -31,7 +31,7 @@ void SCHEDULER_ADD_TASK(const task_func_t task_func, const uint32_t period, cons
 		tasks[task_count].period = period;
 		tasks[task_count].time_last_execute = current_time;
 		tasks[task_count].time_to_execute = period;
-		tasks[task_count].cpu_usage = 0;
+		tasks[task_count].cpu_usage_us = 0;
 		for(int i = 0; i < 32; i++){
 			if(name[i] == '\0'){
 				memcpy(tasks[task_count].name, name, i + 1);
@@ -66,12 +66,12 @@ void SCHEDULER_CHECK_EXECUTION_DELAY(){
 void SCHEDULER_UPDATE(){
 	current_time = MICROS64();
 	for(int i = 0; i < task_count; i++){
-		if((int32_t)(current_time - tasks[i].time_to_execute) >= 0){
+		if(current_time - tasks[i].time_to_execute >= 0){
 			tasks[i].time_last_execute = current_time;
 			tasks[i].time_to_execute += tasks[i].period;
 			tasks[i].task_func();
 			uint32_t delta_t = MICROS64() - current_time;
-			tasks[i].cpu_usage = 0.1f * delta_t + (0.1f * tasks[i].cpu_usage);
+			tasks[i].cpu_usage_us = 0.1f * delta_t + (0.1f * tasks[i].cpu_usage_us);
 			break;
 		}
 	}

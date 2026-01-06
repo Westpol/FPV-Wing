@@ -161,7 +161,7 @@ void CONFIG_READ(){
 
 
 void CONFIG_WRITE(){
-	int32_t struct_size_left = config_packed.config_header.config_length;
+	int32_t struct_size_left = sizeof(config_packed);
 	uint16_t copy_length = 0;
 	uint8_t block_byte_array[BLOCK_DATA_SIZE] = {0};
 
