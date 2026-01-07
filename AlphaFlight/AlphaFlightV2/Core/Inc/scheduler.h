@@ -17,6 +17,8 @@
 typedef void (*task_func_t)(void);
 
 typedef struct{
+	uint8_t active;
+	uint8_t enabled;
 	task_func_t task_func;
 	uint32_t period;
 	uint64_t time_last_execute;

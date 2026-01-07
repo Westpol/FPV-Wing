@@ -21,3 +21,5 @@ AlphaFlight/AlphaFlight/.project
 AlphaFlight/AlphaFlight/.cproject
 AlphaFlight/AlphaFlight/.mxproject
 AlphaFlight/AlphaFlight/AlphaFlight.launch
+AlphaFlight VS Code/AlphaFlight/*
+!AlphaFlight VS Code/AlphaFlight/AlphaFlight.ioc
