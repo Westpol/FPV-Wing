@@ -34,7 +34,7 @@ void SCHEDULER_ADD_TASK(const task_func_t task_func, const uint32_t period, cons
 		tasks[task_count].cpu_usage_us = 0;
 		tasks[task_count].enabled = 1;
 		tasks[task_count].active = 1;
-		for(int i = 0; i < 32; i++){
+		for(int i = 0; i < TASK_NAME_LENGTH; i++){
 			if(name[i] == '\0'){
 				memcpy(tasks[task_count].name, name, i + 1);
 				task_count++;
@@ -80,4 +80,14 @@ void SCHEDULER_UPDATE(){
 			break;
 		}
 	}
+}
+
+task_info_t SCHEDULER_GET_TASK_INFO(uint8_t task_index){
+	task_info_t task_info;
+	task_info.active = tasks[task_index].active;
+	task_info.cpu_usage_us = tasks[task_index].cpu_usage_us;
+	task_info.enabled = tasks[task_index].enabled;
+	memcpy(&task_info.name[0], &tasks[task_index].name[0], TASK_NAME_LENGTH);
+
+	return task_info;
 }

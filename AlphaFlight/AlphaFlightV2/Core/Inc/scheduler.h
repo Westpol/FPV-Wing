@@ -12,6 +12,7 @@
 #include "stdint.h"
 
 #define MAX_TASKS 50
+#define TASK_NAME_LENGTH 32
 #define MIN_TASK_DELAY 1000		// in microseconds (default 1000: equals 1ms or 1kHz)
 
 typedef void (*task_func_t)(void);
@@ -24,13 +25,21 @@ typedef struct{
 	uint64_t time_last_execute;
 	uint64_t time_to_execute;
 	float cpu_usage_us;
-	char name[32];
+	char name[TASK_NAME_LENGTH];
 }task_t;
+
+typedef struct{
+	uint8_t active;
+	uint8_t enabled;
+	float cpu_usage_us;
+	char name[TASK_NAME_LENGTH];
+}task_info_t;
 
 void SCHEDULER_INIT();
 void SCHEDULER_CHECK_EXECUTION_DELAY();
 void SCHEDULER_ADD_TASK(const task_func_t task_func, const uint32_t period, const char* name);
 void SCHEDULER_UPDATE(void);
+task_info_t SCHEDULER_GET_TASK_INFO(uint8_t task_index);
 
 #define HZ_TO_DELTA_T_US(HZ) ((uint32_t)(1000000U / (HZ)))
 
